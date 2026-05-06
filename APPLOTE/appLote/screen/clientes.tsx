@@ -30,7 +30,7 @@ const clientes = ({ navigation, route }) => {
       setCargando(false);
     }
   };
-
+//Revisión
   const anularCliente = async (dni) => {
     try {
       // 1. Cambiamos la URL para incluir el DNI al final
