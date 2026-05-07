@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://go.microsoft.com/fwlink/?LinkID=208121. -->
+<Project>
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <EncryptedPassword>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAcegvLoixW0uXv4+vg/CJngAAAAACAAAAAAAQZgAAAAEAACAAAABxNssRmligX4clc81QQcII24bsOzIdQ7waeduLEEUOqAAAAAAOgAAAAAIAACAAAACEnZiJAreAilYAPBJZYDF9pyU/Vr/Obgz0CEPhQ3Rs/SAAAAAXoFMEKWT1P3TgELpKg66hcs5CcR7OcEdnxmP8TGHp+EAAAAAYcTChYkSlyQzH2bW7QCt93HeSADccIKa+ZG4gSeRFOsOmeZ9+oV2+Ukdemmr9jUh5ioDVqHMivSfGtdTmZeeZ</EncryptedPassword>
+    <_PublishTargetUrl>ftp://155.254.244.37/www.tulote.somee.com</_PublishTargetUrl>
+    <History>True|2026-05-07T15:47:51.2722069Z||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+  <ItemGroup>
+    <File Include="APILote.deps.json">
+      <publishTime>05/07/2026 10:41:53</publishTime>
+    </File>
+    <File Include="APILote.dll">
+      <publishTime>05/07/2026 10:41:51</publishTime>
+    </File>
+    <File Include="APILote.exe">
+      <publishTime>05/07/2026 10:41:51</publishTime>
+    </File>
+    <File Include="APILote.pdb">
+      <publishTime>05/07/2026 10:41:50</publishTime>
+    </File>
+    <File Include="APILote.runtimeconfig.json">
+      <publishTime>05/07/2026 10:41:53</publishTime>
+    </File>
+    <File Include="APILote.staticwebassets.endpoints.json">
+      <publishTime>05/07/2026 10:42:36</publishTime>
+    </File>
+    <File Include="appsettings.Development.json">
+      <publishTime>05/07/2026 10:06:32</publishTime>
+    </File>
+    <File Include="appsettings.json">
+      <publishTime>05/07/2026 10:06:32</publishTime>
+    </File>
+    <File Include="cs/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:44</publishTime>
+    </File>
+    <File Include="de/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:17:24</publishTime>
+    </File>
+    <File Include="es/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:17:40</publishTime>
+    </File>
+    <File Include="fr/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:17:24</publishTime>
+    </File>
+    <File Include="it/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:44</publishTime>
+    </File>
+    <File Include="ja/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:44</publishTime>
+    </File>
+    <File Include="ko/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:10</publishTime>
+    </File>
+    <File Include="Microsoft.ApplicationBlocks.Data.dll">
+      <publishTime>09/26/2014 12:26:46</publishTime>
+    </File>
+    <File Include="Microsoft.Bcl.Cryptography.dll">
+      <publishTime>10/31/2023 09:58:52</publishTime>
+    </File>
+    <File Include="Microsoft.Data.SqlClient.dll">
+      <publishTime>03/17/2026 11:10:14</publishTime>
+    </File>
+    <File Include="Microsoft.Data.SqlClient.Extensions.Abstractions.dll">
+      <publishTime>03/17/2026 10:36:46</publishTime>
+    </File>
+    <File Include="Microsoft.Data.SqlClient.Internal.Logging.dll">
+      <publishTime>03/17/2026 10:11:08</publishTime>
+    </File>
+    <File Include="Microsoft.Extensions.Caching.Memory.dll">
+      <publishTime>09/16/2024 18:10:10</publishTime>
+    </File>
+    <File Include="Microsoft.Extensions.DependencyInjection.Abstractions.dll">
+      <publishTime>09/16/2024 18:09:34</publishTime>
+    </File>
+    <File Include="Microsoft.Extensions.Logging.Abstractions.dll">
+      <publishTime>09/16/2024 18:09:58</publishTime>
+    </File>
+    <File Include="Microsoft.Extensions.Options.dll">
+      <publishTime>01/17/2024 22:05:26</publishTime>
+    </File>
+    <File Include="Microsoft.IdentityModel.Abstractions.dll">
+      <publishTime>02/11/2026 22:32:22</publishTime>
+    </File>
+    <File Include="Microsoft.IdentityModel.JsonWebTokens.dll">
+      <publishTime>02/11/2026 22:32:32</publishTime>
+    </File>
+    <File Include="Microsoft.IdentityModel.Logging.dll">
+      <publishTime>02/11/2026 22:32:02</publishTime>
+    </File>
+    <File Include="Microsoft.IdentityModel.Protocols.dll">
+      <publishTime>02/11/2026 22:32:22</publishTime>
+    </File>
+    <File Include="Microsoft.IdentityModel.Protocols.OpenIdConnect.dll">
+      <publishTime>02/11/2026 22:33:02</publishTime>
+    </File>
+    <File Include="Microsoft.IdentityModel.Tokens.dll">
+      <publishTime>02/11/2026 22:32:22</publishTime>
+    </File>
+    <File Include="Microsoft.OpenApi.dll">
+      <publishTime>12/18/2025 06:45:40</publishTime>
+    </File>
+    <File Include="Microsoft.SqlServer.Server.dll">
+      <publishTime>01/27/2022 12:19:08</publishTime>
+    </File>
+    <File Include="Newtonsoft.Json.dll">
+      <publishTime>09/16/2025 03:04:24</publishTime>
+    </File>
+    <File Include="pl/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:44</publishTime>
+    </File>
+    <File Include="pt-BR/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:10</publishTime>
+    </File>
+    <File Include="ru/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:44</publishTime>
+    </File>
+    <File Include="runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll">
+      <publishTime>03/17/2026 11:10:14</publishTime>
+    </File>
+    <File Include="runtimes/unix/lib/net8.0/System.Data.SqlClient.dll">
+      <publishTime>02/11/2026 19:42:38</publishTime>
+    </File>
+    <File Include="runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll">
+      <publishTime>01/15/2025 19:23:14</publishTime>
+    </File>
+    <File Include="runtimes/win-arm64/native/sni.dll">
+      <publishTime>07/12/2017 06:24:24</publishTime>
+    </File>
+    <File Include="runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll">
+      <publishTime>01/15/2025 19:23:36</publishTime>
+    </File>
+    <File Include="runtimes/win-x64/native/sni.dll">
+      <publishTime>07/12/2017 06:24:22</publishTime>
+    </File>
+    <File Include="runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll">
+      <publishTime>01/15/2025 19:23:04</publishTime>
+    </File>
+    <File Include="runtimes/win-x86/native/sni.dll">
+      <publishTime>07/12/2017 06:24:22</publishTime>
+    </File>
+    <File Include="runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll">
+      <publishTime>03/17/2026 11:10:38</publishTime>
+    </File>
+    <File Include="runtimes/win/lib/net8.0/System.Data.SqlClient.dll">
+      <publishTime>02/11/2026 19:42:42</publishTime>
+    </File>
+    <File Include="runtimes/win/lib/net8.0/System.Diagnostics.EventLog.dll">
+      <publishTime>09/16/2024 18:10:40</publishTime>
+    </File>
+    <File Include="runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll">
+      <publishTime>09/16/2024 18:10:56</publishTime>
+    </File>
+    <File Include="Swashbuckle.AspNetCore.Swagger.dll">
+      <publishTime>03/25/2026 16:49:40</publishTime>
+    </File>
+    <File Include="Swashbuckle.AspNetCore.SwaggerGen.dll">
+      <publishTime>03/25/2026 16:49:44</publishTime>
+    </File>
+    <File Include="Swashbuckle.AspNetCore.SwaggerUI.dll">
+      <publishTime>03/25/2026 16:49:42</publishTime>
+    </File>
+    <File Include="System.Configuration.ConfigurationManager.dll">
+      <publishTime>09/16/2024 18:09:48</publishTime>
+    </File>
+    <File Include="System.Data.SqlClient.dll">
+      <publishTime>02/11/2026 19:42:26</publishTime>
+    </File>
+    <File Include="System.Diagnostics.EventLog.dll">
+      <publishTime>09/16/2024 18:09:32</publishTime>
+    </File>
+    <File Include="System.IdentityModel.Tokens.Jwt.dll">
+      <publishTime>02/11/2026 22:32:22</publishTime>
+    </File>
+    <File Include="System.Security.Cryptography.Pkcs.dll">
+      <publishTime>09/16/2024 18:09:56</publishTime>
+    </File>
+    <File Include="System.Security.Cryptography.ProtectedData.dll">
+      <publishTime>10/31/2023 09:59:04</publishTime>
+    </File>
+    <File Include="tr/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:44</publishTime>
+    </File>
+    <File Include="web.config">
+      <publishTime>05/07/2026 10:42:36</publishTime>
+    </File>
+    <File Include="zh-Hans/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:16:10</publishTime>
+    </File>
+    <File Include="zh-Hant/Microsoft.Data.SqlClient.resources.dll">
+      <publishTime>03/17/2026 11:17:24</publishTime>
+    </File>
+  </ItemGroup>
+</Project>

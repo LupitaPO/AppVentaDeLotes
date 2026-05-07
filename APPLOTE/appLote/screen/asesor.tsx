@@ -11,15 +11,8 @@ import React, { useState, useEffect } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from '@react-navigation/native';
 
-// imports para idiomas 
-import Fontisto from "@expo/vector-icons/Fontisto";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import i18n, {changeLanguage} from "../i18n";
-import { Languages } from "../localizacion";
-
-const API_URL = "http://10.246.197.207:90";
-
-
+const API_URL = "http://10.90.221.207:90";
+//Revisión
 const asesor = ({ navigation, route }) => {
   const { nombre, rol } = route.params || {};
   const tabBarHeight = useBottomTabBarHeight();
