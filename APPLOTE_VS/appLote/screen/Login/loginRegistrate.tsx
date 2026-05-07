@@ -15,7 +15,7 @@ import i18n, {changeLanguage}  from "../../i18n";
 import { Languages } from "../../localizacion";
 
 
-const API_URL = "http://10.28.32.207:90";
+const API_URL = "http://www.tuloteprueba.somee.com";
 
 const loginRegistrate = ({ navigation }) => {
   const [nombre, setNombre] = useState("");
