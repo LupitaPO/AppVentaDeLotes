@@ -12,7 +12,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // Reemplaza con tu URL de Azure cuando la tengas
-const API_URL = "http://www.tuloteprueba.somee.com";
+const API_URL = "http://www.tulote.somee.com";
 
 const DetallePago = ({ route, navigation }) => {
   const { cuota } = route.params; 

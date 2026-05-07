@@ -21,7 +21,7 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
 const { height } = Dimensions.get('window');
-const API_URL = "http://www.tuloteprueba.somee.com";
+const API_URL = "http://www.tulote.somee.com";
 
 
 const Ventas = ({ navigation, route }) => {

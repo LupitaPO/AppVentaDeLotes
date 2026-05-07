@@ -10,7 +10,7 @@ import {
 import React, { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
 
-const API_URL = "http://www.tuloteprueba.somee.com";
+const API_URL = "http://www.tulote.somee.com";
 
 const ModificarProyecto = ({ navigation, route }) => {
   const { proyecto } = route.params || {};

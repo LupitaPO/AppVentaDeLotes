@@ -18,7 +18,7 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
 
-const API_URL = "http://www.tuloteprueba.somee.com";
+const API_URL = "http://www.tulote.somee.com";
 
 const login = ({ navigation }) => {
   const [Correo, setEmail] = useState("");
