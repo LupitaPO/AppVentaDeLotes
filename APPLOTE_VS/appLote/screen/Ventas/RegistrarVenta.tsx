@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 
-const API_URL = "http://www.tulote.somee.com/";
+const API_URL = "http://www.tulote.somee.com";
 
 
 const RegistrarVenta = ({ route, navigation }) => {

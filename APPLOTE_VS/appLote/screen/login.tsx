@@ -18,7 +18,7 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
 
-const API_URL = "http://www.tulote.somee.com/";
+const API_URL = "http://www.tulote.somee.com";
 
 const login = ({ navigation }) => {
   const [Correo, setEmail] = useState("");
@@ -34,15 +34,18 @@ const login = ({ navigation }) => {
     }
 
     setloading(true);
-
+    console.log(API_URL)
     try {
       const [reslogin, resactualizacion] = await Promise.all([
         fetch(`${API_URL}/Usuario/usuario_Login/${Correo}/${Contraseña}`),
         fetch(`${API_URL}/Lote/lote_ActualizarEstadoMasivo`),
+
       ]);
-
+      console.log(reslogin)
+       console.log(Contraseña)
+      
       const data = await reslogin.json();
-
+      console.log(data)
       if (data && data.length > 0) {
         const usuario = data[0];
         const idUsuario = usuario.IdUsuario || usuario.idUsuario || usuario.Id || usuario.id;
@@ -56,6 +59,7 @@ const login = ({ navigation }) => {
       }
     } catch (error) {
       alert("Error al iniciar sesión");
+      
     } finally {
       setloading(false);
     }
