@@ -23,7 +23,7 @@ import { Languages } from "../localizacion";
 
 const screenWidth = Dimensions.get("window").width;
 
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = "http://www.tuloteprueba.somee.com";
 
 
 const home = ({ route, navigation }) => {
