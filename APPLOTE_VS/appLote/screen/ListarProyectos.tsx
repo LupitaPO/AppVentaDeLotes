@@ -16,7 +16,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
-const API_URL = "http://10.246.197.207:90";
+const API_URL = "http://www.tulote.somee.com/";
 
 
 const ListarProyectos = ({ navigation, route }) => {

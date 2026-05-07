@@ -14,7 +14,7 @@ import Papa from "papaparse";
 import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
-const API_URL = "http://10.246.197.207:90";
+const API_URL = "http://www.tulote.somee.com/";
 
 
 const DetalleProyecto = ({ route, navigation }) => {
