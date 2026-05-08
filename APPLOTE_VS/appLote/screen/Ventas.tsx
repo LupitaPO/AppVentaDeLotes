@@ -19,6 +19,12 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
+///////////////////////////////////////////////////
+
+///import para imprimr reporte de cronograma///////
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+//////////////////////////////////////////////////
 
 const { height } = Dimensions.get('window');
 const API_URL = "http://www.tulote.somee.com";
@@ -36,8 +42,9 @@ const Ventas = ({ navigation, route }) => {
         setlanguage(lang);
       }  
       
-  ///////////////////////////////////////////////////////////////////
-  
+//////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedVentaLocal, setSelectedVentaLocal] = useState(null);
 
@@ -57,11 +64,60 @@ const Ventas = ({ navigation, route }) => {
   const [cronogramaTodos, setCronogramaTodos] = useState([]);
   const [cronograma, setCronograma] = useState([]);
   const [cargandoCronograma, setCargandoCronograma] = useState(false);
+  const [listaClientes, setListaClientes] = useState([]);
 
   const obtenerIdVenta = (venta) => {
     return venta?.IdVenta ?? venta?.idVenta ?? venta?.Id ?? venta?.id;
   };
 
+///////////////////////////////////////////////////////////////////////////////
+//funcion para obtener el nombre del cliente ///////////////////////
+  const cargarClientes = async () => {
+    try {
+      const response = await fetch(`${API_URL}/Cliente/cliente_Listar`);
+      const data = await response.json();
+      setListaClientes(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error al cargar clientes:", error);
+    }
+  };
+
+  const obtenerNombreCliente = (idCliente) => {
+    if (!idCliente) return "Sin ID";
+    if (!idCliente || listaClientes.length === 0) return "Cargando...";
+
+    const cliente = listaClientes.find(
+      (c) => (c.IdCliente || c.idCliente)?.toString() === idCliente.toString()
+    );
+
+    if (cliente) {
+      // Juntamos todos los campos en un array, filtramos los que estén vacíos y los unimos con un espacio
+      const nombreCompleto = [
+        cliente.Nombre1,
+        cliente.Nombre2,
+        cliente.Apaterno,
+        cliente.Amaterno
+      ]
+        .filter(parte => parte && parte.toString().trim() !== "") // Quita nulos o vacíos
+        .join(" "); // Los une con un espacio
+
+      return nombreCompleto || "Sin Nombre";
+    }
+
+    return "No encontrado";
+  };;
+
+  // 3. EFECTOS (Ahora sí pueden llamar a las funciones de arriba)
+  useEffect(() => {
+    const inicializar = async () => {
+      await cargarDatosIniciales();
+      await cargarClientes(); // <--- Ahora ya existe y no dará undefined
+    };
+    inicializar();
+  }, [idUsuario]);
+//////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////
   const cargarVentas = async () => {
     try {
       setCargando(true);
@@ -153,8 +209,59 @@ const Ventas = ({ navigation, route }) => {
     setSelectedVenta(venta);
     setCronograma(filtrarCronogramaPorVenta(venta));
   };
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//Aqui se genera los PDF ///////////////////////////////////////////////////////////////////////////////
+  const generarPDF = async () => {
+    if (!cronograma || cronograma.length === 0) {
+      Alert.alert("Aviso", "No hay cuotas cargadas para generar el PDF.");
+      return;
+    }
+    const nombreParaPDF = obtenerNombreCliente(selectedVentaLocal?.IdCliente);
+
+    const html = `
+    <html>
+      <body style="font-family: Arial, sans-serif; padding: 20px;">
+        <h1 style="text-align: center; color: #069488;">Cronograma de Pagos</h1>
+        <p><strong>Lote:</strong> ${selectedVentaLocal?.IdLote || 'N/A'}</p>
+        <p><strong>Nombre de Cliente:</strong> ${nombreParaPDF}</p>
+        <hr/>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <thead>
+            <tr style="background-color: #069488; color: white;">
+              <th style="border: 1px solid #ddd; padding: 10px;">Cuota</th>
+              <th style="border: 1px solid #ddd; padding: 10px;">Vencimiento</th>
+              <th style="border: 1px solid #ddd; padding: 10px;">Monto</th>
+              <th style="border: 1px solid #ddd; padding: 10px;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cronograma.map((item, i) => `
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${i + 1}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${item.FechaVencimiento}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">$${item.MontoCuota}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align: center; color: ${item.EstadoCuota === 'Pagado' ? 'green' : 'orange'};">
+                  ${item.EstadoCuota}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+    try {
+      const { uri } = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+    } catch (error) {
+      Alert.alert("Error", "No se pudo generar el PDF.");
+    }
+  };
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/// funcion para cerra sesion //////////////////////////////////////////////////////////////////////////
 
 const cerrarSesion = () => {
     // Simplemente redirigimos y reseteamos el historial
@@ -242,6 +349,7 @@ const cerrarSesion = () => {
                 <View style={styles.cardFooter}>
                    <View style={styles.priceContainer}>
                       <Text style={styles.priceText}>${venta.PrecioVenta ?? "0.00"}</Text>
+                      <Text style={styles.subtext}>Cliente       : {obtenerNombreCliente(venta.IdCliente)}</Text>
                       <Text style={styles.subtext}>Tipo Venta: {venta.TipoVenta}</Text>
                       <Text style={styles.subtext}>Tipo pago : {venta.TipoPago}</Text>
                       <Text style={styles.subtext}>Inicial        : {venta.MontoInicial}</Text>
@@ -276,6 +384,9 @@ const cerrarSesion = () => {
                 <Text style={styles.modalTitle}>Cronograma de Pagos</Text>
                 <Text style={styles.modalSubtitle}>Lote: {selectedVentaLocal?.IdLote}</Text>
               </View>
+              <TouchableOpacity onPress={generarPDF}>
+                <MaterialIcons name="print" size={28} color="#069488" />
+              </TouchableOpacity>
               <Pressable onPress={() => setModalVisible(false)}>
                 <MaterialCommunityIcons name="close-circle" size={32} color="#ff5252" />
               </Pressable>
@@ -294,7 +405,13 @@ const cerrarSesion = () => {
     style={styles.miniCard} 
     onPress={() => {
       setModalVisible(false); // Cierra el modal actual
-      navigation.navigate("DetallePago", { cuota: item, onRefresh: () => cargarDatosIniciales() }); // Te lleva a la nueva pantalla
+
+      // validacion para evitar q se ingrese a pagar un monto que ya este pagado 
+      if (item.EstadoCuota === "Pagado"){
+        alert("Esta cuota ya esta pagada.")
+      }else{
+        navigation.navigate("DetallePago", { cuota: item, onRefresh: () => cargarDatosIniciales() }); // Te lleva a la nueva pantalla
+      }
     }}
   >
     <View style={styles.cuotaHeader}>
