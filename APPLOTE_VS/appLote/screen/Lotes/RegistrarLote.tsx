@@ -57,37 +57,39 @@ const RegistrarLote = ({ route, navigation }) => {
         headers: {
           "Content-Type": "application/json",
         },
-       body: JSON.stringify({
-    // 1. Campos directos de la clase Lotes
-    IdProyecto: idProyecto,
-    CodigoLote: codLote,
-    Ubicacion: ubicacion,
-    NumeroLote: numLote,
-    Manzana: manzana,
-    Precio: parseFloat(precio) || 0,
-    Descripcion: descrip || "",
-    ImagenUrl: imgUrl || "",
-    EstadoLote: "Libre",
+        body: JSON.stringify({
+          // 1. Campos directos de la clase Lotes
+          IdProyecto: idProyecto,
+          CodigoLote: codLote,
+          Ubicacion: ubicacion,
+          NumeroLote: numLote,
+          Manzana: manzana,
+          Precio: parseFloat(precio) || 0,
+          Descripcion: descrip || "",
+          ImagenUrl: imgUrl || "",
+          EstadoLote: "Libre",
 
-    // 2. LA SOLUCIÓN: Agrupar los campos de medida
-    Medida: { 
-        Izquierda: izquierdaStr,
-        Derecha: derechaStr,
-        Frente: frenteStr,
-        Fondo: fondoStr,
-        Perimetro: parseFloat(perimetro) || 0,
-        TamañoM2: parseFloat(tamañosM2) || 0, // Verifica si en C# es TamañoM2 o TamanoM2
-        Estado: "A"
-    }
-}),
+          // 2. LA SOLUCIÓN: Agrupar los campos de medida
+          Medida: {
+            Izquierda: izquierdaStr,
+            Derecha: derechaStr,
+            Frente: frenteStr,
+            Fondo: fondoStr,
+            Perimetro: parseFloat(perimetro) || 0,
+            TamañoM2: parseFloat(tamañosM2) || 0, // Verifica si en C# es TamañoM2 o TamanoM2
+            Estado: "A"
+          }
+        }),
       });
 
       if (response.ok) {
         Alert.alert("Éxito", "Lote registrado correctamente", [
-          { text: "OK", onPress: () => {
-            onRefresh?.();
-            navigation.goBack();
-          }},
+          {
+            text: "OK", onPress: () => {
+              onRefresh?.();
+              navigation.goBack();
+            }
+          },
         ]);
       } else {
         const errorMsg = await response.text();
@@ -105,42 +107,62 @@ const RegistrarLote = ({ route, navigation }) => {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Registrar Lote</Text>
 
+      <Text style={styles.label}>Codigo Lote:</Text>
       <TextInput
         style={styles.input}
         placeholder="Código del Lote"
         value={codLote}
         onChangeText={setCodLote}
       />
+
+      <Text style={styles.label}>Ubicacion:</Text>
       <TextInput
         style={styles.input}
         placeholder="Ubicación"
         value={ubicacion}
         onChangeText={setUbicacion}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Frente (ej: 10+5)"
-        value={frenteStr}
-        onChangeText={setFrenteStr}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Fondo (ej: 15+8)"
-        value={fondoStr}
-        onChangeText={setFondoStr}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Derecha (ej: 12+3)"
-        value={derechaStr}
-        onChangeText={setDerechaStr}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Izquierda (ej: 11+4)"
-        value={izquierdaStr}
-        onChangeText={setIzquierdaStr}
-      />
+
+      <Text style={{fontWeight:'bold', fontSize:20, marginBottom:5}}>Medidas Del Lote:</Text>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+        
+        <View style={{ width: '48%' }}>
+          <Text style={styles.label}>Frente:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Frente (ej: 10+5)"
+            value={frenteStr}
+            onChangeText={setFrenteStr}
+          />
+          <Text style={styles.label}>Fondo:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Fondo (ej: 15+8)"
+            value={fondoStr}
+            onChangeText={setFondoStr}
+          />
+
+        </View>
+        <View style={{ width: '48%' }}>
+          <Text style={styles.label}>Derecha:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Derecha (ej: 12+3)"
+            value={derechaStr}
+            onChangeText={setDerechaStr}
+          />
+
+          <Text style={styles.label}>Izquierda:</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Izquierda (ej: 11+4)"
+            value={izquierdaStr}
+            onChangeText={setIzquierdaStr}
+          />
+        </View>
+      </View>
+
       <TextInput
         style={styles.input}
         placeholder="Perímetro"
@@ -180,12 +202,12 @@ const RegistrarLote = ({ route, navigation }) => {
         value={descrip}
         onChangeText={setDescrip}
       />
-      <TextInput
+      {/* <TextInput
         style={styles.input}
         placeholder="URL de Imagen"
         value={imgUrl}
         onChangeText={setImgUrl}
-      />
+      /> */}
 
       <TouchableOpacity
         style={[styles.button, cargando && styles.buttonDisabled]}
@@ -212,6 +234,10 @@ const styles = StyleSheet.create({
     color: "#069488",
     textAlign: "center",
     marginBottom: 20,
+  },
+  label: {
+    fontWeight: 'bold',
+    marginBottom:5,
   },
   input: {
     borderWidth: 1,
