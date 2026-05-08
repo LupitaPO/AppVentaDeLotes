@@ -70,5 +70,18 @@ namespace APILote.DATA
                 return null;
             }
         }
+        public DataTable reporteClientes(string dato)
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "reporte_Clientes_pa", dato).Tables[0];
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
     }
 }
