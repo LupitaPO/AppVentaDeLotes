@@ -76,24 +76,32 @@ const DetalleProyecto = ({ route, navigation }) => {
         header: true,
         skipEmptyLines: true,
         complete: (result) => {
-          const datos = result.data.filter(
-            (l) => l["Posición X"] || l["Posicion X"],
-          );
+          // Filtramos y limpiamos: solo filas que tengan coordenadas válidas
+          const datos = result.data.filter((l) => {
+            const x = l["Posición X"] || l["Posicion X"];
+            const y = l["Posición Y"] || l["Posicion Y"];
+            return x !== undefined && y !== undefined && x !== "" && y !== "";
+          });
+
           if (datos.length > 0) {
-            const xs = datos.map((l) =>
-              parseFloat(l["Posición X"] || l["Posicion X"]),
-            );
-            const ys = datos.map((l) =>
-              parseFloat(l["Posición Y"] || l["Posicion Y"]),
-            );
+            const xs = datos.map((l) => parseFloat(l["Posición X"] || l["Posicion X"]));
+            const ys = datos.map((l) => parseFloat(l["Posición Y"] || l["Posicion Y"]));
+
             const minX = Math.min(...xs);
             const minY = Math.min(...ys);
             const maxX = Math.max(...xs);
             const maxY = Math.max(...ys);
-            const padding = 20;
+
+            const anchoTotal = maxX - minX;
+            const altoTotal = maxY - minY;
+            const padding = 20; // Esto evita que el mapa pegue a los bordes
+
+            // IMPORTANTE: El ViewBox dice "Empieza en MinX, termina en AnchoTotal"
+            // Esto hace que aunque las coordenadas sean 500,000, el mapa salte al centro
             setMiViewBox(
-              `${minX - padding} ${minY - padding} ${maxX - minX + padding * 2} ${maxY - minY + padding * 2}`,
+              `${minX - padding} ${minY - padding} ${anchoTotal + padding * 2} ${altoTotal + padding * 2}`
             );
+
             setLotesGeometria(datos);
           }
         },
@@ -150,7 +158,12 @@ const DetalleProyecto = ({ route, navigation }) => {
           {cargando ? (
             <ActivityIndicator size="large" color="#069488" />
           ) : (
-            <Svg height="350" width={width - 80} viewBox={miViewBox} preserveAspectRatio="xMidYMid">
+            <Svg
+              height="350"
+              width={width - 80}
+              viewBox={miViewBox}
+              preserveAspectRatio="xMidYMid meet" // <--- Esto es clave para centrar
+            >
               <G scaleY={1} originY={0}>
                 {lotesGeometria.map((lote, index) => {
                   const kX = Object.keys(lote).find((k) =>
