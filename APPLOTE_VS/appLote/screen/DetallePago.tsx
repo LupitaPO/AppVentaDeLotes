@@ -1,4 +1,7 @@
+// React y hook local para manejar estados internos de la pantalla.
 import React, { useState } from "react";
+
+// Componentes base de React Native para estructura, scroll, botones, alertas y carga.
 import {
   View,
   Text,
@@ -9,24 +12,32 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
+
+// Librería de íconos utilizada para navegación y apoyo visual en la interfaz.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-// Reemplaza con tu URL de Azure cuando la tengas
+// URL base del backend usada para registrar pagos.
 const API_URL = "http://www.tulote.somee.com";
 
 const DetallePago = ({ route, navigation }) => {
+  // Recibe la cuota seleccionada desde la pantalla anterior.
   const { cuota } = route.params; 
   
+  // Controla el spinner mientras se envía el registro del pago al servidor.
   const [cargando, setCargando] = useState(false);
+
   // Estado dinámico para elegir el comprobante (1: Boleta, 2: Factura, 3: Ticket)
   const [tipoComprobante, setTipoComprobante] = useState(1); 
 
+  // Toma la cuota actual, arma el payload y registra el pago en la API.
   const realizarPago = async () => {
+    // Convierte el identificador del cronograma a número, aceptando distintos nombres de propiedad.
     const idCronogramaFinal = parseInt(cuota?.IdCronograma || cuota?.idCronograma);
     
     // Usamos el ID que el usuario seleccionó en la interfaz
     const idTipoComprobanteFinal = tipoComprobante; 
 
+    // Evita enviar la solicitud si el id de cronograma no es válido.
     if (isNaN(idCronogramaFinal)) {
       Alert.alert("Error", "El ID de la cuota no es un número válido.");
       return;
@@ -35,11 +46,13 @@ const DetallePago = ({ route, navigation }) => {
     try {
       setCargando(true);
 
+      // Objeto que el backend espera para registrar el pago.
       const datosParaEnviar = {
         IdCronograma: idCronogramaFinal,
         IdTipoComprobante: idTipoComprobanteFinal
       };
 
+      // Envía la solicitud POST al endpoint de pagos.
       const response = await fetch(`${API_URL}/Pago/pago_Registrar`, {
         method: 'POST',
         headers: { 
@@ -49,8 +62,10 @@ const DetallePago = ({ route, navigation }) => {
         body: JSON.stringify(datosParaEnviar)
       });
 
+      // La API responde en texto plano, por eso se lee como string y no como JSON.
       const textoRespuesta = await response.text();
 
+      // Si el backend confirma el registro, refresca la pantalla anterior y vuelve atrás.
       if (response.ok && textoRespuesta.trim() === "Pago Registrado Correctamente") {
         Alert.alert("¡Éxito!", "Pago Registrado Correctamente", [
           { text: "OK", onPress: () => { route.params?.onRefresh?.(); navigation.goBack() }}
@@ -66,7 +81,9 @@ const DetallePago = ({ route, navigation }) => {
   };
 
   return (
+    /* Contenedor seguro para respetar bordes del dispositivo y áreas del sistema. */
     <SafeAreaView style={styles.container}>
+      {/* Cabecera superior con botón de regreso y título de la pantalla. */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="arrow-left" size={28} color="#333" />
@@ -75,7 +92,9 @@ const DetallePago = ({ route, navigation }) => {
         <View style={{ width: 28 }} /> 
       </View>
 
+      {/* Contenido principal desplazable con el resumen de la cuota y selección de comprobante. */}
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Tarjeta informativa con el monto, fecha y estado actual de la cuota. */}
         <View style={styles.infoCard}>
           <MaterialCommunityIcons name="cash-register" size={50} color="#069488" style={styles.iconCenter} />
           <Text style={styles.label}>Monto de la Cuota</Text>
@@ -88,6 +107,7 @@ const DetallePago = ({ route, navigation }) => {
         <Text style={styles.sectionTitle}>Seleccione Tipo de Comprobante</Text>
         
         {/* CONTENEDOR DE 3 BOTONES */}
+        {/* Grupo de selectores para elegir el tipo de comprobante a emitir. */}
         <View style={styles.comprobanteContainer}>
           <TouchableOpacity 
             style={[styles.selector, tipoComprobante === 1 && styles.selectorActive]} 
@@ -111,6 +131,7 @@ const DetallePago = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Aviso informativo para aclarar cómo se registrará el pago. */}
         <View style={styles.warningBox}>
           <MaterialCommunityIcons name="information-outline" size={20} color="#856404" />
           <Text style={styles.warningText}>
@@ -119,12 +140,14 @@ const DetallePago = ({ route, navigation }) => {
         </View>
       </ScrollView>
 
+      {/* Pie fijo con el botón principal de confirmación del pago. */}
       <View style={styles.footer}>
         <TouchableOpacity 
           style={[styles.btnPago, cargando && styles.btnDeshabilitado]} 
           onPress={realizarPago}
           disabled={cargando || cuota.EstadoCuota === 'Pagado'}
         >
+          {/* Si está procesando, muestra spinner; si no, muestra ícono y texto del botón. */}
           {cargando ? (
             <ActivityIndicator color="#fff" />
           ) : (
@@ -140,7 +163,10 @@ const DetallePago = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // Fondo principal de la pantalla.
   container: { flex: 1, backgroundColor: "#f4f7f6" },
+
+  // Estilos del encabezado superior.
   header: { 
     flexDirection: "row", 
     justifyContent: "space-between", 
@@ -149,8 +175,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     elevation: 2 
   },
+
+  // Título principal del encabezado.
   headerTitle: { fontSize: 20, fontWeight: "bold", color: "#333" },
+
+  // Espaciado interno del contenido desplazable.
   content: { padding: 20 },
+
+  // Tarjeta con el resumen visual de la cuota seleccionada.
   infoCard: { 
     backgroundColor: "#fff", 
     borderRadius: 20, 
@@ -159,20 +191,35 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginBottom: 25 
   },
+
+  // Posición del ícono central de la tarjeta informativa.
   iconCenter: { marginBottom: 15 },
+
+  // Etiqueta descriptiva del monto.
   label: { fontSize: 14, color: "#888", fontWeight: "600" },
+
+  // Monto principal mostrado en grande.
   monto: { fontSize: 40, fontWeight: "bold", color: "#069488", marginVertical: 10 },
+
+  // Separador visual entre el monto y los demás datos de la cuota.
   divider: { width: "100%", height: 1, backgroundColor: "#eee", marginVertical: 15 },
+
+  // Texto secundario para fecha de vencimiento y estado.
   subLabel: { fontSize: 15, color: "#555", marginBottom: 5 },
+
+  // Título de la sección de selección del comprobante.
   sectionTitle: { fontSize: 16, fontWeight: "bold", color: "#444", marginBottom: 15 },
   
   // Estilos ajustados para 3 botones en una fila
+  // Contenedor horizontal de los botones de tipo de comprobante.
   comprobanteContainer: { 
     flexDirection: "row", 
     justifyContent: "space-between", 
     marginBottom: 25,
     gap: 8 
   },
+
+  // Estilo base de cada botón selector.
   selector: { 
     flex: 1,
     paddingVertical: 15, 
@@ -183,10 +230,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
+
+  // Estilo visual del selector actualmente activo.
   selectorActive: { backgroundColor: "#069488", borderColor: "#069488" },
+
+  // Texto del selector en estado normal.
   selectorText: { fontWeight: "600", color: "#666", fontSize: 13 },
+
+  // Texto del selector cuando está activo.
   selectorTextActive: { color: "#fff" },
 
+  // Caja de advertencia/información debajo del selector.
   warningBox: { 
     flexDirection: "row", 
     backgroundColor: "#fff3cd", 
@@ -195,8 +249,14 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: "#ffeeba" 
   },
+
+  // Texto informativo dentro de la caja de advertencia.
   warningText: { flex: 1, fontSize: 13, color: "#856404", marginLeft: 10 },
+
+  // Contenedor del botón inferior fijo.
   footer: { padding: 20, backgroundColor: "#fff" },
+
+  // Botón principal para confirmar el pago.
   btnPago: { 
     backgroundColor: "#069488", 
     flexDirection: "row", 
@@ -206,7 +266,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     gap: 10 
   },
+
+  // Estilo aplicado cuando el botón está deshabilitado.
   btnDeshabilitado: { backgroundColor: "#ccc" },
+
+  // Texto del botón principal.
   btnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });
 

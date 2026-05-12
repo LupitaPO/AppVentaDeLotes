@@ -16,25 +16,36 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
+// URL base del backend para consultar el módulo de proyectos.
 const API_URL = "http://www.tulote.somee.com";
 
 
 const ListarProyectos = ({ navigation, route }) => {
+// Estado que controla si el menú flotante está abierto o cerrado.
 const [isMenuOpen, setIsMenuOpen] = useState(false);
  // funcion de idiomas 
+  // Idioma actual usado por la pantalla para alternar entre español e inglés.
   const [language,setlanguage] = useState<Languages>("es");
+
+  // Cambia el idioma actual y actualiza la configuración global de traducción.
   const handlechangeLanguage = ()=> {
     const lang: Languages = language === "en" ? "es" :"en";
     changeLanguage(lang);
     setlanguage(lang);
   }
 
+  // Datos recibidos desde la navegación para personalizar la vista y las acciones disponibles.
   const { nombre, rol, idUsuario, onRefresh } = route.params || {};
   {
   }
+
+  // Lista de proyectos cargados desde el servidor.
   const [proyectos, setProyectos] = useState([]);
+
+  // Estado para mostrar indicador de carga mientras se consulta la API.
   const [cargando, setCargando] = useState(true);
 
+  // Obtiene todos los proyectos registrados y los guarda en el estado local.
   const obtenerProyectos = async () => {
     try {
       const response = await fetch(`${API_URL}/Proyecto/proyecto_Listar`);
@@ -47,6 +58,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
     }
   };
 
+  // Envía la solicitud para anular un proyecto y luego refresca la lista si la operación fue exitosa.
   const anularProyecto = async (idProyecto) => {
     try {
       const response = await fetch(
@@ -73,20 +85,25 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
     }
   };
 
+  // Carga la lista de proyectos una vez al montar la pantalla.
   useEffect(() => {
     obtenerProyectos();
   }, []);
 
+  // Vuelve a cargar los proyectos cada vez que la pantalla recupera el foco.
   useFocusEffect(
     useCallback(() => {
       obtenerProyectos();
     }, []),
   );
 
+  // Mientras los datos llegan, muestra un indicador de carga a pantalla completa.
   if (cargando)
     return (
       <ActivityIndicator size="large" color="#069488" style={{ flex: 1 }} />
     );
+
+  // Reinicia la navegación para cerrar sesión y volver a la pantalla de login.
   const cerrarSesion = () => {
     // Simplemente redirigimos y reseteamos el historial
     navigation.reset({
@@ -101,6 +118,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <View style={styles.container}>
+      {/* Encabezado con el nombre del usuario autenticado. */}
       <View style={{ flexDirection: "row", justifyContent: "space-between"}}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={styles.textheader}>Bienvenido:</Text>
@@ -112,6 +130,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
+      {/* Menú flotante para cambiar idioma y cerrar sesión. */}
       <View style={styles.containerFlotante}>
         <TouchableOpacity 
           style={styles.btnPrincipal} 
@@ -152,6 +171,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
       <Text style={styles.title}>Gestion de Proyectos:</Text>
       <Text style={styles.subtitle}>Selecciona un Proyecto:</Text>
 
+      {/* Área principal con la lista desplazable de proyectos. */}
       <View style={styles.form}>
         <ScrollView
           style={{ flex: 1 }}
@@ -159,6 +179,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
           showsVerticalScrollIndicator={true}
         >
           {proyectos.map((proyecto, index) => (
+            /* Cada tarjeta representa un proyecto y permite abrir su detalle. */
             <TouchableOpacity
               key={
                 proyecto.IdProyecto
@@ -180,6 +201,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
                   {proyecto.Nombre || "Proyecto sin nombre"}
                 </Text>
 
+                {/* Acciones de administración visibles solo para roles distintos de Cliente. */}
                 {rol !== "Cliente" && (
                   <TouchableOpacity
                     style={styles.opciones}
@@ -229,6 +251,8 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
           ))}
         </ScrollView>
       </View>
+
+      {/* Botón para registrar un nuevo proyecto, disponible solo para usuarios con permisos. */}
       <View>
         {rol !== "Cliente" && (
           <TouchableOpacity
@@ -247,7 +271,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 const styles = StyleSheet.create({
 
-// estilos para boton desplegable
+// Estilos del menú flotante superior.
   containerFlotante: {
     position: 'absolute',
     top: 50,           // Ajusta según la pantalla
@@ -302,7 +326,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 10,
   },
-// ///////////////////////////////////////////////
+// Estilos generales de la pantalla y del listado de proyectos.
   container: {
     flex: 1,
     backgroundColor: "#e4f5f3",
@@ -361,11 +385,15 @@ const styles = StyleSheet.create({
     width: 20,
     paddingLeft: 15,
   },
+
+  // Estilo del ícono textual que abre el menú de opciones por proyecto.
   textOpciones: {
     color: "#069488",
     fontSize: 20,
     fontWeight: "bold",
   },
+
+  // Estilos del botón para registrar nuevos proyectos.
   btnRegistrar: {
     backgroundColor: "#29c268",
     width: 378,

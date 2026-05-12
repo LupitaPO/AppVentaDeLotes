@@ -26,7 +26,10 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 //////////////////////////////////////////////////
 
+// Alto disponible de la ventana para calcular tamaños proporcionales en la UI.
 const { height } = Dimensions.get('window');
+
+// URL base del backend donde se consultan ventas, clientes y cronograma.
 const API_URL = "http://www.tulote.somee.com";
 
 
@@ -45,9 +48,13 @@ const Ventas = ({ navigation, route }) => {
 //////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////
+  // Estado para abrir o cerrar el modal con el detalle del cronograma.
   const [modalVisible, setModalVisible] = useState(false);
+
+  // Guarda la venta elegida localmente para mostrar sus datos en el modal y en el PDF.
   const [selectedVentaLocal, setSelectedVentaLocal] = useState(null);
 
+  // Maneja el toque sobre una venta: la guarda, actualiza el cronograma filtrado y abre el modal.
   const manejarSeleccion = (venta) => {
     setSelectedVentaLocal(venta);
     seleccionarVenta(venta);
@@ -55,23 +62,41 @@ const Ventas = ({ navigation, route }) => {
   };
 
 
+  // Obtiene la altura de la barra inferior para respetar espacios del layout si fuera necesario.
   const tabBarHeight = useBottomTabBarHeight();
 
+  // Recibe el id del usuario autenticado desde los parámetros de navegación.
   const { idUsuario } = route.params || {};
+
+  // Lista de ventas del usuario actual.
   const [ventas, setVentas] = useState([]);
+
+  // Controla el spinner principal mientras se consultan las ventas.
   const [cargando, setCargando] = useState(true);
+
+  // Venta actualmente seleccionada para filtrar el cronograma.
   const [selectedVenta, setSelectedVenta] = useState(null);
+
+  // Lista completa del cronograma recuperado desde el backend.
   const [cronogramaTodos, setCronogramaTodos] = useState([]);
+
+  // Lista de cuotas filtradas según la venta seleccionada.
   const [cronograma, setCronograma] = useState([]);
+
+  // Controla el spinner interno del modal mientras se procesa el cronograma.
   const [cargandoCronograma, setCargandoCronograma] = useState(false);
+
+  // Catálogo de clientes para resolver el nombre completo a partir del IdCliente.
   const [listaClientes, setListaClientes] = useState([]);
 
+  // Normaliza diferentes posibles nombres de propiedad para obtener el id de una venta.
   const obtenerIdVenta = (venta) => {
     return venta?.IdVenta ?? venta?.idVenta ?? venta?.Id ?? venta?.id;
   };
 
 ///////////////////////////////////////////////////////////////////////////////
 //funcion para obtener el nombre del cliente ///////////////////////
+  // Consulta la lista de clientes desde la API y la guarda en memoria local.
   const cargarClientes = async () => {
     try {
       const response = await fetch(`${API_URL}/Cliente/cliente_Listar`);
@@ -82,6 +107,7 @@ const Ventas = ({ navigation, route }) => {
     }
   };
 
+  // Busca el nombre completo del cliente usando su identificador.
   const obtenerNombreCliente = (idCliente) => {
     if (!idCliente) return "Sin ID";
     if (!idCliente || listaClientes.length === 0) return "Cargando...";
@@ -108,6 +134,7 @@ const Ventas = ({ navigation, route }) => {
   };;
 
   // 3. EFECTOS (Ahora sí pueden llamar a las funciones de arriba)
+  // Al iniciar la pantalla o cambiar de usuario, carga ventas, cronograma y clientes.
   useEffect(() => {
     const inicializar = async () => {
       await cargarDatosIniciales();
@@ -118,6 +145,7 @@ const Ventas = ({ navigation, route }) => {
 //////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////
+  // Recupera las ventas del sistema y filtra solo las que pertenecen al usuario actual.
   const cargarVentas = async () => {
     try {
       setCargando(true);
@@ -141,6 +169,7 @@ const Ventas = ({ navigation, route }) => {
     }
   };
 
+  // Carga el cronograma relacionado al usuario y adapta la respuesta si viene en distintos formatos.
   const cargarCronogramaUsuario = async () => {
   try {
     setCargandoCronograma(true);
@@ -177,6 +206,7 @@ const Ventas = ({ navigation, route }) => {
 };
 
 
+  // Filtra las cuotas del cronograma para quedarnos solo con las de una venta concreta.
   const filtrarCronogramaPorVenta = (venta, lista = cronogramaTodos) => {
     if (!venta || !lista || lista.length === 0) return [];
     const idVentaSeleccionada = obtenerIdVenta(venta)?.toString();
@@ -187,6 +217,7 @@ const Ventas = ({ navigation, route }) => {
     );
   };
 
+  // Carga en paralelo ventas y cronograma, y deja una venta seleccionada por defecto si existe.
   const cargarDatosIniciales = async () => {
     if (!idUsuario) return;
     const [ventasUsuario, cronogramaPorUsuario] = await Promise.all([
@@ -201,10 +232,12 @@ const Ventas = ({ navigation, route }) => {
     }
   };
 
+  // Vuelve a inicializar los datos cuando cambie el usuario recibido por navegación.
   useEffect(() => {
     cargarDatosIniciales();
   }, [idUsuario]);
 
+  // Actualiza la venta activa y refresca la lista de cuotas visibles en pantalla.
   const seleccionarVenta = (venta) => {
     setSelectedVenta(venta);
     setCronograma(filtrarCronogramaPorVenta(venta));
@@ -212,6 +245,7 @@ const Ventas = ({ navigation, route }) => {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Aqui se genera los PDF ///////////////////////////////////////////////////////////////////////////////
+  // Genera un PDF con el cronograma visible de la venta seleccionada y lo comparte.
   const generarPDF = async () => {
     if (!cronograma || cronograma.length === 0) {
       Alert.alert("Aviso", "No hay cuotas cargadas para generar el PDF.");
@@ -263,6 +297,7 @@ const Ventas = ({ navigation, route }) => {
 
 /// funcion para cerra sesion //////////////////////////////////////////////////////////////////////////
 
+// Reinicia el historial de navegación y envía al usuario a la pantalla de login.
 const cerrarSesion = () => {
     // Simplemente redirigimos y reseteamos el historial
     navigation.reset({
@@ -274,8 +309,10 @@ const cerrarSesion = () => {
 
   return (
     <View style={styles.mainContainer}>
+      {/* Contenedor principal de la lista de ventas del usuario. */}
       {/* --- LISTA DE VENTAS (CONTENEDOR FIJO) --- */}
       <View style={styles.ventasContainer}>
+        {/* Encabezado visual de la pantalla. */}
         <View style={styles.header}>
           <Text style={styles.title}>Mis Ventas</Text>
           <MaterialCommunityIcons name="sign-real-estate" size={28} color="#069488" />
@@ -283,6 +320,7 @@ const cerrarSesion = () => {
         {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
+      {/* Menú flotante para acciones rápidas: idioma y cerrar sesión. */}
       <View style={styles.containerFlotante}>
         <TouchableOpacity 
           style={styles.btnPrincipal} 
@@ -319,6 +357,7 @@ const cerrarSesion = () => {
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
         <Text style={styles.sectionTitle}>Toca una venta para ver el cronograma</Text>
         
+        {/* Lista desplazable con todas las ventas asociadas al usuario. */}
         <ScrollView 
           style={styles.scrollVentas} 
           contentContainerStyle={styles.scrollContent}
@@ -330,6 +369,7 @@ const cerrarSesion = () => {
             <Text style={styles.emptyText}>No hay ventas registradas.</Text>
           ) : (
             ventas.map((venta, index) => (
+              /* Cada tarjeta representa una venta y al tocarla se abre su cronograma. */
               <TouchableOpacity 
                 key={index} 
                 style={styles.card} 
@@ -364,12 +404,14 @@ const cerrarSesion = () => {
         </ScrollView>
       </View>
 
+      {/* Indicador visual inferior para invitar a deslizar la lista. */}
       {/* PIE DE PÁGINA (OPCIONAL) */}
       <View style={styles.footerHint}>
         <MaterialCommunityIcons name="gesture-swipe-up" size={20} color="#999" />
         <Text style={styles.footerText}>Desliza para ver más lotes</Text>
       </View>
 
+      {/* Modal inferior donde se muestran las cuotas de la venta seleccionada. */}
       {/* --- MODAL DEL CRONOGRAMA --- */}
       <Modal
         animationType="slide"
@@ -397,6 +439,7 @@ const cerrarSesion = () => {
                 <ActivityIndicator size="large" color="#069488" />
               </View>
             ) : (
+              /* Grilla de cuotas del cronograma; cada cuota puede abrir el detalle de pago. */
               <ScrollView contentContainerStyle={styles.modalScroll}>
                 <View style={styles.grid}>
                   {cronograma.map((item, i) => (
@@ -404,6 +447,7 @@ const cerrarSesion = () => {
     key={i} 
     style={styles.miniCard} 
     onPress={() => {
+      // Cierra primero el modal antes de navegar a la pantalla del detalle.
       setModalVisible(false); // Cierra el modal actual
 
       // validacion para evitar q se ingrese a pagar un monto que ya este pagado 
@@ -437,7 +481,7 @@ const cerrarSesion = () => {
 }; 
 
 const styles = StyleSheet.create({
-   // estilos para boton desplegable
+    // Estilos del menú flotante superior derecho.
   containerFlotante: {
     position: 'absolute',
     top: 40,           // Ajusta según la pantalla
@@ -492,7 +536,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 10,
   },
-// ///////////////////////////////////////////////
+// Estilos base de la pantalla principal y tarjetas de ventas.
   mainContainer: { flex: 1, backgroundColor: "#e4f5f3" },
   ventasContainer: {
     height: height * 0.6, // Ocupa el 60% de la pantalla
@@ -531,10 +575,11 @@ const styles = StyleSheet.create({
   badge: { backgroundColor: '#e0f2f1', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   badgeText: { color: '#069488', fontSize: 12, fontWeight: 'bold' },
 
+  // Estilos del texto guía inferior.
   footerHint: { alignItems: 'center', marginTop: 20, opacity: 0.4 },
   footerText: { fontSize: 12, marginTop: 4 },
 
-  // MODAL STYLES
+  // Estilos del modal y de las cuotas del cronograma.
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalContent: { 
     backgroundColor: '#fff', 

@@ -17,19 +17,32 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
+// URL base del backend usada para consultar y actualizar datos de clientes.
 const API_URL = "http://www.tulote.somee.com";
 
 
 const clientes = ({ navigation, route }) => {
+  // Datos recibidos desde la navegación para personalizar la vista según el usuario.
   const { nombre, rol } = route.params || {};
+
+  // Altura de la barra inferior para dejar espacio visual al final del ScrollView.
   const tabBarHeight = useBottomTabBarHeight();
+
+  // Lista de clientes obtenida desde la API.
   const [clientes, setClientes] = useState([]);
+
+  // Controla el indicador de carga mientras se consultan los datos.
   const [cargando, setCargando] = useState(true);
 
 // funcion de idiomas //////////////////////////////////////////////
 
+    // Estado que controla la apertura del menú flotante.
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    // Idioma activo de la pantalla.
     const [language,setlanguage] = useState<Languages>("es");
+
+    // Alterna entre español e inglés y actualiza el sistema de traducción.
     const handlechangeLanguage = ()=> {
       const lang: Languages = language === "en" ? "es" :"en";
       changeLanguage(lang);
@@ -38,6 +51,7 @@ const clientes = ({ navigation, route }) => {
     
 ///////////////////////////////////////////////////////////////////
 
+  // Consulta todos los clientes registrados y los guarda en el estado local.
   const obtenerClientes = async () => {
     try {
       const response = await fetch(`${API_URL}/Cliente/cliente_Listar`);
@@ -50,6 +64,7 @@ const clientes = ({ navigation, route }) => {
     }
   };
 //Revisión
+  // Envía la solicitud para anular un cliente usando su DNI como identificador.
   const anularCliente = async (dni) => {
     try {
       // 1. Cambiamos la URL para incluir el DNI al final
@@ -75,10 +90,13 @@ const clientes = ({ navigation, route }) => {
       Alert.alert("Error", "Error de conexión con el servidor");
     }
   };
+
+  // Recarga la lista de clientes cada vez que esta pantalla entra en foco.
   useFocusEffect(() => {
     obtenerClientes();
   });
 
+  // Muestra un spinner mientras se completa la carga inicial.
   if (cargando)
     return (
       <ActivityIndicator size="large" color="#069488" style={{ flex: 1 }} />
@@ -97,10 +115,12 @@ const cerrarSesion = () => {
 
   return (
     <View style={styles.container}>
+      {/* Título principal de la pantalla de gestión de clientes. */}
       <Text style={styles.title}>Gestion de Clientes:</Text>
        {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
+      {/* Menú flotante para cambiar idioma y cerrar sesión. */}
       <View style={styles.containerFlotante}>
         <TouchableOpacity 
           style={styles.btnPrincipal} 
@@ -136,6 +156,7 @@ const cerrarSesion = () => {
       </View>
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
 
+      {/* Lista desplazable de clientes registrados. */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: tabBarHeight - 50 }}
@@ -144,6 +165,7 @@ const cerrarSesion = () => {
         <Text style={styles.subtitle}>Selecciona un Cliente:</Text>
 
         {clientes.map((cliente, index) => {
+          // Construye el nombre completo uniendo los nombres y apellidos disponibles.
           const nombreCompleto = [
             cliente.Nombre1,
             cliente.Nombre2,
@@ -154,6 +176,7 @@ const cerrarSesion = () => {
             .join(" ");
 
           return (
+            /* Cada tarjeta representa un cliente y abre opciones de gestión. */
             <TouchableOpacity
               key={cliente.IdCliente ? cliente.IdCliente.toString() : index.toString()}
               style={styles.card}
@@ -190,6 +213,7 @@ const cerrarSesion = () => {
         <View style={{ height: tabBarHeight - 80 }}></View>
       </ScrollView>
 
+      {/* Botón inferior para navegar al formulario de registro de un nuevo cliente. */}
       <View style={styles.grid}>
         <TouchableOpacity
           onPress={() => navigation.navigate("RegistrarCliente", { onRefresh: obtenerClientes })}
@@ -203,7 +227,7 @@ const cerrarSesion = () => {
 };
 
 const styles = StyleSheet.create({
-  // estilos para boton desplegable
+  // Estilos del menú flotante superior.
   containerFlotante: {
     position: 'absolute',
     top: 40,           // Ajusta según la pantalla
@@ -258,7 +282,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 10,
   },
-// ///////////////////////////////////////////////
+// Estilos generales de la pantalla y del listado de clientes.
   container: {
     flex: 1,
     backgroundColor: "#e4f5f3",
@@ -299,6 +323,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 10,
   },
+
+  // Estilos del botón principal para registrar clientes.
   btnRegistrar: {
     backgroundColor: "#29c268",
     width: 378,
@@ -311,6 +337,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+
+  // Estilos heredados para botones de modificar y anular dentro de esta pantalla.
   btnModificar: {
     backgroundColor: "#ff761a",
     width: 120,
@@ -335,6 +363,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+
+  // Texto del botón de registro.
   btnRegisText: {
     color: "#fff",
     fontWeight: "bold",

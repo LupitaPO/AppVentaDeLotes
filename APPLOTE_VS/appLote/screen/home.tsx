@@ -1,3 +1,4 @@
+// Componentes base de React Native para estructura visual, dimensiones, carga y scroll.
 import {
   View,
   Text,
@@ -8,44 +9,82 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
+
+// Hooks de React para manejar estado local y ciclos de vida simples del componente.
 import React, { useState, useEffect } from "react";
+
+// Componente de gráfica circular usado para mostrar el resumen de lotes vendidos y libres.
 import { PieChart } from "react-native-chart-kit";
+
+// Librería de íconos usada en tarjetas y elementos visuales del dashboard.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+// Import actualmente presente en el archivo, aunque no forma parte del flujo visual del dashboard.
 import { symbolicate } from "react-native/types_generated/Libraries/LogBox/Data/LogBoxSymbolication";
+
+// Soporte para animaciones; en este archivo está importado pero no se usa en la lógica visible.
 import Animated from "react-native-reanimated";
+
+// Hook para conocer la altura de la barra inferior de navegación.
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+
+// Hook que permite recargar datos cuando la pantalla vuelve a tener foco.
 import { useFocusEffect } from "@react-navigation/native";
 // imports para idiomas 
+
+// Ícono usado para el botón flotante de cambio de idioma.
 import Fontisto from "@expo/vector-icons/Fontisto";
+
+// Íconos usados para el menú flotante y el botón de cerrar sesión.
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+
+// Instancia de traducción y función auxiliar para cambiar idioma dinámicamente.
 import i18n, {changeLanguage} from "../i18n";
+
+// Tipo que restringe los idiomas válidos manejados por la aplicación.
 import { Languages } from "../localizacion";
 
+// Ancho de la pantalla usado para calcular tamaños del dashboard y de la gráfica.
 const screenWidth = Dimensions.get("window").width;
 
+// URL base del backend para consultar el resumen general del dashboard.
 const API_URL = "http://www.tulote.somee.com";
 
 
 const home = ({ route, navigation }) => {
+  // Altura de la barra inferior para dejar espacio visual al final del contenido.
   const tabBarHeight = useBottomTabBarHeight();
+
+  // Datos del usuario recibidos desde la navegación principal.
   const { nombre, rol } = route.params || {};
   // Aseguramos que route.params exista
   // console.log("rol recibido:", rol);// Aseguramos que route.params exista
   
   // funcion de idiomas 
+  // Estado que controla si el menú flotante está abierto o cerrado.
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    // Idioma actualmente seleccionado en la interfaz.
     const [language,setlanguage] = useState<Languages>("es");
+
+    // Alterna entre español e inglés y actualiza el motor de traducciones.
     const handlechangeLanguage = ()=> {
       const lang: Languages = language === "en" ? "es" :"en";
       changeLanguage(lang);
       setlanguage(lang);
     }
 
+  // Objeto con los datos resumidos que devuelve el dashboard desde la API.
   const [datos, setDatos] = useState(null);
+
+  // Controla el spinner inicial mientras se carga la información.
   const [loading, setLoading] = useState(true);
+
+  // Controla el estado del gesto de actualización manual del ScrollView.
   const [refreshing, setRefreshing] = useState(false);
 
   // --- 2. LÓGICA DE COMUNICACIÓN CON EL PA ---
+  // Consulta el resumen general del dashboard y guarda la primera fila devuelta por la API.
   const cargarDashboard = async () => {
     try {
       const response = await fetch(
@@ -64,10 +103,12 @@ const home = ({ route, navigation }) => {
     }
   };
 
+  // Recarga el dashboard cada vez que esta pantalla vuelve a tener foco.
   useFocusEffect(() => {
     cargarDashboard();
   });
 
+  // Componente local reutilizable para mostrar una métrica con ícono y color.
   const DashCard = ({ titulo, valor, icono, color }) => (
     <View style={[styles.card, { borderLeftColor: color }]}>
       <MaterialCommunityIcons name={icono} size={28} color={color} />
@@ -79,6 +120,7 @@ const home = ({ route, navigation }) => {
     </View>
   );
 
+  // Mientras llega la información del dashboard, se muestra una pantalla de carga.
   if (loading)
     return (
       <View style={{ flex: 1, justifyContent: "center" }}>
@@ -87,6 +129,7 @@ const home = ({ route, navigation }) => {
     );
 
   // Configuración de la gráfica con tus datos del PA
+  // Datos transformados al formato que espera la librería de gráfica circular.
   const pieData = [
     {
       name: "Vendidos",
@@ -103,6 +146,8 @@ const home = ({ route, navigation }) => {
       legendFontSize: 12,
     },
   ];
+
+  // Reinicia la navegación y devuelve al usuario a la pantalla de login.
   const cerrarSesion = () => {
     // Simplemente redirigimos y reseteamos el historial
     navigation.reset({
@@ -112,9 +157,11 @@ const home = ({ route, navigation }) => {
   };
   return (
     <View>
+      {/* Cabecera superior con saludo al usuario y menú de acciones rápidas. */}
       <View
         style={{ width: "100%", height: "11%", backgroundColor: "#ffffff" }}
       >
+        {/* Contenedor del encabezado con nombre del usuario actual. */}
         <View style={styles.headerContainer}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Text style={styles.textheader}>{i18n.t("Dtitle")}</Text>
@@ -125,6 +172,7 @@ const home = ({ route, navigation }) => {
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
+      {/* Menú flotante para cambiar idioma y cerrar sesión. */}
       <View style={styles.containerFlotante}>
         <TouchableOpacity 
           style={styles.btnPrincipal} 
@@ -161,6 +209,8 @@ const home = ({ route, navigation }) => {
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
 
       </View>
+
+      {/* Contenedor desplazable del dashboard con soporte para refresco manual. */}
       <ScrollView
         style={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
@@ -168,6 +218,7 @@ const home = ({ route, navigation }) => {
           <RefreshControl refreshing={refreshing} onRefresh={cargarDashboard} />
         }
       >
+        {/* El contenido del resumen solo se muestra para roles distintos de Cliente. */}
         {rol !== "Cliente" && (
           <View
             style={styles.container}
@@ -180,12 +231,15 @@ const home = ({ route, navigation }) => {
 
             {/* Zona de Dinero */}
 
+            {/* Tarjeta principal con el valor total esperado en cartera futura. */}
             <View style={styles.mainBox}>
               <Text style={styles.mainTitle}>{i18n.t("Dmsj2")}</Text>
               <Text style={styles.mainAmount}>
                 S/ {datos?.CarteraTotalFutura || "0.00"}
               </Text>
             </View>
+
+            {/* Sección de gráfica circular para comparar lotes vendidos y libres. */}
             <View style={styles.chartBox}>
               <Text style={styles.chartTitle}>{i18n.t("Dmsj3")}</Text>
               <PieChart
@@ -203,6 +257,7 @@ const home = ({ route, navigation }) => {
             </View>
 
             {/* Grid de Métricas */}
+            {/* Cuadrícula de indicadores rápidos del estado comercial y financiero. */}
             <View style={styles.grid}>
               <DashCard
                 titulo={i18n.t("card1")}
@@ -235,6 +290,7 @@ const home = ({ route, navigation }) => {
 
            
 
+            {/* Espacio extra para que el contenido no quede pegado a la barra inferior. */}
             <View style={{ height: tabBarHeight + 20 }}></View>
           </View>
         )}
@@ -245,7 +301,7 @@ const home = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
 
-  // estilos para boton desplegable
+  // Estilos del menú flotante superior derecho.
   containerFlotante: {
     position: 'absolute',
     top: 40,           // Ajusta según la pantalla
@@ -300,7 +356,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 10,
   },
-// ///////////////////////////////////////////////
+// Estilos generales del encabezado y del dashboard.
   
   headerContainer: {
     position: "relative",
@@ -316,17 +372,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     elevation: 5,
   },
+
+  // Texto fijo del saludo del encabezado.
   textheader: {
     fontWeight: "500",
     padding: 10,
     color: "#069488",
     fontSize: 17,
   },
+
+  // Nombre del usuario mostrado en el encabezado.
   textheader2: {
     fontWeight: "bold",
     fontSize: 22,
     color: "#069488",
   },
+
+  // Contenedor principal del contenido del dashboard.
   container: {
     width: "100%",
     minHeight: screenWidth,
@@ -335,12 +397,16 @@ const styles = StyleSheet.create({
     padding: 10,
     paddingBottom: 50,
   },
+
+  // Título principal del resumen del panel.
   header: {
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 20,
     color: "#069488",
   },
+
+  // Tarjeta destacada para la métrica económica principal.
   mainBox: {
     backgroundColor: "#09caba",
     elevation: 5,
@@ -352,21 +418,29 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: 20,
   },
+
+  // Etiqueta pequeña dentro de la tarjeta principal.
   mainTitle: {
     color: "#ffffff",
     fontSize: 14,
     textTransform: "uppercase",
   },
+
+  // Valor monetario principal mostrado en el dashboard.
   mainAmount: {
     color: "#FFF",
     fontSize: 28,
     fontWeight: "bold",
   },
+
+  // Distribución en grilla para las tarjetas de métricas.
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
+
+  // Tarjeta pequeña individual de cada indicador.
   card: {
     backgroundColor: "#FFF",
     width: "48%",
@@ -377,19 +451,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderLeftWidth: 5,
   },
+
+  // Contenedor del texto a la derecha del ícono en cada tarjeta métrica.
   info: {
     marginLeft: 10,
   },
+
+  // Título de una tarjeta métrica pequeña.
   cardTitle: {
     fontSize: 11,
     color: "#666",
     fontWeight: "600",
   },
+
+  // Valor principal de una tarjeta métrica pequeña.
   cardValue: {
     fontSize: 15,
     fontWeight: "bold",
     color: "#333",
   },
+
+  // Caja que contiene la gráfica circular y su título.
   chartBox: {
     backgroundColor: "#FFF",
 
@@ -405,6 +487,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 2, // Asegura que esté por encima
   },
+
+  // Título descriptivo de la gráfica.
   chartTitle: {
     fontSize: 16,
     fontWeight: "bold",
@@ -412,6 +496,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
   },
+
+  // Estilos heredados para botones de acciones genéricas dentro del proyecto.
   btnRegistrar: {
     backgroundColor: "#29c268",
     width: 120,
@@ -426,6 +512,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+
+  // Estilo heredado para un botón de modificar.
   btnModificar: {
     backgroundColor: "#ff761a",
     width: 120,
@@ -440,6 +528,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+
+  // Estilo heredado para un botón de anular.
   btnAnular: {
     backgroundColor: "#d3002e",
     width: 120,
@@ -454,6 +544,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+
+  // Texto reutilizable de los botones verdes.
   btnRegisText: {
     color: "#fff",
     fontSize: 15,

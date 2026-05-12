@@ -17,18 +17,31 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
+// URL base del backend para consultar y administrar usuarios.
 const API_URL = "http://www.tulote.somee.com";
 
 const usuario = ({navigation, route}) => {
+  // Datos recibidos desde navegación para personalizar la pantalla según el contexto del usuario.
   const { nombre, rol } = route.params || {};
+
+  // Altura de la barra inferior para dejar espacio visual al final del listado.
   const tabBarHeight = useBottomTabBarHeight();
+
+  // Lista de usuarios recuperada desde la API.
   const [usuarios, setUsuarios] = useState([]);
+
+  // Estado que controla el indicador de carga mientras llegan los datos.
   const [cargando, setCargando] = useState(true);
 
 // funcion de idiomas //////////////////////////////////////////////
 
+    // Estado que abre o cierra el menú flotante de acciones rápidas.
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    // Idioma actual seleccionado en la pantalla.
     const [language,setlanguage] = useState<Languages>("es");
+
+    // Alterna entre español e inglés y sincroniza el cambio con i18n.
     const handlechangeLanguage = ()=> {
       const lang: Languages = language === "en" ? "es" :"en";
       changeLanguage(lang);
@@ -37,6 +50,7 @@ const usuario = ({navigation, route}) => {
 
 ///////////////////////////////////////////////////////////////////
 
+  // Consulta la lista de usuarios registrados y la guarda en el estado local.
   const obtenerUsuarios = async () => {
     try {
       const response = await fetch(`${API_URL}/Usuario/usuario_Listar`);
@@ -49,6 +63,7 @@ const usuario = ({navigation, route}) => {
     }
   };
 
+  // Envía la solicitud para anular un usuario según su identificador.
   const anularUsuario = async (IdUsuario) => {
     try {
       const response = await fetch(`${API_URL}/Usuario/usuario_Anular/${IdUsuario}`, {
@@ -72,10 +87,12 @@ const usuario = ({navigation, route}) => {
     }
   };
 
+  // Recarga la lista cada vez que la pantalla vuelve a estar en foco.
   useFocusEffect(() => {
     obtenerUsuarios();
   });
 
+  // Mientras se obtienen los usuarios, muestra un spinner de carga.
   if (cargando)
     return (
       <ActivityIndicator size="large" color="#069488" style={{ flex: 1 }} />
@@ -94,10 +111,12 @@ const cerrarSesion = () => {
 
   return (
     <View style={styles.container}>
+      {/* Título principal de la sección de gestión de usuarios. */}
       <Text style={styles.title}>Gestion de Usuarios:</Text>
         {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
+      {/* Menú flotante para cambio de idioma y cierre de sesión. */}
       <View style={styles.containerFlotante}>
         <TouchableOpacity 
           style={styles.btnPrincipal} 
@@ -132,6 +151,8 @@ const cerrarSesion = () => {
         
       </View>
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+
+      {/* Lista desplazable con todos los usuarios registrados. */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: tabBarHeight + 20 }}
@@ -140,6 +161,7 @@ const cerrarSesion = () => {
         <Text style={styles.subtitle}>Selecciona un Usuario:</Text>
 
         {usuarios.map((usuario, index) => {
+          // Construye el nombre mostrado usando los campos disponibles del usuario.
           const nombreCompleto = [
             usuario.Nombre
           ]
@@ -147,6 +169,7 @@ const cerrarSesion = () => {
             .join(" ");
 
           return (
+            /* Cada tarjeta representa un usuario y abre acciones de administración. */
             <TouchableOpacity
               key={usuario.IdUsuario ? usuario.IdUsuario.toString() : index.toString()}
               style={styles.card}
@@ -186,6 +209,7 @@ const cerrarSesion = () => {
         })}
       </ScrollView>
 
+      {/* Botón inferior para navegar al formulario de registro. */}
       <View style={styles.grid}>
         <TouchableOpacity
           onPress={() =>
@@ -201,7 +225,7 @@ const cerrarSesion = () => {
 };
 
 const styles = StyleSheet.create({
-  // estilos para boton desplegable
+  // Estilos del menú flotante superior.
   containerFlotante: {
     position: 'absolute',
     top: 40,           // Ajusta según la pantalla
@@ -256,7 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 10,
   },
-// ///////////////////////////////////////////////
+// Estilos generales de la pantalla y las tarjetas de usuarios.
   container: {
     flex: 1,
     backgroundColor: "#e4f5f3",
@@ -297,6 +321,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 10,
   },
+
+  // Estilos del botón principal para registrar un nuevo usuario/asesor.
   btnRegistrar: {
     backgroundColor: "#29c268",
     width: 378,
@@ -309,6 +335,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
+
+  // Estilo del texto interno del botón de registro.
   btnRegisText: {
     color: "#fff",
     fontWeight: "bold",
