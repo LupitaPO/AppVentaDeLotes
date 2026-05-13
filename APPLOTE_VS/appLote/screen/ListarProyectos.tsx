@@ -118,7 +118,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <View style={styles.container}>
-      {/* Encabezado con el nombre del usuario autenticado. */}
+      {/* Encabezado con el nombre del usuario autenticado.
       <View style={{ flexDirection: "row", justifyContent: "space-between"}}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={styles.textheader}>Bienvenido:</Text>
@@ -126,7 +126,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
         </View>
 
         
-      </View>
+      </View> */}
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
 // Estilos del menú flotante superior.
   containerFlotante: {
     position: 'absolute',
-    top: 50,           // Ajusta según la pantalla
+    top: 40,           // Ajusta según la pantalla
     right: 20,
     zIndex: 999,       // Siempre al frente
     alignItems: 'center',

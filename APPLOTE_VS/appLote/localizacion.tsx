@@ -35,7 +35,16 @@ export  const traslations={
         card1:"Collected",
         card2:"Mora Today",
         card3:"Lots",
-        card4:"Debts"
+        card4:"Debts",
+        // texto para registro de proyectos 
+        PrjRegis:"Project Registration",
+        CodProyt:"Project Code",
+        NameProyt:"Project Name",
+        location:"Location",
+        NumHect:"Number of Hectares",
+        PartRegis:"Registration Item",
+        selecplane:"Select Plane",
+        saveProyt:"Save Project",
     },
 
     es:{
@@ -75,6 +84,15 @@ export  const traslations={
         card2:"Mora Hoy",
         card3:"Lotes",
         card4:"Deudas",
+        // texto para registro de proyectos 
+        PrjRegis:"Registro De Proyecto",
+        CodProyt:"Codigo de Proyecto",
+        NameProyt:"Nombre del Proyecto",
+        location:"Ubicacion",
+        NumHect:"Numero de Hectareas",
+        PartRegis:"Partida Registral",
+        selecplane:"Seleccionar Plano",
+        saveProyt:"Guardar Proyecto",
     }
 }
 
