@@ -10,10 +10,40 @@ import {
 import React, { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
 
+// Ícono usado para el botón flotante de cambio de idioma.
+import Fontisto from "@expo/vector-icons/Fontisto";
+
+// Íconos usados para el menú flotante y el botón de cerrar sesión.
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+
+// Instancia de traducción y función auxiliar para cambiar idioma dinámicamente.
+import i18n, { changeLanguage } from "../../i18n";
+
+// Tipo que restringe los idiomas válidos manejados por la aplicación.
+import { Languages } from "../../localizacion";
+
+
+
 const API_URL = "http://www.tulote.somee.com";
 
 const Rproyecto = ({ navigation, route }) => {
   const { nombre, rol } = route.params;
+
+  // funcion de idiomas 
+  // Estado que controla si el menú flotante está abierto o cerrado.
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Idioma actualmente seleccionado en la interfaz.
+  const [language, setlanguage] = useState<Languages>("es");
+
+  // Alterna entre español e inglés y actualiza el motor de traducciones.
+  const handlechangeLanguage = () => {
+    const lang: Languages = language === "en" ? "es" : "en";
+    changeLanguage(lang);
+    setlanguage(lang);
+  }
+
+
 
   //  estados par el formulario
   const [codProyecto, setcodProyecto] = useState("");
@@ -94,43 +124,103 @@ const Rproyecto = ({ navigation, route }) => {
     }
   };
 
+  // Reinicia la navegación y devuelve al usuario a la pantalla de login.
+  const cerrarSesion = () => {
+    // Simplemente redirigimos y reseteamos el historial
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }], // Cambia 'Login' por el nombre exacto de tu pantalla inicial
+    });
+  };
+
+
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registro de Proyectos:</Text>
+      <Text style={styles.title}>{i18n.t("PrjRegis")}:</Text>
+
+
+      {/* Menú flotante para cambiar idioma y cerrar sesión. */}
+      <View style={styles.containerFlotante}>
+        <TouchableOpacity
+          style={styles.btnPrincipal}
+          onPress={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          <MaterialIcons
+            name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
+            size={28}
+            color="white"
+          />
+        </TouchableOpacity>
+        {isMenuOpen && (
+          <View style={styles.menuDesplegado}>
+
+            <View>
+              <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
+                <Fontisto name="world-o" size={25} />
+              </TouchableOpacity>
+            </View>
+            <View>
+              <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
+                <MaterialIcons
+                  name="exit-to-app"
+                  size={28}
+                  color="white"
+                />
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        )}
+
+      </View>
+      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+
 
       <View style={styles.form}>
+
+        <Text style={styles.label}>{i18n.t("CodProyt")}:</Text>
         <TextInput
           style={styles.input}
-          placeholder="Código de Proyecto"
+          placeholder={i18n.t("CodProyt")}
           value={codProyecto}
           onChangeText={setcodProyecto}
         />
+
+        <Text style={styles.label}>{i18n.t("NameProyt")}:</Text>
         <TextInput
           style={styles.input}
-          placeholder="Nombre del Proyecto"
+          placeholder={i18n.t("NameProyt")}
           value={Nombre}
           onChangeText={setnombre}
         />
+
+        <Text style={styles.label}>{i18n.t("location")}:</Text>
         <TextInput
           style={styles.input}
-          placeholder="Ubicación"
+          placeholder={i18n.t("location")}
           value={ubicacion}
           onChangeText={setubicacion}
         />
+
+        <Text style={styles.label}>{i18n.t("NumHect")}:</Text>
         <TextInput
           style={styles.input}
-          placeholder="Número de Hectáreas"
+          placeholder={i18n.t("NumHect")}
           keyboardType="numeric"
           value={numHectareas}
           onChangeText={setnumHecatreas}
         />
+
+        <Text style={styles.label}>{i18n.t("PartRegis")}:</Text>
         <TextInput
           style={styles.input}
-          placeholder="Partida Registral"
+          placeholder={i18n.t("PartRegis")}
           value={partidaRegistral}
           onChangeText={setPartidaRegistral}
         />
 
+        <Text style={styles.label}>{i18n.t("selecplane")}:</Text>
         <TouchableOpacity
           style={styles.btnArchivo}
           onPress={seleccionarArchivo}
@@ -138,12 +228,12 @@ const Rproyecto = ({ navigation, route }) => {
           <Text style={styles.btnTextArchivo}>
             {archivoCSV
               ? `Seleccionado: ${archivoCSV.name}`
-              : "📁 Seleccionar Plano (.csv)"}
+              : `📁 ${i18n.t("selecplane")} (.csv)`}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.btnGuardar} onPress={registrarProyecto}>
-          <Text style={styles.btnTextGuardar}>GUARDAR PROYECTO</Text>
+          <Text style={styles.btnTextGuardar}>{i18n.t("saveProyt")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -151,12 +241,68 @@ const Rproyecto = ({ navigation, route }) => {
         style={styles.btnregresar}
         onPress={() => navigation.goBack()}
       >
-        <Text>regresar</Text>
+        <Text>{i18n.t("Comeback")}</Text>
       </TouchableOpacity>
     </View>
   );
 };
 const styles = StyleSheet.create({
+  // Estilos del menú flotante superior derecho.
+  containerFlotante: {
+    position: 'absolute',
+    top: 40,           // Ajusta según la pantalla
+    right: 20,
+    zIndex: 999,       // Siempre al frente
+    alignItems: 'center',
+
+
+  },
+  menuDesplegado: {
+    // Los botones aparecen antes (arriba) del principal, 
+    // o puedes ponerlos después para que bajen.
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 10,
+  },
+  btnPrincipal: {
+    backgroundColor: '#333', // Un color neutro o el de tu app
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+  },
+  // estilos de exit y idioma :
+  idioma: {
+    top: 5,   // Separación del borde inferior
+
+    marginTop: 5,
+    backgroundColor: '#22c5aa', // Color de fondo del botón
+    width: 45,
+    height: 45,
+    borderRadius: 28,     // Hace que sea circular
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,         // Sombra en Android
+    shadowColor: '#000',  // Sombra en iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 999,
+  },
+  btnsalir: {
+    backgroundColor: "#f30a0a9c",
+    marginTop: 5,
+    height: 40,
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+  },
+  // ///////////////////////////////////
   container: {
     flex: 1,
     backgroundColor: "#e4f5f3",
@@ -166,8 +312,14 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#069488",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
+    marginBottom:10
+  },
+  label:{
+    fontWeight:"bold",
+    marginBottom:5,
+    
   },
   form: {
     marginTop: 10,
