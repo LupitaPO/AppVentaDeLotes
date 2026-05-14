@@ -16,6 +16,8 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
+import RegistrarAsesor from "./Asesor/RegistrarAsesor";
+import RegistrarUsuario from "./Usuarios/RegistrarUsuario";
 
 // URL base del backend para consultar y administrar usuarios.
 const API_URL = "http://www.tulote.somee.com";
@@ -213,11 +215,11 @@ const cerrarSesion = () => {
       <View style={styles.grid}>
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate("RegistrarAsesor", { onRefresh: obtenerAsesores })
+            navigation.navigate("RegistrarUsuario", { onRefresh: obtenerUsuarios })
           }
           style={styles.btnRegistrar}
         >
-          <Text style={styles.btnRegisText}>Nuevo Asesor</Text>
+          <Text style={styles.btnRegisText}>Nuevo Usuario</Text>
         </TouchableOpacity>
       </View>
     </View>
