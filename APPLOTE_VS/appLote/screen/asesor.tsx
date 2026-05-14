@@ -10,6 +10,8 @@ import {
 import React, { useState, useEffect } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from '@react-navigation/native';
+import { MaterialIcons } from "@expo/vector-icons";
+import Fontisto from "@expo/vector-icons";
 
 const API_URL = "http://10.90.221.207:90";
 //Revisión
