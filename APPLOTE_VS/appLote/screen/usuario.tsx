@@ -207,8 +207,10 @@ const cerrarSesion = () => {
               <Text style={styles.cardText}>TipoUsuario: {usuario.TipoUsuario || "N/A"}</Text>
               <Text style={styles.cardText}>Estado: {usuario.Estado || "N/A"}</Text>
             </TouchableOpacity>
+            // holaaaaaaaaaa
           );
         })}
+
       </ScrollView>
 
       {/* Botón inferior para navegar al formulario de registro. */}
