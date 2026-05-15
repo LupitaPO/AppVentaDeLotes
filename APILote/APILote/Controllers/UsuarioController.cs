@@ -84,9 +84,9 @@ namespace APILote.Controllers
             return objusuariodata.usuarioRegistrar_pa(objusuario);
         }
 
-        //nuevo 15 d emayo 2026
+        //nuevo 15 de mayo 2026
         [HttpGet]
-        [Route("usuario_TipoUsuario_Listar")]
+        [Route("usuario_Tipo_Listar")]
         public string usuario_TipoUsuario_Listar()
         {
             string jsoString = string.Empty;

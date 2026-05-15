@@ -23,7 +23,7 @@ namespace APILote.Controllers
 
 
         [HttpGet]
-        [Route("reporte_ClientesEnDeusa")]
+        [Route("reporte_ClientesEnDeuda")]
         public string reporte_ClientesEnDeuda()
         {
             string jsoString = string.Empty;
