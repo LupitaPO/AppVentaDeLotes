@@ -7,7 +7,7 @@ namespace APILote.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ReporteController
+    public class ReporteController: ControllerBase
     {
         [HttpGet]
         [Route("reporte_LotesVendidos")]
