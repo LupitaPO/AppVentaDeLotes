@@ -108,5 +108,13 @@ namespace APILote.Controllers
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
+
+        [HttpGet]
+        [Route("test2")]
+        public string test2()
+        {
+            return "OK PROYECTO FUNCIONANDO";
+        }
     }
+
 }

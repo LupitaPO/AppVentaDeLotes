@@ -7,6 +7,14 @@
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\reportecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\clientecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\clientecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\lotecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\lotecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -35,16 +43,8 @@
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\data\\clientedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\clientecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\clientecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\pagocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -94,44 +94,20 @@
       "DocumentGroups": [
         {
           "DockedWidth": 53,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "conexion.cs",
-              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\conexion.cs",
-              "RelativeDocumentMoniker": "APILote\\DATA\\conexion.cs",
-              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\conexion.cs",
-              "RelativeToolTip": "APILote\\DATA\\conexion.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAByAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-07T15:17:46.804Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\appsettings.json",
-              "RelativeDocumentMoniker": "APILote\\appsettings.json",
-              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\appsettings.json",
-              "RelativeToolTip": "APILote\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-05-07T15:14:46.553Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Program.cs",
               "RelativeDocumentMoniker": "APILote\\Program.cs",
               "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Program.cs",
               "RelativeToolTip": "APILote\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-07T15:14:27.141Z"
+              "WhenOpened": "2026-05-07T15:14:27.141Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -147,7 +123,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "ReporteData.cs",
               "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\ReporteData.cs",
               "RelativeDocumentMoniker": "APILote\\DATA\\ReporteData.cs",
@@ -166,14 +142,14 @@
               "RelativeDocumentMoniker": "APILote\\Controllers\\ReporteController.cs",
               "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ReporteController.cs",
               "RelativeToolTip": "APILote\\Controllers\\ReporteController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAyAAAAAAAAAA==",
+              "ViewState": "AgIAAF4AAAAAAAAAAAAwwGIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-08T14:04:39.582Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "UsuarioData.cs",
               "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
               "RelativeDocumentMoniker": "APILote\\DATA\\UsuarioData.cs",
@@ -186,7 +162,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "UsuarioController.cs",
               "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs",
               "RelativeDocumentMoniker": "APILote\\Controllers\\UsuarioController.cs",
@@ -198,7 +174,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "LoteController.cs",
               "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\LoteController.cs",
               "RelativeDocumentMoniker": "APILote\\Controllers\\LoteController.cs",
@@ -211,7 +187,45 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
+              "Title": "ClienteController.cs",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ClienteController.cs",
+              "RelativeDocumentMoniker": "APILote\\Controllers\\ClienteController.cs",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ClienteController.cs",
+              "RelativeToolTip": "APILote\\Controllers\\ClienteController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-08T14:01:51.001Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\appsettings.json",
+              "RelativeDocumentMoniker": "APILote\\appsettings.json",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\appsettings.json",
+              "RelativeToolTip": "APILote\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-05-07T15:14:46.553Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "conexion.cs",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\conexion.cs",
+              "RelativeDocumentMoniker": "APILote\\DATA\\conexion.cs",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\conexion.cs",
+              "RelativeToolTip": "APILote\\DATA\\conexion.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAByAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-07T15:17:46.804Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "ProyectoController.cs",
               "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ProyectoController.cs",
               "RelativeDocumentMoniker": "APILote\\Controllers\\ProyectoController.cs",
@@ -219,24 +233,11 @@
               "RelativeToolTip": "APILote\\Controllers\\ProyectoController.cs",
               "ViewState": "AgIAAEQAAAAAAAAAAAAwwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-15T19:47:40.399Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-15T19:47:40.399Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "ClienteController.cs",
-              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ClienteController.cs",
-              "RelativeDocumentMoniker": "APILote\\Controllers\\ClienteController.cs",
-              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ClienteController.cs",
-              "RelativeToolTip": "APILote\\Controllers\\ClienteController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-08T14:01:51.001Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "ClienteData.cs",
               "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\ClienteData.cs",
               "RelativeDocumentMoniker": "APILote\\DATA\\ClienteData.cs",
