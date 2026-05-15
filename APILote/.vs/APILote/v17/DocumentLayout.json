@@ -27,6 +27,57 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
+<<<<<<< Updated upstream
+=======
+              "Title": "conexion.cs",
+              "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\conexion.cs",
+              "RelativeDocumentMoniker": "APILote\\DATA\\conexion.cs",
+              "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\conexion.cs",
+              "RelativeToolTip": "APILote\\DATA\\conexion.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-13T02:20:51.678Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ProyectoController.cs",
+              "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ProyectoController.cs",
+              "RelativeDocumentMoniker": "APILote\\Controllers\\ProyectoController.cs",
+              "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ProyectoController.cs",
+              "RelativeToolTip": "APILote\\Controllers\\ProyectoController.cs",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAowEwAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-09T01:52:11.492Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "TipoComprobante.cs",
+              "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Models\\TipoComprobante.cs",
+              "RelativeDocumentMoniker": "APILote\\Models\\TipoComprobante.cs",
+              "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Models\\TipoComprobante.cs",
+              "RelativeToolTip": "APILote\\Models\\TipoComprobante.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-06T09:51:10.575Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "PagoData.cs",
+              "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\PagoData.cs",
+              "RelativeDocumentMoniker": "APILote\\DATA\\PagoData.cs",
+              "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\PagoData.cs",
+              "RelativeToolTip": "APILote\\DATA\\PagoData.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAA8wDoAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-06T09:50:04.297Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+>>>>>>> Stashed changes
               "Title": "UsuarioData.cs",
               "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
               "RelativeDocumentMoniker": "APILote\\DATA\\UsuarioData.cs",
@@ -66,6 +117,16 @@
         },
         {
           "DockedWidth": 1666,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 1115,
           "SelectedChildIndex": -1,
           "Children": [
             {
