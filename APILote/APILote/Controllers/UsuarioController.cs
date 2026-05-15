@@ -83,6 +83,18 @@ namespace APILote.Controllers
             UsuarioData objusuariodata = new UsuarioData();
             return objusuariodata.usuarioRegistrar_pa(objusuario);
         }
-        
+
+        //nuevo 15 d emayo 2026
+        [HttpGet]
+        [Route("usuario_TipoUsuario_Listar")]
+        public string usuario_TipoUsuario_Listar()
+        {
+            string jsoString = string.Empty;
+            DataTable Datos = new DataTable();
+            UsuarioData objCliente = new UsuarioData();
+            Datos = objCliente.usuarioTipoUsuarioListar();
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsoString;
+        }
     }
 }

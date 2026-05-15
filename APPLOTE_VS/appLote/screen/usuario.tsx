@@ -59,7 +59,7 @@ const usuario = ({navigation, route}) => {
       const data = await response.json();
       setUsuarios(data);
     } catch (error) {
-      console.error("Error al listar asesores:", error);
+      console.error("Error al listar Usuario:", error);
     } finally {
       setCargando(false);
     }
@@ -207,10 +207,8 @@ const cerrarSesion = () => {
               <Text style={styles.cardText}>TipoUsuario: {usuario.TipoUsuario || "N/A"}</Text>
               <Text style={styles.cardText}>Estado: {usuario.Estado || "N/A"}</Text>
             </TouchableOpacity>
-            // holaaaaaaaaaa
           );
         })}
-
       </ScrollView>
 
       {/* Botón inferior para navegar al formulario de registro. */}

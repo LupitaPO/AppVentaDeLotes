@@ -86,7 +86,7 @@ namespace APILote.Controllers
         }
 
         [HttpGet]
-        [Route("reporte_Clientes/{datoBuscar}")]
+        [Route("reporte_Asesores/{datoBuscar}")]
         public string reporte_Asesores(string datoBuscar)
         {
             string jsoString = string.Empty;

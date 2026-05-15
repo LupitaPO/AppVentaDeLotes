@@ -1,15 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-<<<<<<< HEAD
     <ActiveDebugProfile>https</ActiveDebugProfile>
-    <NameOfLastUsedPublishProfile>D:\AppVentaDeLotes\APILote\APILote\Properties\PublishProfiles\FolderProfile.pubxml</NameOfLastUsedPublishProfile>
-=======
-    <ActiveDebugProfile>IIS Express</ActiveDebugProfile>
-    <NameOfLastUsedPublishProfile>C:\Users\guada\Downloads\AppVentaDeLotes\APILote\APILote\Properties\PublishProfiles\FTPProfile.pubxml</NameOfLastUsedPublishProfile>
->>>>>>> 07c0c7a555c8b01706ecbd5ac817056e73ed2d17
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
+    <NameOfLastUsedPublishProfile>C:\Users\Juan HC\Desktop\AppVentaDeLotes\APILote\APILote\Properties\PublishProfiles\FolderProfile.pubxml</NameOfLastUsedPublishProfile>
   </PropertyGroup>
 </Project>

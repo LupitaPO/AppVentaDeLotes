@@ -5,23 +5,57 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Modal, //agrgado para el despegable
   Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
+const API_URL = "http://www.tulote.somee.com";
 
-const RegistrarUsuario = (navigation,route) => {
-  const [dni, setDni] = useState("");
-  const [nombre1, setNombre1] = useState("");
-  const [nombre2, setNombre2] = useState("");
-  const [apaterno, setApaterno] = useState("");
-  const [amaterno, setAmaterno] = useState("");
-  const [celular, setCelular] = useState("");
-  const [observaciones, setObservaciones] = useState("");
+const RegistrarUsuario = ({ navigation, route }) => {
+
+  const [nombre, setNombre] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [contraseña, setContraseña] = useState("")
+  const [TipoUsuario, setTipoUsuario] = useState("");
+  const [celular, setcelular] = useState("");
+
+  const [listaTipos, setListarTipos] = useState([]);
   const [cargando, setCargando] = useState(false);
+  // agreagdo para el abrir y cerrar del despegable
+  const [modalVisible, setModalVisible] = useState(false)
 
-  const registrarAsesor = async () => {
-    if (!dni.trim() || !nombre1.trim() || !apaterno.trim()) {
+  useEffect(() => {
+    TipoUsuarioListar();
+  }, []);
+
+  ///////////////////////////////////////////////////////////////////////////////////////
+
+  const TipoUsuarioListar = async () => {
+    try {
+      const response = await fetch(`${API_URL}/Usuario/usuario_TipoUsuario_Listar`);
+      console.log(response)
+      // 1. Leemos la respuesta de Somee como texto plano
+      const textoCrudo = await response.text();
+      console.log("Datos recibidos de Somee:", textoCrudo);
+
+      // 2. Si el servidor envió datos, los transformamos manualmente a objeto/arreglo
+      if (textoCrudo && textoCrudo.trim() !== "") {
+        const data = JSON.parse(textoCrudo);
+        setListarTipos(data); // Guarda el arreglo en tu estado de React Native
+      } else {
+        console.warn("Somee sigue respondiendo vacío.");
+        setListarTipos([]);
+      }
+
+    } catch (error) {
+      console.error("Error al procesar el listado:", error);
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////
+  const registrarUsuario = async () => {
+    if (!nombre.trim() || !correo.trim() || !contraseña.trim()) {
       Alert.alert("Error", "DNI, Primer Nombre y Apellido Paterno son obligatorios");
       return;
     }
@@ -32,20 +66,20 @@ const RegistrarUsuario = (navigation,route) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-        
-          Nombre1: nombre1.trim(),
-          Nombre2: nombre2.trim() || "",
-          Apaterno: apaterno.trim(),
-          Amaterno: amaterno.trim(),
+
+          Nombre: nombre.trim(),
+          Correo: correo.trim(),
+          Contraseña: contraseña.trim(),
+          TipoUsuario: TipoUsuario.trim(),
           Celular: celular.trim(),
-          Observaciones: observaciones.trim() || "",
+
           Estado: "A",
         }),
       });
 
       const data = await response.text();
       if (response.ok) {
-        Alert.alert("Éxito", "Asesor registrado correctamente", [
+        Alert.alert("Éxito", "Usuario registrado correctamente", [
           {
             text: "OK",
             onPress: () => {
@@ -67,84 +101,69 @@ const RegistrarUsuario = (navigation,route) => {
 
 
 
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Registrar Nuevo Usuario</Text>
       <ScrollView style={styles.scrollView}>
-        <Text style={styles.label}>DNI:</Text>
+
+
+
+
+        <Text style={styles.label}>Nombre Usuario:</Text>
         <TextInput
           style={styles.input}
-          value={dni}
-          onChangeText={setDni}
-          placeholder="DNI"
-          keyboardType="numeric"
+          value={nombre}
+          onChangeText={setNombre}
+          placeholder="Nombre"
         />
 
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.label}>Nombre 1:</Text>
-            <TextInput
-              style={styles.input}
-              value={nombre1}
-              onChangeText={setNombre1}
-              placeholder="Nombre 1"
-            />
-          </View>
-          <View style={styles.column}>
-            <Text style={styles.label}>Nombre 2:</Text>
-            <TextInput
-              style={styles.input}
-              value={nombre2}
-              onChangeText={setNombre2}
-              placeholder="Nombre 2 (opcional)"
-            />
-          </View>
-        </View>
 
-        <View style={styles.row}>
-          <View style={styles.column}>
-            <Text style={styles.label}>Apellido Paterno:</Text>
+        <Text style={styles.label}>Correo:</Text>
+        <TextInput
+          style={styles.input}
+          value={correo}
+          onChangeText={setCorreo}
+          placeholder="Correo"
+        />
+
+        <Text style={styles.label}>Contraseña:</Text>
+        <TextInput
+          style={styles.input}
+          value={contraseña}
+          onChangeText={setContraseña}
+          placeholder="Apellido Paterno"
+        />
+
+
+        <Text style={styles.label}>TipoUsuario:</Text>
+        {/* 3. MODIFICADO: Envolvemos el TextInput en un botón transparente para abrir el desplegable */}
+        <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.7}>
+          <View pointerEvents="none">
             <TextInput
               style={styles.input}
-              value={apaterno}
-              onChangeText={setApaterno}
-              placeholder="Apellido Paterno"
+              value={TipoUsuario}
+              editable={false}
+              placeholder="Tipo Usuario"
             />
           </View>
-          <View style={styles.column}>
-            <Text style={styles.label}>Apellido Materno:</Text>
-            <TextInput
-              style={styles.input}
-              value={amaterno}
-              onChangeText={setAmaterno}
-              placeholder="Apellido Materno"
-            />
-          </View>
-        </View>
+        </TouchableOpacity>
+
 
         <Text style={styles.label}>Celular:</Text>
         <TextInput
           style={styles.input}
           value={celular}
-          onChangeText={setCelular}
+          onChangeText={setcelular}
           placeholder="Celular"
           keyboardType="phone-pad"
         />
 
-        <Text style={styles.label}>Observaciones:</Text>
-        <TextInput
-          style={styles.input}
-          value={observaciones}
-          onChangeText={setObservaciones}
-          placeholder="Observaciones"
-          multiline
-          numberOfLines={3}
-        />
 
         <TouchableOpacity
           style={styles.btnGuardar}
           disabled={cargando}
-          onPress={registrarAsesor}
+          onPress={registrarUsuario}
         >
           <Text style={styles.btnText}>Registrar Usuario</Text>
         </TouchableOpacity>
@@ -156,6 +175,43 @@ const RegistrarUsuario = (navigation,route) => {
           <Text style={styles.btnText}>Cancelar</Text>
         </TouchableOpacity> */}
       </ScrollView>
+
+      {/* MODIFICADO: Ventana del Modal mapeando la API de manera automática */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalFondo}>
+          <View style={styles.modalContenedor}>
+            <Text style={styles.modalTitulo}>Selecciona Tipo de Usuario</Text>
+
+            <ScrollView style={{ width: "100%", maxHeight: 300 }}>
+              {/* CORREGIDO: Mapeo de la base de datos */}
+              {listaTipos.map((tipo) => (
+                <TouchableOpacity
+                  key={tipo.IdTipo}
+                  style={styles.modalOpcion}
+                  onPress={() => {
+                    setTipoUsuario(tipo.Descripcion); // Asigna el texto (ej: "Administrador") al input
+                    setModalVisible(false); // Cierra el modal
+                  }}
+                >
+                  <Text style={styles.modalOpcionTexto}>{tipo.Descripcion}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.modalOpcion, { backgroundColor: '#ff4d4d', marginTop: 10 }]}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={[styles.modalOpcionTexto, { color: '#fff' }]}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -221,6 +277,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+  // 5. AGREGADO: Estilos específicos para la ventana flotante (Modal)
+  modalFondo: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 20 },
+  modalContenedor: { backgroundColor: "white", borderRadius: 15, padding: 20, alignItems: "center" },
+  modalTitulo: { fontSize: 18, fontWeight: "bold", marginBottom: 15, color: "#069488" },
+  modalOpcion: { width: "100%", padding: 15, borderBottomWidth: 1, borderBottomColor: "#f0f0f0", alignItems: "center", borderRadius: 8 },
+  modalOpcionTexto: { fontSize: 16, color: "#333", fontWeight: "600" }
 });
 
 export default RegistrarUsuario
