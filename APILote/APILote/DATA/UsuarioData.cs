@@ -94,5 +94,20 @@ namespace APILote.DATA
             }
         }
 
+        //nuevo 15 de mayo 2026
+        public DataTable usuarioTipoUsuarioListar()
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "usuario_TipoUsuario_Listar_pa").Tables[0];
+                return Datos;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+     
     }
 }
