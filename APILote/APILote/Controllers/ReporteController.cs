@@ -91,8 +91,20 @@ namespace APILote.Controllers
         {
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();
-            ReporteData objCliente = new ReporteData();
-            Datos = objCliente.reporteAsesores(datoBuscar);
+            ReporteData objAsesor = new ReporteData();
+            Datos = objAsesor.reporteAsesores(datoBuscar);
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsoString;
+        }
+
+        [HttpGet]
+        [Route("reporte_Proyectos/{datoBuscar}")]
+        public string reporte_Proyectos(string datoBuscar)
+        {
+            string jsoString = string.Empty;
+            DataTable Datos = new DataTable();
+            ReporteData objProyecto = new ReporteData();
+            Datos = objProyecto.reporteProyectos(datoBuscar);
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
