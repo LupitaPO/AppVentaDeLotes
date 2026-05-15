@@ -8,11 +8,11 @@ import {
   Modal, //agrgado para el despegable
   Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const API_URL = "http://www.tulote.somee.com";
 
-const RegistrarUsuario = ({navigation, route}) => {
+const RegistrarUsuario = ({ navigation, route }) => {
 
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
@@ -20,11 +20,42 @@ const RegistrarUsuario = ({navigation, route}) => {
   const [TipoUsuario, setTipoUsuario] = useState("");
   const [celular, setcelular] = useState("");
 
+  const [listaTipos, setListarTipos] = useState([]);
   const [cargando, setCargando] = useState(false);
-
   // agreagdo para el abrir y cerrar del despegable
   const [modalVisible, setModalVisible] = useState(false)
 
+  useEffect(() => {
+    TipoUsuarioListar();
+  }, []);
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+  const TipoUsuarioListar = async () => {
+    try {
+    const response = await fetch(`${API_URL}/Usuario/usuario_TipoUsuario_Listar`);
+    
+    // 1. Obtener la respuesta como texto plano primero
+    const textData = await response.text();
+    console.log("Respuesta cruda del servidor:", textData);
+
+    // 2. Verificar si el texto está vacío
+    if (!textData || textData.trim() === "") {
+      console.warn("El servidor devolvió un cuerpo vacío.");
+      setListarTipos([]);
+      return;
+    }
+
+    // 3. Si no está vacío, parsearlo de forma segura
+    const data = JSON.parse(textData);
+    setListarTipos(data);
+    
+  } catch (error) {
+    console.error("Error detallado al listar El TipoUsuario:", error);
+  }
+  }
+
+//////////////////////////////////////////////////////////////////////////////////////
   const registrarUsuario = async () => {
     if (!nombre.trim() || !correo.trim() || !contraseña.trim()) {
       Alert.alert("Error", "DNI, Primer Nombre y Apellido Paterno son obligatorios");
@@ -69,6 +100,7 @@ const RegistrarUsuario = ({navigation, route}) => {
       setCargando(false);
     }
   };
+
 
 
 
@@ -145,7 +177,8 @@ const RegistrarUsuario = ({navigation, route}) => {
           <Text style={styles.btnText}>Cancelar</Text>
         </TouchableOpacity> */}
       </ScrollView>
-      {/* 4. AGREGADO: Componente Modal que contiene las opciones desplegables */}
+
+      {/* MODIFICADO: Ventana del Modal mapeando la API de manera automática */}
       <Modal
         visible={modalVisible}
         transparent={true}
@@ -156,31 +189,22 @@ const RegistrarUsuario = ({navigation, route}) => {
           <View style={styles.modalContenedor}>
             <Text style={styles.modalTitulo}>Selecciona Tipo de Usuario</Text>
 
-            {/* Opción 1 */}
-            <TouchableOpacity 
-              style={styles.modalOpcion} 
-              onPress={() => { setTipoUsuario("Gerente"); setModalVisible(false); }}
-            >
-              <Text style={styles.modalOpcionTexto}>Gerente</Text>
-            </TouchableOpacity>
+            <ScrollView style={{ width: "100%", maxHeight: 300 }}>
+              {/* CORREGIDO: Mapeo de la base de datos */}
+              {listaTipos.map((tipo) => (
+                <TouchableOpacity 
+                  key={tipo.IdTipo} 
+                  style={styles.modalOpcion} 
+                  onPress={() => { 
+                    setTipoUsuario(tipo.Descripcion); // Asigna el texto (ej: "Administrador") al input
+                    setModalVisible(false); // Cierra el modal
+                  }}
+                >
+                  <Text style={styles.modalOpcionTexto}>{tipo.Descripcion}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-            {/* Opción 2 */}
-            <TouchableOpacity 
-              style={styles.modalOpcion} 
-              onPress={() => { setTipoUsuario("Asesor"); setModalVisible(false); }}
-            >
-              <Text style={styles.modalOpcionTexto}>Asesor</Text>
-            </TouchableOpacity>
-
-            {/* Opción 3 */}
-            <TouchableOpacity 
-              style={styles.modalOpcion} 
-              onPress={() => { setTipoUsuario("Gerente"); setModalVisible(false); }}
-            >
-              <Text style={styles.modalOpcionTexto}>Cliente</Text>
-            </TouchableOpacity>
-
-            {/* Botón Cancelar del Modal */}
             <TouchableOpacity 
               style={[styles.modalOpcion, { backgroundColor: '#ff4d4d', marginTop: 10 }]} 
               onPress={() => setModalVisible(false)}
@@ -255,7 +279,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-    // 5. AGREGADO: Estilos específicos para la ventana flotante (Modal)
+  // 5. AGREGADO: Estilos específicos para la ventana flotante (Modal)
   modalFondo: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: 20 },
   modalContenedor: { backgroundColor: "white", borderRadius: 15, padding: 20, alignItems: "center" },
   modalTitulo: { fontSize: 18, fontWeight: "bold", marginBottom: 15, color: "#069488" },

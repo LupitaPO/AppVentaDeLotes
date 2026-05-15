@@ -59,7 +59,7 @@ const usuario = ({navigation, route}) => {
       const data = await response.json();
       setUsuarios(data);
     } catch (error) {
-      console.error("Error al listar asesores:", error);
+      console.error("Error al listar Usuario:", error);
     } finally {
       setCargando(false);
     }
