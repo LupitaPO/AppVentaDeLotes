@@ -29,33 +29,31 @@ const RegistrarUsuario = ({ navigation, route }) => {
     TipoUsuarioListar();
   }, []);
 
-///////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////
 
   const TipoUsuarioListar = async () => {
     try {
-    const response = await fetch(`${API_URL}/Usuario/usuario_TipoUsuario_Listar`);
-    
-    // 1. Obtener la respuesta como texto plano primero
-    const textData = await response.text();
-    console.log("Respuesta cruda del servidor:", textData);
+      const response = await fetch(`${API_URL}/Usuario/usuario_TipoUsuario_Listar`);
+      console.log(response)
+      // 1. Leemos la respuesta de Somee como texto plano
+      const textoCrudo = await response.text();
+      console.log("Datos recibidos de Somee:", textoCrudo);
 
-    // 2. Verificar si el texto está vacío
-    if (!textData || textData.trim() === "") {
-      console.warn("El servidor devolvió un cuerpo vacío.");
-      setListarTipos([]);
-      return;
+      // 2. Si el servidor envió datos, los transformamos manualmente a objeto/arreglo
+      if (textoCrudo && textoCrudo.trim() !== "") {
+        const data = JSON.parse(textoCrudo);
+        setListarTipos(data); // Guarda el arreglo en tu estado de React Native
+      } else {
+        console.warn("Somee sigue respondiendo vacío.");
+        setListarTipos([]);
+      }
+
+    } catch (error) {
+      console.error("Error al procesar el listado:", error);
     }
-
-    // 3. Si no está vacío, parsearlo de forma segura
-    const data = JSON.parse(textData);
-    setListarTipos(data);
-    
-  } catch (error) {
-    console.error("Error detallado al listar El TipoUsuario:", error);
-  }
   }
 
-//////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////
   const registrarUsuario = async () => {
     if (!nombre.trim() || !correo.trim() || !contraseña.trim()) {
       Alert.alert("Error", "DNI, Primer Nombre y Apellido Paterno son obligatorios");
@@ -192,10 +190,10 @@ const RegistrarUsuario = ({ navigation, route }) => {
             <ScrollView style={{ width: "100%", maxHeight: 300 }}>
               {/* CORREGIDO: Mapeo de la base de datos */}
               {listaTipos.map((tipo) => (
-                <TouchableOpacity 
-                  key={tipo.IdTipo} 
-                  style={styles.modalOpcion} 
-                  onPress={() => { 
+                <TouchableOpacity
+                  key={tipo.IdTipo}
+                  style={styles.modalOpcion}
+                  onPress={() => {
                     setTipoUsuario(tipo.Descripcion); // Asigna el texto (ej: "Administrador") al input
                     setModalVisible(false); // Cierra el modal
                   }}
@@ -205,8 +203,8 @@ const RegistrarUsuario = ({ navigation, route }) => {
               ))}
             </ScrollView>
 
-            <TouchableOpacity 
-              style={[styles.modalOpcion, { backgroundColor: '#ff4d4d', marginTop: 10 }]} 
+            <TouchableOpacity
+              style={[styles.modalOpcion, { backgroundColor: '#ff4d4d', marginTop: 10 }]}
               onPress={() => setModalVisible(false)}
             >
               <Text style={[styles.modalOpcionTexto, { color: '#fff' }]}>Cancelar</Text>
