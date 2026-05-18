@@ -12,6 +12,9 @@ import Rproyecto from "./screen/Proyectos/Rproyecto";
 import home from "./screen/home";
 import DetalleProyecto from "./screen/Proyectos/DetalleProyecto";
 import ModificarProyecto from "./screen/Proyectos/ModificarProyecto";
+import ReporteClientes from "./screen/ReporteClientes";  /// Agregado para importar el componente ReporteClientes
+import ReporteAsesores from "./screen/ReporteAsesores";  /// Agregado para importar el componente ReporteAsesores
+import MenuReportes from "./screen/MenuReportes";  /// ATAMAINE: Menu para elegir entre reportes de clientes o asesores 
 
 import ModificarCliente from "./screen/Clientes/ModificarCliente";
 import RegistrarCliente from "./screen/Clientes/RegistrarCliente";
@@ -53,6 +56,11 @@ export default function App() {
         <Stack.Screen name="ModificarUsuario" component={ModificarUsuario} />
         <Stack.Screen name="RegistrarUsuario" component={RegistrarUsuario} />
         <Stack.Screen name="DetallePago" component={DetallePago} />
+        <Stack.Screen name="MenuReportes" component={MenuReportes} />
+        <Stack.Screen name="ReporteClientes" component={ReporteClientes} />
+        <Stack.Screen name="ReporteAsesores" component={ReporteAsesores} />
+        {/* ATAMAINE: Alias "Reportes" apunta a MenuReportes para que el usuario elija entre clientes o asesores */}
+        <Stack.Screen name="Reportes" component={MenuReportes} />
         <Stack.Screen name="MainTabs" component={bottomTabs} />
       </Stack.Navigator>
     </NavigationContainer>

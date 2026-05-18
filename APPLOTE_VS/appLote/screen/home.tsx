@@ -8,19 +8,18 @@ import {
   RefreshControl,
   ScrollView,
   TouchableOpacity,
+  Pressable,
 } from "react-native";
 
 // Hooks de React para manejar estado local y ciclos de vida simples del componente.
 import React, { useState, useEffect } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Componente de gráfica circular usado para mostrar el resumen de lotes vendidos y libres.
 import { PieChart } from "react-native-chart-kit";
 
 // Librería de íconos usada en tarjetas y elementos visuales del dashboard.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
-// Import actualmente presente en el archivo, aunque no forma parte del flujo visual del dashboard.
-import { symbolicate } from "react-native/types_generated/Libraries/LogBox/Data/LogBoxSymbolication";
 
 // Soporte para animaciones; en este archivo está importado pero no se usa en la lógica visible.
 import Animated from "react-native-reanimated";
@@ -44,14 +43,44 @@ import i18n, {changeLanguage} from "../i18n";
 // Tipo que restringe los idiomas válidos manejados por la aplicación.
 import { Languages } from "../localizacion";
 
+
+
 // Ancho de la pantalla usado para calcular tamaños del dashboard y de la gráfica.
 const screenWidth = Dimensions.get("window").width;
 
 // URL base del backend para consultar el resumen general del dashboard.
 const API_URL = "http://www.tulote.somee.com";
 
+///REPORTES ATAMAINE
 
-const home = ({ route, navigation }) => {
+
+type HomeProps = {
+  route: any;
+  navigation: any;
+};
+
+type DashboardResumen = {
+  TotalVendidos?: number;
+  TotalLotes?: number;
+  CarteraTotalFutura?: string | number;
+  RecaudadoHistorico?: string | number;
+  DineroVencidoHoy?: string | number;
+  CantidadDeudores?: string | number;
+};
+
+type DashCardProps = {
+  titulo: string;
+  valor: string | number | undefined;
+  icono: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+  color: string;
+};
+
+
+const home = ({ route, navigation }: HomeProps) => {
+  ///REPORTES ATAMAINE
+
+
+
   // Altura de la barra inferior para dejar espacio visual al final del contenido.
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -75,7 +104,7 @@ const home = ({ route, navigation }) => {
     }
 
   // Objeto con los datos resumidos que devuelve el dashboard desde la API.
-  const [datos, setDatos] = useState(null);
+  const [datos, setDatos] = useState<DashboardResumen | null>(null); //ATAMAINE
 
   // Controla el spinner inicial mientras se carga la información.
   const [loading, setLoading] = useState(true);
@@ -109,9 +138,11 @@ const home = ({ route, navigation }) => {
   });
 
   // Componente local reutilizable para mostrar una métrica con ícono y color.
-  const DashCard = ({ titulo, valor, icono, color }) => (
+  const DashCard = ({ titulo, valor, icono, color }: DashCardProps) => ( ///ATAMAINE
     <View style={[styles.card, { borderLeftColor: color }]}>
-      <MaterialCommunityIcons name={icono} size={28} color={color} />
+      <View style={[styles.cardIconWrap, { backgroundColor: `${color}18` }]}>
+        <MaterialCommunityIcons name={icono} size={24} color={color} />
+      </View>
 
       <View style={styles.info}>
         <Text style={styles.cardTitle}>{titulo}</Text>
@@ -140,7 +171,8 @@ const home = ({ route, navigation }) => {
     },
     {
       name: "Libres",
-      population: datos?.TotalLotes - datos?.TotalVendidos || 0,
+      ///ATAMAINE: Calculamos los lotes libres restando los vendidos a los totales, asegurando que no sea negativo.
+      population: (datos?.TotalLotes ?? 0) - (datos?.TotalVendidos ?? 0),
       color: "#E0E0E0",
       legendFontColor: "#7F7F7F",
       legendFontSize: 12,
@@ -155,11 +187,18 @@ const home = ({ route, navigation }) => {
       routes: [{ name: "Login" }], // Cambia 'Login' por el nombre exacto de tu pantalla inicial
     });
   };
+  ///ATAMAINE: Función para abrir el menú de reportes donde se elige entre clientes o asesores, pasando los mismos parámetros de navegación actuales.
+
+  const abrirReportes = () => {
+    navigation.navigate("Reportes", route.params || {});
+  };
+
   return (
     <View>
       {/* Cabecera superior con saludo al usuario y menú de acciones rápidas. */}
       <View
-        style={{ width: "100%", height: "11%", backgroundColor: "#ffffff" }}
+      ///
+        style={styles.topHeader}
       >
         {/* Contenedor del encabezado con nombre del usuario actual. */}
         <View style={styles.headerContainer}>
@@ -167,8 +206,14 @@ const home = ({ route, navigation }) => {
             <Text style={styles.textheader}>{i18n.t("Dtitle")}</Text>
             <Text style={styles.textheader2}>{nombre || "Usuario"}</Text>
           </View>
-      
         </View>
+
+        {rol !== "Cliente" && ( ///ATAMAINE: Solo mostramos el botón de reportes para roles distintos a Cliente, asumiendo que es un reporte de clientes.
+          <Pressable style={styles.reportButton} onPress={abrirReportes}>
+            <MaterialCommunityIcons name="file-chart" size={20} color="#2196F3" />
+            <Text style={styles.reportButtonText}>Reportes</Text>
+          </Pressable>
+        )}
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
@@ -186,6 +231,20 @@ const home = ({ route, navigation }) => {
         </TouchableOpacity>
         {isMenuOpen && (
           <View style={styles.menuDesplegado}>
+
+
+  {/* BOTONES DE ACCESO USUARIOS ANGIE */}
+            <View>
+              <TouchableOpacity style={styles.roleButton}>
+                <Text style={styles.roleButtonText}>Administrador</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View>
+              <TouchableOpacity style={styles.roleButton}>
+                <Text style={styles.roleButtonText}>Cliente</Text>
+              </TouchableOpacity>
+            </View>
 
             <View>
               <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
@@ -232,12 +291,18 @@ const home = ({ route, navigation }) => {
             {/* Zona de Dinero */}
 
             {/* Tarjeta principal con el valor total esperado en cartera futura. */}
-            <View style={styles.mainBox}>
+            {/* ATAMAINE: Tarjeta principal rediseñada con gradiente para mantener el mismo lenguaje visual de reportes. */}
+            <LinearGradient
+              colors={["#1fc7bf", "#0ea5a1"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.mainBox}
+            >
               <Text style={styles.mainTitle}>{i18n.t("Dmsj2")}</Text>
               <Text style={styles.mainAmount}>
                 S/ {datos?.CarteraTotalFutura || "0.00"}
               </Text>
-            </View>
+            </LinearGradient>
 
             {/* Sección de gráfica circular para comparar lotes vendidos y libres. */}
             <View style={styles.chartBox}>
@@ -298,8 +363,47 @@ const home = ({ route, navigation }) => {
     </View>
   );
 };
+  
 
+///ATANMAINE ESTILOS
 const styles = StyleSheet.create({
+  topHeader: {
+    width: "100%",
+    backgroundColor: "#f4fbfc",
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  // ATAMAINE: Boton de Reportes compactado en horizontal para que se vea mas pro y menos largo.
+  reportButton: {
+    marginLeft: 20,
+    marginTop: 10,
+    alignSelf: "flex-start",
+    minWidth: 150,
+    maxWidth: 190,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderLeftWidth: 4,
+    borderLeftColor: "#2196F3",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  reportButtonText: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  ///ATAMAINE: Estilos del menú flotante superior derecho.
 
   // Estilos del menú flotante superior derecho.
   containerFlotante: {
@@ -347,6 +451,28 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     zIndex: 999,  
   },
+
+  //STYLOS DE BOTON DE ADMINISTRADOR,, Y CLIENTE, ANGIE.
+  roleButton: {
+    minWidth: 110,
+    marginTop: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: '#22c5aa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  roleButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   btnsalir: {
     backgroundColor: "#f30a0a9c",
     marginTop:5,
@@ -364,7 +490,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 5,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#f4fbfc",
     paddingTop: 40,
     height: 99,
     flexDirection: "row",
@@ -377,7 +503,7 @@ const styles = StyleSheet.create({
   textheader: {
     fontWeight: "500",
     padding: 10,
-    color: "#069488",
+    color: "#0f766e",
     fontSize: 17,
   },
 
@@ -385,16 +511,16 @@ const styles = StyleSheet.create({
   textheader2: {
     fontWeight: "bold",
     fontSize: 22,
-    color: "#069488",
+    color: "#0f766e",
   },
 
   // Contenedor principal del contenido del dashboard.
   container: {
     width: "100%",
     minHeight: screenWidth,
-    backgroundColor: "#e4f5f3",
-    paddingTop: 20,
-    padding: 10,
+    backgroundColor: "#eaf8fb",
+    paddingTop: 18,
+    paddingHorizontal: 12,
     paddingBottom: 50,
   },
 
@@ -402,35 +528,36 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 20,
-    color: "#069488",
+    marginBottom: 16,
+    color: "#0f766e",
   },
 
   // Tarjeta destacada para la métrica económica principal.
   mainBox: {
-    backgroundColor: "#09caba",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 20,
+    elevation: 6,
+    shadowColor: "#0891b2",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    padding: 22,
+    borderRadius: 18,
+    marginBottom: 18,
   },
 
   // Etiqueta pequeña dentro de la tarjeta principal.
   mainTitle: {
-    color: "#ffffff",
-    fontSize: 14,
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 12,
+    fontWeight: "700",
     textTransform: "uppercase",
   },
 
   // Valor monetario principal mostrado en el dashboard.
   mainAmount: {
     color: "#FFF",
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "bold",
+    marginTop: 6,
   },
 
   // Distribución en grilla para las tarjetas de métricas.
@@ -438,62 +565,82 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    marginTop: 2,
   },
 
   // Tarjeta pequeña individual de cada indicador.
   card: {
     backgroundColor: "#FFF",
     width: "48%",
-    padding: 15,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 16,
     marginBottom: 15,
     flexDirection: "row",
     alignItems: "center",
     borderLeftWidth: 5,
+    borderWidth: 1,
+    borderColor: "#e5f0f2",
+    shadowColor: "#164e63",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  // ATAMAINE: Contenedor visual del icono para dar una apariencia mas premium a las metricas.
+  cardIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Contenedor del texto a la derecha del ícono en cada tarjeta métrica.
   info: {
-    marginLeft: 10,
+    marginLeft: 12,
+    flex: 1,
   },
 
   // Título de una tarjeta métrica pequeña.
   cardTitle: {
-    fontSize: 11,
-    color: "#666",
-    fontWeight: "600",
+    fontSize: 10,
+    color: "#64748b",
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
 
   // Valor principal de una tarjeta métrica pequeña.
   cardValue: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
+    color: "#0f172a",
+    marginTop: 4,
   },
 
   // Caja que contiene la gráfica circular y su título.
   chartBox: {
     backgroundColor: "#FFF",
 
-    borderRadius: 20,
-    padding: 15,
-    marginBottom: 20,
-    // MARGEN NEGATIVO para que suba y "pise" el azul
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 18,
     elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "#164e63",
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 16,
     alignItems: "center",
-    zIndex: 2, // Asegura que esté por encima
+    borderWidth: 1,
+    borderColor: "#d8eef1",
+    zIndex: 2,
   },
 
   // Título descriptivo de la gráfica.
   chartTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
+    color: "#0f172a",
+    marginBottom: 12,
     textAlign: "center",
   },
 

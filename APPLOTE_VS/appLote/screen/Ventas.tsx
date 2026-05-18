@@ -305,7 +305,14 @@ const cerrarSesion = () => {
       routes: [{ name: "Login" }], // Cambia 'Login' por el nombre exacto de tu pantalla inicial
     });
   };
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
 
   return (
     <View style={styles.mainContainer}>
@@ -356,6 +363,13 @@ const cerrarSesion = () => {
       </View>
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
         <Text style={styles.sectionTitle}>Toca una venta para ver el cronograma</Text>
+
+
+
+
+
+
+
         
         {/* Lista desplazable con todas las ventas asociadas al usuario. */}
         <ScrollView 
@@ -536,13 +550,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 10,
   },
+  
 // Estilos base de la pantalla principal y tarjetas de ventas.
   mainContainer: { flex: 1, backgroundColor: "#e4f5f3" },
   ventasContainer: {
     height: height * 0.6, // Ocupa el 60% de la pantalla
     backgroundColor: '#fff',
     borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    borderBottomRightRadius: 30,  
     paddingTop: 50,
     paddingHorizontal: 20,
     elevation: 5,
@@ -553,6 +568,13 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a' },
   sectionTitle: { fontSize: 14, color: '#666', marginBottom: 15 },
+
+
+
+
+
+  
+
   scrollVentas: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   
