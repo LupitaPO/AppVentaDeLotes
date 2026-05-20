@@ -33,7 +33,7 @@ const RegistrarUsuario = ({ navigation, route }) => {
 
   const TipoUsuarioListar = async () => {
     try {
-      const response = await fetch(`${API_URL}/Usuario/usuario_TipoUsuario_Listar`);
+      const response = await fetch(`${API_URL}/Usuario/usuario_Tipo_Listar`);
       console.log(response)
       // 1. Leemos la respuesta de Somee como texto plano
       const textoCrudo = await response.text();
