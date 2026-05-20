@@ -28,11 +28,20 @@
       "favicon": "./assets/splash-icon.png"
     },
     "plugins": [
-      "expo-video"
+      "expo-video",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {
-        "projectId": "1b365289-42d7-494a-8464-acb6302f1d6f"
+        "projectId": "d90d98d8-5cbb-465f-b849-6fce21907de0"
       }
     }
   }

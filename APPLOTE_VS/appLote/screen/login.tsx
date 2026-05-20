@@ -87,7 +87,7 @@ const login = ({ navigation }) => {
 
   // Alterna el idioma entre español e inglés y actualiza i18n.
   const handlechangeLanguage = ()=> {
-    const lang: Languages = language === "en" ? "es" :"en";
+    const lang: Languages = language === "es" ? "en" :"es";
     changeLanguage(lang);
     setlanguage(lang);
   }

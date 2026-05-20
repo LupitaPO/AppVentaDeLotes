@@ -3,7 +3,8 @@ import { Languages, traslations } from "./localizacion";
 
 const i18n = new I18n(traslations);
 
-i18n.defaultLocale="en";
+i18n.defaultLocale="es";
+i18n.locale = "es";
 i18n.enableFallback = true;
 
 export const changeLanguage = (lang: Languages) => {
