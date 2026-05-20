@@ -7,7 +7,7 @@ namespace APILote.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ReporteController
+    public class ReporteController: ControllerBase
     {
         [HttpGet]
         [Route("reporte_LotesVendidos")]
@@ -108,5 +108,13 @@ namespace APILote.Controllers
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
+
+        [HttpGet]
+        [Route("test2")]
+        public string test2()
+        {
+            return "OK PROYECTO FUNCIONANDO";
+        }
     }
+
 }
