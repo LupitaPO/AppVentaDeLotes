@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
 
   // Estilos del botón para registrar nuevos proyectos.
   btnRegistrar: {
-    backgroundColor: "#29c268",
+    backgroundColor: "#069488",
     width: 378,
     height: 50,
     marginBottom: 5,

@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   btnRegistrar: {
-    backgroundColor: "#29c268",
+    backgroundColor: "#069488",
     width: 378,
     height: 50,
     marginBottom: 5,
