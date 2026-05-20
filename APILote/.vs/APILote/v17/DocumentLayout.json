@@ -21,10 +21,6 @@
           "SelectedChildIndex": 1,
           "Children": [
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
-            },
-            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "ReporteController.cs",
@@ -45,10 +41,14 @@
               "RelativeDocumentMoniker": "APILote\\Controllers\\UsuarioController.cs",
               "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs",
               "RelativeToolTip": "APILote\\Controllers\\UsuarioController.cs",
-              "ViewState": "AgIAAEIAAAAAAAAAAAAUwGEAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAUwGAAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-15T16:15:10.319Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             }
           ]
         }
