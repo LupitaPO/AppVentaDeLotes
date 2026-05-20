@@ -70,7 +70,7 @@ const login = ({ navigation }) => {
         alert("Usuario o contraseña incorrectos");
       }
     } catch (error) {
-      alert(API_URL)
+      
       alert(error)
       alert("Error al iniciar sesión");
 

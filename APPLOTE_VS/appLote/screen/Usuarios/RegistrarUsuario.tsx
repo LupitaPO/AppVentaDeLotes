@@ -76,7 +76,7 @@ const RegistrarUsuario = ({ navigation, route }) => {
           Estado: "A",
         }),
       });
-
+      console.log(TipoUsuario)
       const data = await response.text();
       if (response.ok) {
         Alert.alert("Éxito", "Usuario registrado correctamente", [
@@ -88,6 +88,7 @@ const RegistrarUsuario = ({ navigation, route }) => {
             },
           },
         ]);
+
       } else {
         Alert.alert("Error del servidor", data);
       }
@@ -132,7 +133,7 @@ const RegistrarUsuario = ({ navigation, route }) => {
           style={styles.input}
           value={contraseña}
           onChangeText={setContraseña}
-          placeholder="Apellido Paterno"
+          placeholder="Contraseña"
         />
 
 
