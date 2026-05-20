@@ -85,7 +85,7 @@ namespace APILote.DATA
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_Registrar_pa",objusuarios.Nombre, objusuarios.Correo, objusuarios.Contraseña, objusuarios.Celular);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_Registrar_pa",objusuarios.Nombre, objusuarios.Correo, objusuarios.Contraseña, objusuarios.TipoUsuario,objusuarios.Celular);
                 return "Usuario Registrado";
             }
             catch (Exception ex)
