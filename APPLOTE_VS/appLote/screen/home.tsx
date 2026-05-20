@@ -288,7 +288,24 @@ const home = ({ route, navigation }) => {
               />
             </View>
 
-           
+            {/* Botón estilo "pill" para acceder al menú de reportes (solo diseño visual). */}
+            <View style={styles.reportPillWrapper}>
+              <TouchableOpacity
+                style={styles.reportPill}
+                onPress={() =>
+                  navigation.navigate("MenuReportes", {
+                    rol,
+                    nombre,
+                    idUsuario: route?.params?.idUsuario,
+                  })
+                }
+                activeOpacity={0.85}
+              >
+                <View style={styles.reportPillAccent} />
+                <MaterialCommunityIcons name="file-chart" size={20} color="#0f766e" style={{ marginRight: 10 }} />
+                <Text style={styles.reportPillText}>Reportes</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Espacio extra para que el contenido no quede pegado a la barra inferior. */}
             <View style={{ height: tabBarHeight + 20 }}></View>
@@ -518,15 +535,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ff761a",
     width: 120,
     height: 50,
-
-    marginBottom: 5,
-    marginTop: 5,
-
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#fff",
   },
 
   // Estilo heredado para un botón de anular.
@@ -550,6 +558,36 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "bold",
+  },
+  reportPillWrapper: {
+    paddingHorizontal: 14,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  reportPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  reportPillAccent: {
+    width: 8,
+    height: 36,
+    backgroundColor: "#0f766e",
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  reportPillText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#064e3b",
   },
 });
 
