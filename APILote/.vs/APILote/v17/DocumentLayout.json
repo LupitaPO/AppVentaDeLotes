@@ -26,8 +26,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 564,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 2,
@@ -38,8 +42,7 @@
               "RelativeToolTip": "APILote\\Models\\Usuarios.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAqwAcAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-20T15:02:26.31Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-20T15:02:26.31Z"
             },
             {
               "$type": "Document",
@@ -49,14 +52,10 @@
               "RelativeDocumentMoniker": "APILote\\DATA\\UsuarioData.cs",
               "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
               "RelativeToolTip": "APILote\\DATA\\UsuarioData.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAABgAAAAAAAAAAAAowD4AAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-20T15:01:58.697Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
               "$type": "Document",
@@ -78,7 +77,7 @@
               "RelativeDocumentMoniker": "APILote\\Controllers\\UsuarioController.cs",
               "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs",
               "RelativeToolTip": "APILote\\Controllers\\UsuarioController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEgAAAA7AAAAAAAAAA==",
+              "ViewState": "AgIAAFAAAAAAAAAAAAA8wEgAAAA7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-15T16:15:10.319Z",
               "EditorCaption": ""

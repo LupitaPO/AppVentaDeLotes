@@ -8,16 +8,16 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Modal, 
+  Modal,
   Pressable,
-  Dimensions 
+  Dimensions
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // imports para idiomas 
 import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import i18n, {changeLanguage} from "../i18n";
+import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
 ///////////////////////////////////////////////////
 
@@ -34,20 +34,20 @@ const API_URL = "http://www.tulote.somee.com";
 
 
 const Ventas = ({ navigation, route }) => {
-  
-  // funcion de idiomas //////////////////////////////////////////////
-  
-      const [isMenuOpen, setIsMenuOpen] = useState(false);
-      const [language,setlanguage] = useState<Languages>("es");
-      const handlechangeLanguage = ()=> {
-        const lang: Languages = language === "en" ? "es" :"en";
-        changeLanguage(lang);
-        setlanguage(lang);
-      }  
-      
-//////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////
+  // funcion de idiomas //////////////////////////////////////////////
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [language, setlanguage] = useState<Languages>("es");
+  const handlechangeLanguage = () => {
+    const lang: Languages = language === "en" ? "es" : "en";
+    changeLanguage(lang);
+    setlanguage(lang);
+  }
+
+  //////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////
   // Estado para abrir o cerrar el modal con el detalle del cronograma.
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -94,8 +94,8 @@ const Ventas = ({ navigation, route }) => {
     return venta?.IdVenta ?? venta?.idVenta ?? venta?.Id ?? venta?.id;
   };
 
-///////////////////////////////////////////////////////////////////////////////
-//funcion para obtener el nombre del cliente ///////////////////////
+  ///////////////////////////////////////////////////////////////////////////////
+  //funcion para obtener el nombre del cliente ///////////////////////
   // Consulta la lista de clientes desde la API y la guarda en memoria local.
   const cargarClientes = async () => {
     try {
@@ -142,9 +142,9 @@ const Ventas = ({ navigation, route }) => {
     };
     inicializar();
   }, [idUsuario]);
-//////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////
   // Recupera las ventas del sistema y filtra solo las que pertenecen al usuario actual.
   const cargarVentas = async () => {
     try {
@@ -153,10 +153,10 @@ const Ventas = ({ navigation, route }) => {
       const data = await response.json();
       const ventasUsuario = Array.isArray(data)
         ? data.filter(
-            (venta) =>
-              venta.IdUsuario?.toString() === idUsuario?.toString() ||
-              venta.idUsuario?.toString() === idUsuario?.toString(),
-          )
+          (venta) =>
+            venta.IdUsuario?.toString() === idUsuario?.toString() ||
+            venta.idUsuario?.toString() === idUsuario?.toString(),
+        )
         : [];
       setVentas(ventasUsuario);
       return ventasUsuario;
@@ -171,39 +171,39 @@ const Ventas = ({ navigation, route }) => {
 
   // Carga el cronograma relacionado al usuario y adapta la respuesta si viene en distintos formatos.
   const cargarCronogramaUsuario = async () => {
-  try {
-    setCargandoCronograma(true);
-    
-    const response = await fetch(`${API_URL}/Cronograma/cronograma_ListarPorVenta/${idUsuario}`);
-    
-    // Leemos la respuesta como texto primero para evitar errores de parseo
-    const textoRespuesta = await response.text();
-    
-    if (response.ok && textoRespuesta) {
-      const data = JSON.parse(textoRespuesta);
-      
-      // SI EL PROBLEMA ES EL ARRAY, HACEMOS ESTA DOBLE VERIFICACIÓN:
-      let listaFinal = [];
-      if (Array.isArray(data)) {
-        listaFinal = data;
-      } else if (data && typeof data === 'object' && data.Table) { 
-        // A veces los DataTables de C# vienen envueltos en una propiedad "Table"
-        listaFinal = data.Table;
-      }
+    try {
+      setCargandoCronograma(true);
 
-      setCronogramaTodos(listaFinal);
-      return listaFinal;
-    } else {
+      const response = await fetch(`${API_URL}/Cronograma/cronograma_ListarPorVenta/${idUsuario}`);
+
+      // Leemos la respuesta como texto primero para evitar errores de parseo
+      const textoRespuesta = await response.text();
+
+      if (response.ok && textoRespuesta) {
+        const data = JSON.parse(textoRespuesta);
+
+        // SI EL PROBLEMA ES EL ARRAY, HACEMOS ESTA DOBLE VERIFICACIÓN:
+        let listaFinal = [];
+        if (Array.isArray(data)) {
+          listaFinal = data;
+        } else if (data && typeof data === 'object' && data.Table) {
+          // A veces los DataTables de C# vienen envueltos en una propiedad "Table"
+          listaFinal = data.Table;
+        }
+
+        setCronogramaTodos(listaFinal);
+        return listaFinal;
+      } else {
+        setCronogramaTodos([]);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error procesando cronograma:", error);
       setCronogramaTodos([]);
-      return [];
+    } finally {
+      setCargandoCronograma(false);
     }
-  } catch (error) {
-    console.error("Error procesando cronograma:", error);
-    setCronogramaTodos([]);
-  } finally {
-    setCargandoCronograma(false);
-  }
-};
+  };
 
 
   // Filtra las cuotas del cronograma para quedarnos solo con las de una venta concreta.
@@ -242,9 +242,9 @@ const Ventas = ({ navigation, route }) => {
     setSelectedVenta(venta);
     setCronograma(filtrarCronogramaPorVenta(venta));
   };
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//Aqui se genera los PDF ///////////////////////////////////////////////////////////////////////////////
+  //Aqui se genera los PDF ///////////////////////////////////////////////////////////////////////////////
   // Genera un PDF con el cronograma visible de la venta seleccionada y lo comparte.
   const generarPDF = async () => {
     if (!cronograma || cronograma.length === 0) {
@@ -293,19 +293,19 @@ const Ventas = ({ navigation, route }) => {
       Alert.alert("Error", "No se pudo generar el PDF.");
     }
   };
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/// funcion para cerra sesion //////////////////////////////////////////////////////////////////////////
+  /// funcion para cerra sesion //////////////////////////////////////////////////////////////////////////
 
-// Reinicia el historial de navegación y envía al usuario a la pantalla de login.
-const cerrarSesion = () => {
+  // Reinicia el historial de navegación y envía al usuario a la pantalla de login.
+  const cerrarSesion = () => {
     // Simplemente redirigimos y reseteamos el historial
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }], // Cambia 'Login' por el nombre exacto de tu pantalla inicial
     });
   };
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   return (
     <View style={styles.mainContainer}>
@@ -318,48 +318,48 @@ const cerrarSesion = () => {
           <MaterialCommunityIcons name="sign-real-estate" size={28} color="#069488" />
         </View>
         {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
-  {/* funcion de boton desplegable patra idioma y exit */}
+        {/* funcion de boton desplegable patra idioma y exit */}
 
-      {/* Menú flotante para acciones rápidas: idioma y cerrar sesión. */}
-      <View style={styles.containerFlotante}>
-        <TouchableOpacity 
-          style={styles.btnPrincipal} 
-          onPress={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          <MaterialIcons 
-          name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
-          size={28} 
-          color="white" 
-          />
-        </TouchableOpacity>
-        {isMenuOpen && (
-          <View style={styles.menuDesplegado}>
+        {/* Menú flotante para acciones rápidas: idioma y cerrar sesión. */}
+        <View style={styles.containerFlotante}>
+          <TouchableOpacity
+            style={styles.btnPrincipal}
+            onPress={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <MaterialIcons
+              name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
+              size={28}
+              color="white"
+            />
+          </TouchableOpacity>
+          {isMenuOpen && (
+            <View style={styles.menuDesplegado}>
 
-            <View>
-              <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
-                <Fontisto name="world-o" size={25}/>
-              </TouchableOpacity>
+              <View>
+                <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
+                  <Fontisto name="world-o" size={25} />
+                </TouchableOpacity>
+              </View>
+              <View>
+                <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
+                  <MaterialIcons
+                    name="exit-to-app"
+                    size={28}
+                    color="white"
+                  />
+                </TouchableOpacity>
+              </View>
+
             </View>
-            <View>
-              <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
-                <MaterialIcons
-                name="exit-to-app"
-                size={28}
-                color="white"
-                />
-              </TouchableOpacity>
-            </View>
+          )}
 
-          </View>
-        )}
-        
-      </View>
-  {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+        </View>
+        {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
         <Text style={styles.sectionTitle}>Toca una venta para ver el cronograma</Text>
-        
+
         {/* Lista desplazable con todas las ventas asociadas al usuario. */}
-        <ScrollView 
-          style={styles.scrollVentas} 
+        <ScrollView
+          style={styles.scrollVentas}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
         >
@@ -370,45 +370,53 @@ const cerrarSesion = () => {
           ) : (
             ventas.map((venta, index) => (
               /* Cada tarjeta representa una venta y al tocarla se abre su cronograma. */
-              <TouchableOpacity 
-                key={index} 
-                style={styles.card} 
+              <TouchableOpacity
+                key={index}
+                style={styles.card}
                 onPress={() => manejarSeleccion(venta)}
               >
                 <View style={styles.cardHeader}>
-                   <View style={styles.loteInfo}>
-                      <MaterialCommunityIcons name="map-marker-radius" size={20} color="#069488" />
-                      <View style={{marginLeft: 8}}>
-                        <Text style={styles.cardLabel}>LOTE</Text>
-                        <Text style={styles.cardValue}>{venta.IdLote ?? "N/A"}</Text>
-                      </View>
-                   </View>
-                   <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
+                  <View style={styles.loteInfo}>
+                    <MaterialCommunityIcons name="map-marker-radius" size={20} color="#069488" />
+                    <View style={{ marginLeft: 8 }}>
+                      <Text style={styles.cardLabel}>LOTE</Text>
+                      <Text style={styles.cardValue}>{venta.IdLote ?? "N/A"}</Text>
+                    </View>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
                 </View>
 
                 <View style={styles.cardFooter}>
-                   <View style={styles.priceContainer}>
-                      <Text style={styles.priceText}>${venta.PrecioVenta ?? "0.00"}</Text>
-                      <Text style={styles.subtext}>Cliente       : {obtenerNombreCliente(venta.IdCliente)}</Text>
-                      <Text style={styles.subtext}>Tipo Venta: {venta.TipoVenta}</Text>
-                      <Text style={styles.subtext}>Tipo pago : {venta.TipoPago}</Text>
-                      <Text style={styles.subtext}>Inicial        : {venta.MontoInicial}</Text>
-                   </View>
-                   <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{venta.Estadoventa ?? "Activo"}</Text>
-                   </View>
+                  <View style={styles.priceContainer}>
+                    <Text style={styles.priceText}>${venta.PrecioVenta ?? "0.00"}</Text>
+                    <Text style={styles.subtext}>Cliente       : {obtenerNombreCliente(venta.IdCliente)}</Text>
+                    <Text style={styles.subtext}>Tipo Venta: {venta.TipoVenta}</Text>
+                    <Text style={styles.subtext}>Tipo pago : {venta.TipoPago}</Text>
+                    <Text style={styles.subtext}>Inicial        : {venta.MontoInicial}</Text>
+                  </View>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{venta.Estadoventa ?? "Activo"}</Text>
+                  </View>
                 </View>
               </TouchableOpacity>
             ))
           )}
         </ScrollView>
+
       </View>
+
 
       {/* Indicador visual inferior para invitar a deslizar la lista. */}
       {/* PIE DE PÁGINA (OPCIONAL) */}
       <View style={styles.footerHint}>
         <MaterialCommunityIcons name="gesture-swipe-up" size={20} color="#999" />
         <Text style={styles.footerText}>Desliza para ver más lotes</Text>
+      </View>
+
+      <View style={styles.ctnbtn}>
+        <TouchableOpacity onPress={()=> navigation.navigate("RegistrarVenta")} style={styles.btnregistrar}>
+          <Text>REGISTRAR</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Modal inferior donde se muestran las cuotas de la venta seleccionada. */}
@@ -443,32 +451,32 @@ const cerrarSesion = () => {
               <ScrollView contentContainerStyle={styles.modalScroll}>
                 <View style={styles.grid}>
                   {cronograma.map((item, i) => (
-                    <TouchableOpacity 
-    key={i} 
-    style={styles.miniCard} 
-    onPress={() => {
-      // Cierra primero el modal antes de navegar a la pantalla del detalle.
-      setModalVisible(false); // Cierra el modal actual
+                    <TouchableOpacity
+                      key={i}
+                      style={styles.miniCard}
+                      onPress={() => {
+                        // Cierra primero el modal antes de navegar a la pantalla del detalle.
+                        setModalVisible(false); // Cierra el modal actual
 
-      // validacion para evitar q se ingrese a pagar un monto que ya este pagado 
-      if (item.EstadoCuota === "Pagado"){
-        alert("Esta cuota ya esta pagada.")
-      }else{
-        navigation.navigate("DetallePago", { cuota: item, onRefresh: () => cargarDatosIniciales() }); // Te lleva a la nueva pantalla
-      }
-    }}
-  >
-    <View style={styles.cuotaHeader}>
-      <Text style={styles.cuotaTitle}>Cuota {i + 1}</Text>
-      <MaterialCommunityIcons 
-        name={item.EstadoCuota === 'Pagado' ? "check-decagram" : "clock-outline"} 
-        size={16} 
-        color={item.EstadoCuota === 'Pagado' ? "#27ae60" : "#f39c12"} 
-      />
-    </View>
-    <Text style={styles.cuotaMonto}>${item.MontoCuota}</Text>
-    <Text style={styles.cuotaFecha}>{item.FechaVencimiento}</Text>
-  </TouchableOpacity>
+                        // validacion para evitar q se ingrese a pagar un monto que ya este pagado 
+                        if (item.EstadoCuota === "Pagado") {
+                          alert("Esta cuota ya esta pagada.")
+                        } else {
+                          navigation.navigate("DetallePago", { cuota: item, onRefresh: () => cargarDatosIniciales() }); // Te lleva a la nueva pantalla
+                        }
+                      }}
+                    >
+                      <View style={styles.cuotaHeader}>
+                        <Text style={styles.cuotaTitle}>Cuota {i + 1}</Text>
+                        <MaterialCommunityIcons
+                          name={item.EstadoCuota === 'Pagado' ? "check-decagram" : "clock-outline"}
+                          size={16}
+                          color={item.EstadoCuota === 'Pagado' ? "#27ae60" : "#f39c12"}
+                        />
+                      </View>
+                      <Text style={styles.cuotaMonto}>${item.MontoCuota}</Text>
+                      <Text style={styles.cuotaFecha}>{item.FechaVencimiento}</Text>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </ScrollView>
@@ -478,25 +486,25 @@ const cerrarSesion = () => {
       </Modal>
     </View>
   );
-}; 
+};
 
 const styles = StyleSheet.create({
-    // Estilos del menú flotante superior derecho.
+  // Estilos del menú flotante superior derecho.
   containerFlotante: {
     position: 'absolute',
     top: 40,           // Ajusta según la pantalla
     right: 20,
     zIndex: 999,       // Siempre al frente
     alignItems: 'center',
-    
-    
+
+
   },
   menuDesplegado: {
     // Los botones aparecen antes (arriba) del principal, 
     // o puedes ponerlos después para que bajen.
-    alignItems:"center",
-    marginBottom: 8, 
-    gap: 10,          
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 10,
   },
   btnPrincipal: {
     backgroundColor: '#333', // Un color neutro o el de tu app
@@ -509,11 +517,11 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.3,
   },
-    // estilos de exit y idioma :
-  idioma:{
-    top:5,   // Separación del borde inferior
-    
-    marginTop:5,
+  // estilos de exit y idioma :
+  idioma: {
+    top: 5,   // Separación del borde inferior
+
+    marginTop: 5,
     backgroundColor: '#22c5aa', // Color de fondo del botón
     width: 45,
     height: 45,
@@ -525,18 +533,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 999,  
+    zIndex: 999,
   },
   btnsalir: {
     backgroundColor: "#f30a0a9c",
-    marginTop:5,
+    marginTop: 5,
     height: 40,
     width: 40,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
   },
-// Estilos base de la pantalla principal y tarjetas de ventas.
+  // Estilos base de la pantalla principal y tarjetas de ventas.
   mainContainer: { flex: 1, backgroundColor: "#e4f5f3" },
   ventasContainer: {
     height: height * 0.6, // Ocupa el 60% de la pantalla
@@ -555,7 +563,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, color: '#666', marginBottom: 15 },
   scrollVentas: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-  
+
   card: {
     backgroundColor: '#f8f9fa',
     borderRadius: 15,
@@ -568,7 +576,7 @@ const styles = StyleSheet.create({
   loteInfo: { flexDirection: 'row', alignItems: 'center' },
   cardLabel: { fontSize: 10, color: '#999', fontWeight: 'bold' },
   cardValue: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  
+
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   priceText: { fontSize: 18, fontWeight: 'bold', color: '#069488' },
   subtext: { fontSize: 12, color: '#777' },
@@ -581,17 +589,17 @@ const styles = StyleSheet.create({
 
   // Estilos del modal y de las cuotas del cronograma.
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContent: { 
-    backgroundColor: '#fff', 
-    borderTopLeftRadius: 30, 
-    borderTopRightRadius: 30, 
-    height: '75%', 
-    padding: 24 
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    height: '75%',
+    padding: 24
   },
-  modalHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -619,7 +627,10 @@ const styles = StyleSheet.create({
   cuotaTitle: { fontSize: 11, color: '#888', fontWeight: 'bold', textTransform: 'uppercase' },
   cuotaMonto: { fontSize: 17, fontWeight: 'bold', color: '#2c3e50' },
   cuotaFecha: { fontSize: 12, color: '#999', marginTop: 4 },
-  modalLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' }
+  modalLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  label:{color:"#fff"},
+  btnregistrar: { width: "80%", height: 60, backgroundColor: "#27ae60", justifyContent: "center", alignItems: "center",borderRadius:10},
+  ctnbtn:{top:100,alignItems:"center"}
 });
 
 export default Ventas
