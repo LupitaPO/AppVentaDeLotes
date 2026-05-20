@@ -74,8 +74,9 @@ namespace APILote.Controllers
         }
 
         [HttpGet]
-        [Route("reporte_Clientes/{datoBuscar}")]
-        public string reporte_Clientes(string datoBuscar)
+        // Permite llamar /Reporte/reporte_Clientes o /Reporte/reporte_Clientes/{datoBuscar}
+        [Route("reporte_Clientes/{datoBuscar?}")]
+        public string reporte_Clientes(string datoBuscar = "*")
         {
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();
@@ -86,8 +87,8 @@ namespace APILote.Controllers
         }
 
         [HttpGet]
-        [Route("reporte_Asesores/{datoBuscar}")]
-        public string reporte_Asesores(string datoBuscar)
+        [Route("reporte_Asesores/{datoBuscar?}")]
+        public string reporte_Asesores(string datoBuscar = "*" )
         {
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();
