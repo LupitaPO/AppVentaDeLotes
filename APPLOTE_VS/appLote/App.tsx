@@ -23,6 +23,9 @@ import RegistrarVenta from "./screen/Ventas/RegistrarVenta";
 import ModificarUsuario from "./screen/Usuarios/ModificarUsuario";
 import RegistrarUsuario from "./screen/Usuarios/RegistrarUsuario";
 import DetallePago from "./screen/DetallePago";
+import MenuReportes from "./screen/MenuReportes";
+import ReporteClientes from "./screen/ReporteClientes";
+import ReporteAsesores from "./screen/ReporteAsesores";
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -54,6 +57,10 @@ export default function App() {
         <Stack.Screen name="RegistrarUsuario" component={RegistrarUsuario} />
         <Stack.Screen name="DetallePago" component={DetallePago} />
         <Stack.Screen name="MainTabs" component={bottomTabs} />
+        <Stack.Screen name="MenuReportes" component={MenuReportes} />
+        <Stack.Screen name="Reportes" component={MenuReportes} />
+        <Stack.Screen name="ReporteClientes" component={ReporteClientes} />
+        <Stack.Screen name="ReporteAsesores" component={ReporteAsesores} />
       </Stack.Navigator>
     </NavigationContainer>
   );
