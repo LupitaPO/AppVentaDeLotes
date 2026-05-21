@@ -17,7 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import styles from "./ReporteClientesStyles";
 
 // ATAMAINE: URL base del backend .NET donde consultamos la lista real de clientes.
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 // ATAMAINE: Datos fijos que usamos para personalizar la cabecera y pie del PDF.
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
 const EMPRESA_CONTACTO = "www.tulote.somee.com";
