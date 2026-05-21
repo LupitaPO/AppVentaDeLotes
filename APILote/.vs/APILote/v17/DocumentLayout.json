@@ -32,7 +32,11 @@
               "RelativeDocumentMoniker": "APILote\\DATA\\UsuarioData.cs",
               "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
               "RelativeToolTip": "APILote\\DATA\\UsuarioData.cs",
+<<<<<<< HEAD
               "ViewState": "AgIAAFwAAAAAAAAAAADgv3MAAAANAAAAAAAAAA==",
+=======
+              "ViewState": "AgIAAFkAAAAAAAAAAAAuwGkAAAAgAAAAAAAAAA==",
+>>>>>>> 376a55e88182f157007fd159e6dd33d29c8f7f33
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-20T15:01:58.697Z",
               "EditorCaption": ""
@@ -47,8 +51,7 @@
               "RelativeToolTip": "APILote\\Controllers\\UsuarioController.cs",
               "ViewState": "AgIAAFMAAAAAAAAAAAAiwHIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-15T16:15:10.319Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-15T16:15:10.319Z"
             }
           ]
         },
