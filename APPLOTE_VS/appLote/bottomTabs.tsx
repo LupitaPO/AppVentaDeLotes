@@ -19,6 +19,7 @@ const Tab = createBottomTabNavigator();
 const bottomTabs = ({ route }) => {
   const { nombre, rol, idUsuario } = route.params || {};
 
+  console.log(rol,idUsuario,nombre)
   return (
     <Tab.Navigator
       screenOptions={{
