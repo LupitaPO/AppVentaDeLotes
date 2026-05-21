@@ -3,11 +3,15 @@
   "WorkspaceRootPath": "D:\\AppVentaDeLotes\\APILote\\",
   "Documents": [
     {
+<<<<<<< Updated upstream
 <<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\data\\usuariodata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\data\\usuariodata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+<<<<<<< Updated upstream
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
 =======
@@ -26,6 +30,22 @@
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|c:\\users\\juan hc\\desktop\\appventadelotes\\apilote\\apilote\\controllers\\reportecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\reportecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
 >>>>>>> 376a55e88182f157007fd159e6dd33d29c8f7f33
+=======
+      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\reportecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\reportecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\data\\reportedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\data\\reportedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|d:\\appventadelotes\\apilote\\apilote\\controllers\\ventacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\ventacontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+>>>>>>> Stashed changes
     }
   ],
   "DocumentGroupContainers": [
@@ -35,11 +55,15 @@
       "DocumentGroups": [
         {
           "DockedWidth": 564,
+<<<<<<< Updated upstream
 <<<<<<< HEAD
           "SelectedChildIndex": 1,
 =======
           "SelectedChildIndex": 2,
 >>>>>>> 376a55e88182f157007fd159e6dd33d29c8f7f33
+=======
+          "SelectedChildIndex": 5,
+>>>>>>> Stashed changes
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,17 +74,19 @@
 <<<<<<< HEAD
 =======
               "DocumentIndex": 2,
-              "Title": "Usuarios.cs",
-              "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Models\\Usuarios.cs",
-              "RelativeDocumentMoniker": "APILote\\Models\\Usuarios.cs",
-              "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Models\\Usuarios.cs",
-              "RelativeToolTip": "APILote\\Models\\Usuarios.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAqwAcAAAAuAAAAAAAAAA==",
+              "Title": "ReporteData.cs",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\ReporteData.cs",
+              "RelativeDocumentMoniker": "APILote\\DATA\\ReporteData.cs",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\ReporteData.cs",
+              "RelativeToolTip": "APILote\\DATA\\ReporteData.cs",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAmwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-20T15:02:26.31Z"
+              "WhenOpened": "2026-05-20T16:55:20.308Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
+<<<<<<< Updated upstream
 >>>>>>> 376a55e88182f157007fd159e6dd33d29c8f7f33
               "DocumentIndex": 0,
               "Title": "UsuarioData.cs",
@@ -75,8 +101,30 @@
               "RelativeToolTip": "APILote\\DATA\\UsuarioData.cs",
               "ViewState": "AgIAABgAAAAAAAAAAAAowD4AAAAQAAAAAAAAAA==",
 >>>>>>> 376a55e88182f157007fd159e6dd33d29c8f7f33
+=======
+              "DocumentIndex": 1,
+              "Title": "ReporteController.cs",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ReporteController.cs",
+              "RelativeDocumentMoniker": "APILote\\Controllers\\ReporteController.cs",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ReporteController.cs",
+              "RelativeToolTip": "APILote\\Controllers\\ReporteController.cs",
+              "ViewState": "AgIAAFcAAAAAAAAAAAAmwAAAAAAAAAAAAAAAAA==",
+>>>>>>> Stashed changes
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-20T15:01:58.697Z",
+              "WhenOpened": "2026-05-20T17:10:39.782Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "VentaController.cs",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\VentaController.cs",
+              "RelativeDocumentMoniker": "APILote\\Controllers\\VentaController.cs",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\VentaController.cs",
+              "RelativeToolTip": "APILote\\Controllers\\VentaController.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAowAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-20T16:55:24.152Z",
               "EditorCaption": ""
             },
             {
@@ -84,17 +132,19 @@
 <<<<<<< HEAD
 =======
               "DocumentIndex": 3,
-              "Title": "ReporteController.cs",
-              "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ReporteController.cs",
-              "RelativeDocumentMoniker": "APILote\\Controllers\\ReporteController.cs",
-              "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\ReporteController.cs",
-              "RelativeToolTip": "APILote\\Controllers\\ReporteController.cs",
-              "ViewState": "AgIAAEMAAAAAAAAAAAAcwE0AAAA5AAAAAAAAAA==",
+              "Title": "UsuarioController.cs",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs",
+              "RelativeDocumentMoniker": "APILote\\Controllers\\UsuarioController.cs",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs",
+              "RelativeToolTip": "APILote\\Controllers\\UsuarioController.cs",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAmwFcAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-15T16:15:15.778Z"
+              "WhenOpened": "2026-05-20T16:55:07.887Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
+<<<<<<< Updated upstream
 >>>>>>> 376a55e88182f157007fd159e6dd33d29c8f7f33
               "DocumentIndex": 1,
               "Title": "UsuarioController.cs",
@@ -103,8 +153,17 @@
               "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs*",
               "RelativeToolTip": "APILote\\Controllers\\UsuarioController.cs*",
               "ViewState": "AgIAAFkAAAAAAAAAAAAiwGUAAAAkAAAAAAAAAA==",
+=======
+              "DocumentIndex": 0,
+              "Title": "UsuarioData.cs",
+              "DocumentMoniker": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
+              "RelativeDocumentMoniker": "APILote\\DATA\\UsuarioData.cs",
+              "ToolTip": "D:\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
+              "RelativeToolTip": "APILote\\DATA\\UsuarioData.cs",
+              "ViewState": "AgIAAGIAAAAAAAAAAAAAwGwAAAANAAAAAAAAAA==",
+>>>>>>> Stashed changes
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-15T16:15:10.319Z",
+              "WhenOpened": "2026-05-20T16:54:31.582Z",
               "EditorCaption": ""
             }
           ]

@@ -97,15 +97,26 @@ namespace APILote.Controllers
             return jsoString;
         }
 
+<<<<<<< Updated upstream
         //nuevo 21 de mayo 2026
         [HttpGet]
         [Route("formulario_Listar")]
         public string formulario_Listar()
+=======
+        //nuevo 20 de mayo 2026
+        [HttpGet]
+        [Route("formularios_Listar")]
+        public string formulariosListar()
+>>>>>>> Stashed changes
         {
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();
             UsuarioData objCliente = new UsuarioData();
+<<<<<<< Updated upstream
             Datos = objCliente.formulario_Listar();
+=======
+            Datos = objCliente.formulariosListar();
+>>>>>>> Stashed changes
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }

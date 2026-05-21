@@ -19,6 +19,7 @@ import { PieChart } from "react-native-chart-kit";
 // Librería de íconos usada en tarjetas y elementos visuales del dashboard.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
+
 // Import actualmente presente en el archivo, aunque no forma parte del flujo visual del dashboard.
 import { symbolicate } from "react-native/types_generated/Libraries/LogBox/Data/LogBoxSymbolication";
 
@@ -198,9 +199,16 @@ const home = ({ route, navigation }) => {
                 <Fontisto name="world-o" size={25}/>
               </TouchableOpacity>
             </View>
+<<<<<<< Updated upstream
           <View>
               <TouchableOpacity  style={styles.Permisos} onPress={()=> navigation.navigate("Permisos")}>
                 <AntDesign name="setting" size={25}/>
+=======
+
+              <View>
+              <TouchableOpacity style={styles.idioma} onPress={()=> navigation.navigate("Permisos")}>
+                <MaterialIcons name="perm-data-setting" size={25}/>
+>>>>>>> Stashed changes
               </TouchableOpacity>
             </View>
 

@@ -109,13 +109,23 @@ namespace APILote.DATA
             }
         }
 
+<<<<<<< Updated upstream
         //nuevo 21 de mayo 2026
         public DataTable formulario_Listar()
+=======
+
+        //nuevo 20 de mayo 2026
+        public DataTable formulariosListar()
+>>>>>>> Stashed changes
         {
             try
             {
                 DataTable Datos = new DataTable();
+<<<<<<< Updated upstream
                 Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "formulario_Listar").Tables[0];
+=======
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "formularios_Listar_pa").Tables[0];
+>>>>>>> Stashed changes
                 return Datos;
             }
             catch (Exception ex)
@@ -123,5 +133,9 @@ namespace APILote.DATA
                 return null;
             }
         }
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     }
 }
