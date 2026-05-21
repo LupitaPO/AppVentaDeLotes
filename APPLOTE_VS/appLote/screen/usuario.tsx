@@ -66,7 +66,11 @@ const usuario = ({navigation, route}) => {
   };
 
   // Envía la solicitud para anular un usuario según su identificador.
-  const anularUsuario = async (IdUsuario) => {
+  const anularUsuario = async (objUsuario) => {
+    const esActivo = objUsuario.Estado === "A";
+    const accionTexto = esActivo ? "anular" : "restaurar";
+    const exitoTexto = esActivo ? "anulado" : "restaurado";
+
     try {
       const response = await fetch(`${API_URL}/Usuario/usuario_Anular/${IdUsuario}`, {
         method: "POST",
@@ -74,14 +78,14 @@ const usuario = ({navigation, route}) => {
           "Content-Type": "application/json",
         },
       });
-
+      
       if (response.ok) {
-        Alert.alert("Éxito", "Usuario anulado correctamente");
+        Alert.alert("Éxito", `Usuario ${exitoTexto} correctamente`);
         obtenerUsuarios();
       } else {
         const errorMsg = await response.text();
         console.log("Error del server:", errorMsg);
-        Alert.alert("Error", "No se pudo anular el Usuario");
+        Alert.alert("Error", `No se pudo ${accionTexto} el Usuario`);
       }
     } catch (error) {
       console.error("Error al anular Usuario:", error);
@@ -167,9 +171,9 @@ const cerrarSesion = () => {
           const nombreCompleto = [
             usuario.Nombre
           ]
-            .filter(Boolean)
-            .join(" ");
-
+          
+          const estaActivo = usuario.Estado === "A";
+          const textoBotonestado = estaActivo ? "Anular" : "Restaurar";
           return (
             /* Cada tarjeta representa un usuario y abre acciones de administración. */
             <TouchableOpacity
@@ -185,7 +189,7 @@ const cerrarSesion = () => {
                       onPress: () => anularUsuario(usuario.IdUsuario),
                     },
                     {
-                      text: "Modificar",
+                      text: textoBotonestado,
                       onPress: () =>
                         navigation.navigate("ModificarUsuario", {
                           asesor: usuario,
