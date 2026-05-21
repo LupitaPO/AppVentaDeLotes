@@ -88,7 +88,7 @@ const Ventas = ({ navigation, route }) => {
 
   // Catálogo de clientes para resolver el nombre completo a partir del IdCliente.
   const [listaClientes, setListaClientes] = useState([]);
-
+  
   // Normaliza diferentes posibles nombres de propiedad para obtener el id de una venta.
   const obtenerIdVenta = (venta) => {
     return venta?.IdVenta ?? venta?.idVenta ?? venta?.Id ?? venta?.id;
@@ -380,10 +380,10 @@ const Ventas = ({ navigation, route }) => {
                     <MaterialCommunityIcons name="map-marker-radius" size={20} color="#069488" />
                     <View style={{ marginLeft: 8 }}>
                       <Text style={styles.cardLabel}></Text>
-                      <Text style={styles.cardValue}>:{venta.Proyecto}</Text>
+                      <Text style={styles.subtext}>Proyecto:{venta.Proyecto}</Text>
                       <Text style={styles.cardLabel}>LOTE</Text>
-                     <Text style={styles.cardValue}>Manzana:{venta.Manzana}</Text>
-                      <Text style={styles.cardValue}>Número:{venta.CodigoLote}</Text>
+                     <Text style={styles.cardValue}>{venta.Manzana}{venta.NumeroLote}</Text>
+                      
                     </View>
                   </View>
                   <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
