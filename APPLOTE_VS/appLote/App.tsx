@@ -26,15 +26,10 @@ import DetallePago from "./screen/DetallePago";
 import MenuReportes from "./screen/MenuReportes";
 import ReporteClientes from "./screen/ReporteClientes";
 import ReporteAsesores from "./screen/ReporteAsesores";
-<<<<<<< Updated upstream
-import Permisos from "./screen/permisos";
-=======
-import permisos from "./screen/permisos";
 
-
->>>>>>> Stashed changes
-
+import Permisos from "./screen/permisos"
 const Stack = createStackNavigator();
+
 export default function App() {
   return (
     <NavigationContainer>
@@ -68,11 +63,9 @@ export default function App() {
         <Stack.Screen name="Reportes" component={MenuReportes} />
         <Stack.Screen name="ReporteClientes" component={ReporteClientes} />
         <Stack.Screen name="ReporteAsesores" component={ReporteAsesores} />
-<<<<<<< Updated upstream
+
         <Stack.Screen name="Permisos" component={Permisos} />
-=======
-        <Stack.Screen name="Permisos" component={permisos} />
->>>>>>> Stashed changes
+
       </Stack.Navigator>
     </NavigationContainer>
   );
