@@ -8,7 +8,7 @@ namespace APILote.DATA
         public DataTable cronograma_ListarPorVenta(int IdUsuario)
         {
             DataTable Datos = new DataTable();
-            Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "cronograma_ListarPorVenta_pa",IdUsuario).Tables[0];
+            Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "cronograma_ListarPorVenta_pa", IdUsuario).Tables[0];
             return Datos;
         }
     }

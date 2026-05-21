@@ -17,8 +17,8 @@ namespace APILote.Controllers
         }
         [HttpPost]
         [Route("lote_Actualizar")]
-        
-        public string lote_Actualizar([FromBody] LoteActualizarRequest request )
+
+        public string lote_Actualizar([FromBody] LoteActualizarRequest request)
         {
             LoteData objloteData = new LoteData();
             return objloteData.loteActualizar(request.Lote, request.Medida);
@@ -96,14 +96,15 @@ namespace APILote.Controllers
             return jsostring;
         }
 
-        
+
 
         [HttpPost]
         [Route("lote_Registrar")]
-        public string lote_Registrar([FromBody] Lotes objlote) {
-        LoteData objlotedata = new LoteData();
-         // Aquí es donde "desarmas" el paquete para mandarlo a tu Data
-        return objlotedata.loteRegistrar(objlote, objlote.Medida);
+        public string lote_Registrar([FromBody] Lotes objlote)
+        {
+            LoteData objlotedata = new LoteData();
+            // Aquí es donde "desarmas" el paquete para mandarlo a tu Data
+            return objlotedata.loteRegistrar(objlote, objlote.Medida);
         }
 
     }
