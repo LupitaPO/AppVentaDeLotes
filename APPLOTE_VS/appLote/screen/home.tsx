@@ -206,425 +206,425 @@ const home = ({ route, navigation }) => {
               <TouchableOpacity style={styles.Permisos} onPress={() => navigation.navigate("Permisos")}>
                 <AntDesign name="setting" size={25} />
               </TouchableOpacity>
-              </View>
-
-                <View>
-                <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
-                  <MaterialIcons
-                    name="exit-to-app"
-                    size={28}
-                    color="white"
-                  />
-                </TouchableOpacity>
-              </View>
-
             </View>
-        )}
+
+            <View>
+              <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
+                <MaterialIcons
+                  name="exit-to-app"
+                  size={28}
+                  color="white"
+                />
+              </TouchableOpacity>
+            </View>
 
           </View>
-  {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+        )}
 
-
-
-        {/* Contenedor desplazable del dashboard con soporte para refresco manual. */}
-        <ScrollView
-          style={{ flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={cargarDashboard} />
-          }
-        >
-          {/* El contenido del resumen solo se muestra para roles distintos de Cliente. */}
-          {rol !== "Cliente" && (
-            <View
-              style={styles.container}
-
-            // refreshControl={<RefreshControl
-            // refreshing={refreshing}
-            // onRefresh={cargarDashboard} />}
-            >
-              <Text style={styles.header}>{i18n.t("Dmsj")}</Text>
-
-              {/* Zona de Dinero */}
-
-              {/* Tarjeta principal con el valor total esperado en cartera futura. */}
-              <View style={styles.mainBox}>
-                <Text style={styles.mainTitle}>{i18n.t("Dmsj2")}</Text>
-                <Text style={styles.mainAmount}>
-                  S/ {datos?.CarteraTotalFutura || "0.00"}
-                </Text>
-              </View>
-
-              {/* Sección de gráfica circular para comparar lotes vendidos y libres. */}
-              <View style={styles.chartBox}>
-                <Text style={styles.chartTitle}>{i18n.t("Dmsj3")}</Text>
-                <PieChart
-                  data={pieData} // <--- AQUÍ ES DONDE SE LLAMA A LA CONSTANTE
-                  width={screenWidth - 60}
-                  height={200}
-                  chartConfig={{
-                    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                  }}
-                  accessor={"population"} // Le dice a la gráfica que use el número de 'population'
-                  backgroundColor={"transparent"}
-                  paddingLeft={"15"}
-                  absolute // Para que muestre el número exacto (ej. 50) y no solo el %
-                />
-              </View>
-
-              {/* Grid de Métricas */}
-              {/* Cuadrícula de indicadores rápidos del estado comercial y financiero. */}
-              <View style={styles.grid}>
-                <DashCard
-                  titulo={i18n.t("card1")}
-                  valor={`S/ ${datos?.RecaudadoHistorico}`}
-                  icono="cash-check"
-                  color="#4CAF50"
-                />
-
-                <DashCard
-                  titulo={i18n.t("card2")}
-                  valor={`S/ ${datos?.DineroVencidoHoy}`}
-                  icono="alert-circle"
-                  color="#F44336"
-                />
-
-                <DashCard
-                  titulo={i18n.t("card3")}
-                  valor={`${datos?.TotalVendidos} / ${datos?.TotalLotes}`}
-                  icono="home-group"
-                  color="#2196F3"
-                />
-
-                <DashCard
-                  titulo={i18n.t("card4")}
-                  valor={datos?.CantidadDeudores}
-                  icono="account-alert"
-                  color="#FF9800"
-                />
-              </View>
-
-              {/* Botón estilo "pill" para acceder al menú de reportes (solo diseño visual). */}
-              <View style={styles.reportPillWrapper}>
-                <TouchableOpacity
-                  style={styles.reportPill}
-                  onPress={() =>
-                    navigation.navigate("MenuReportes", {
-                      rol,
-                      nombre,
-                      idUsuario: route?.params?.idUsuario,
-                    })
-                  }
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.reportPillAccent} />
-                  <MaterialCommunityIcons name="file-chart" size={20} color="#0f766e" style={{ marginRight: 10 }} />
-                  <Text style={styles.reportPillText}>Reportes</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Espacio extra para que el contenido no quede pegado a la barra inferior. */}
-              <View style={{ height: tabBarHeight + 20 }}></View>
-            </View>
-          )}
-        </ScrollView>
       </View>
-      );
+      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+
+
+
+      {/* Contenedor desplazable del dashboard con soporte para refresco manual. */}
+      <ScrollView
+        style={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={cargarDashboard} />
+        }
+      >
+        {/* El contenido del resumen solo se muestra para roles distintos de Cliente. */}
+        {rol !== "Cliente" && (
+          <View
+            style={styles.container}
+
+          // refreshControl={<RefreshControl
+          // refreshing={refreshing}
+          // onRefresh={cargarDashboard} />}
+          >
+            <Text style={styles.header}>{i18n.t("Dmsj")}</Text>
+
+            {/* Zona de Dinero */}
+
+            {/* Tarjeta principal con el valor total esperado en cartera futura. */}
+            <View style={styles.mainBox}>
+              <Text style={styles.mainTitle}>{i18n.t("Dmsj2")}</Text>
+              <Text style={styles.mainAmount}>
+                S/ {datos?.CarteraTotalFutura || "0.00"}
+              </Text>
+            </View>
+
+            {/* Sección de gráfica circular para comparar lotes vendidos y libres. */}
+            <View style={styles.chartBox}>
+              <Text style={styles.chartTitle}>{i18n.t("Dmsj3")}</Text>
+              <PieChart
+                data={pieData} // <--- AQUÍ ES DONDE SE LLAMA A LA CONSTANTE
+                width={screenWidth - 60}
+                height={200}
+                chartConfig={{
+                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                }}
+                accessor={"population"} // Le dice a la gráfica que use el número de 'population'
+                backgroundColor={"transparent"}
+                paddingLeft={"15"}
+                absolute // Para que muestre el número exacto (ej. 50) y no solo el %
+              />
+            </View>
+
+            {/* Grid de Métricas */}
+            {/* Cuadrícula de indicadores rápidos del estado comercial y financiero. */}
+            <View style={styles.grid}>
+              <DashCard
+                titulo={i18n.t("card1")}
+                valor={`S/ ${datos?.RecaudadoHistorico}`}
+                icono="cash-check"
+                color="#4CAF50"
+              />
+
+              <DashCard
+                titulo={i18n.t("card2")}
+                valor={`S/ ${datos?.DineroVencidoHoy}`}
+                icono="alert-circle"
+                color="#F44336"
+              />
+
+              <DashCard
+                titulo={i18n.t("card3")}
+                valor={`${datos?.TotalVendidos} / ${datos?.TotalLotes}`}
+                icono="home-group"
+                color="#2196F3"
+              />
+
+              <DashCard
+                titulo={i18n.t("card4")}
+                valor={datos?.CantidadDeudores}
+                icono="account-alert"
+                color="#FF9800"
+              />
+            </View>
+
+            {/* Botón estilo "pill" para acceder al menú de reportes (solo diseño visual). */}
+            <View style={styles.reportPillWrapper}>
+              <TouchableOpacity
+                style={styles.reportPill}
+                onPress={() =>
+                  navigation.navigate("MenuReportes", {
+                    rol,
+                    nombre,
+                    idUsuario: route?.params?.idUsuario,
+                  })
+                }
+                activeOpacity={0.85}
+              >
+                <View style={styles.reportPillAccent} />
+                <MaterialCommunityIcons name="file-chart" size={20} color="#0f766e" style={{ marginRight: 10 }} />
+                <Text style={styles.reportPillText}>Reportes</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Espacio extra para que el contenido no quede pegado a la barra inferior. */}
+            <View style={{ height: tabBarHeight + 20 }}></View>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
 
 };
 
-      const styles = StyleSheet.create({
+const styles = StyleSheet.create({
 
-        // Estilos del menú flotante superior derecho.
-        containerFlotante: {
-        position: 'absolute',
-      top: 40,           // Ajusta según la pantalla
-      right: 20,
-      zIndex: 999,       // Siempre al frente
-      alignItems: 'center',
-    
-    
-  },
-      menuDesplegado: {
-        // Los botones aparecen antes (arriba) del principal, 
-        // o puedes ponerlos después para que bajen.
-        alignItems:"center",
-      marginBottom: 8,
-      gap: 10,          
-  },
-      btnPrincipal: {
-        backgroundColor: '#333', // Un color neutro o el de tu app
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      justifyContent: 'center',
-      alignItems: 'center',
-      elevation: 5,
-      shadowColor: '#000',
-      shadowOpacity: 0.3,
-  },
-      // estilos de exit y idioma :
-      idioma:{
-        top:5,   // Separación del borde inferior
+  // Estilos del menú flotante superior derecho.
+  containerFlotante: {
+    position: 'absolute',
+    top: 40,           // Ajusta según la pantalla
+    right: 20,
+    zIndex: 999,       // Siempre al frente
+    alignItems: 'center',
 
-      marginTop:5,
-      backgroundColor: '#22c5aa', // Color de fondo del botón
-      width: 45,
-      height: 45,
-      borderRadius: 28,     // Hace que sea circular
-      justifyContent: 'center',
-      alignItems: 'center',
-      elevation: 5,         // Sombra en Android
-      shadowColor: '#000',  // Sombra en iOS
-      shadowOffset: {width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      zIndex: 999,     // Asegura que esté por encima de otros elementos
+
   },
+  menuDesplegado: {
+    // Los botones aparecen antes (arriba) del principal, 
+    // o puedes ponerlos después para que bajen.
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 10,
+  },
+  btnPrincipal: {
+    backgroundColor: '#333', // Un color neutro o el de tu app
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+  },
+  // estilos de exit y idioma :
+  idioma: {
+    top: 5,   // Separación del borde inferior
 
-      Permisos:{
-        top:5,   // Separación del borde inferior
-
-      marginTop:5,
-      backgroundColor: '#22c5aa', // Color de fondo del botón
-      width: 45,
-      height: 45,
-      borderRadius: 28,     // Hace que sea circular
-      justifyContent: 'center',
-      alignItems: 'center',
-      elevation: 5,         // Sombra en Android
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      zIndex: 999,     // Asegura que esté por encima de otros elementos
+    marginTop: 5,
+    backgroundColor: '#22c5aa', // Color de fondo del botón
+    width: 45,
+    height: 45,
+    borderRadius: 28,     // Hace que sea circular
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,         // Sombra en Android
+    shadowColor: '#000',  // Sombra en iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 999,     // Asegura que esté por encima de otros elementos
   },
 
-      btnsalir: {
-        backgroundColor: "#f30a0a9c",
-      marginTop:5,
-      height: 40,
-      width: 40,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 10,
-  },
-      // Estilos generales del encabezado y del dashboard.
+  Permisos: {
+    top: 5,   // Separación del borde inferior
 
-      headerContainer: {
-        position: "relative",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 5,
-      backgroundColor: "#ffffff",
-      paddingTop: 40,
-      height: 99,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      elevation: 5,
+    marginTop: 5,
+    backgroundColor: '#22c5aa', // Color de fondo del botón
+    width: 45,
+    height: 45,
+    borderRadius: 28,     // Hace que sea circular
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,         // Sombra en Android
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 999,     // Asegura que esté por encima de otros elementos
   },
 
-      // Texto fijo del saludo del encabezado.
-      textheader: {
-        fontWeight: "500",
-      padding: 10,
-      color: "#069488",
-      fontSize: 17,
+  btnsalir: {
+    backgroundColor: "#f30a0a9c",
+    marginTop: 5,
+    height: 40,
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+  },
+  // Estilos generales del encabezado y del dashboard.
+
+  headerContainer: {
+    position: "relative",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 5,
+    backgroundColor: "#ffffff",
+    paddingTop: 40,
+    height: 99,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    elevation: 5,
   },
 
-      // Nombre del usuario mostrado en el encabezado.
-      textheader2: {
-        fontWeight: "bold",
-      fontSize: 22,
-      color: "#069488",
+  // Texto fijo del saludo del encabezado.
+  textheader: {
+    fontWeight: "500",
+    padding: 10,
+    color: "#069488",
+    fontSize: 17,
   },
 
-      // Contenedor principal del contenido del dashboard.
-      container: {
-        width: "100%",
-      minHeight: screenWidth,
-      backgroundColor: "#e4f5f3",
-      paddingTop: 20,
-      padding: 10,
-      paddingBottom: 50,
+  // Nombre del usuario mostrado en el encabezado.
+  textheader2: {
+    fontWeight: "bold",
+    fontSize: 22,
+    color: "#069488",
   },
 
-      // Título principal del resumen del panel.
-      header: {
-        fontSize: 22,
-      fontWeight: "bold",
-      marginBottom: 20,
-      color: "#069488",
+  // Contenedor principal del contenido del dashboard.
+  container: {
+    width: "100%",
+    minHeight: screenWidth,
+    backgroundColor: "#e4f5f3",
+    paddingTop: 20,
+    padding: 10,
+    paddingBottom: 50,
   },
 
-      // Tarjeta destacada para la métrica económica principal.
-      mainBox: {
-        backgroundColor: "#09caba",
-      elevation: 5,
-      shadowColor: "#000",
-      shadowOffset: {width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      padding: 20,
-      borderRadius: 15,
-      marginBottom: 20,
+  // Título principal del resumen del panel.
+  header: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#069488",
   },
 
-      // Etiqueta pequeña dentro de la tarjeta principal.
-      mainTitle: {
-        color: "#ffffff",
-      fontSize: 14,
-      textTransform: "uppercase",
+  // Tarjeta destacada para la métrica económica principal.
+  mainBox: {
+    backgroundColor: "#09caba",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    padding: 20,
+    borderRadius: 15,
+    marginBottom: 20,
   },
 
-      // Valor monetario principal mostrado en el dashboard.
-      mainAmount: {
-        color: "#FFF",
-      fontSize: 28,
-      fontWeight: "bold",
+  // Etiqueta pequeña dentro de la tarjeta principal.
+  mainTitle: {
+    color: "#ffffff",
+    fontSize: 14,
+    textTransform: "uppercase",
   },
 
-      // Distribución en grilla para las tarjetas de métricas.
-      grid: {
-        flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
+  // Valor monetario principal mostrado en el dashboard.
+  mainAmount: {
+    color: "#FFF",
+    fontSize: 28,
+    fontWeight: "bold",
   },
 
-      // Tarjeta pequeña individual de cada indicador.
-      card: {
-        backgroundColor: "#FFF",
-      width: "48%",
-      padding: 15,
-      borderRadius: 12,
-      marginBottom: 15,
-      flexDirection: "row",
-      alignItems: "center",
-      borderLeftWidth: 5,
+  // Distribución en grilla para las tarjetas de métricas.
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
 
-      // Contenedor del texto a la derecha del ícono en cada tarjeta métrica.
-      info: {
-        marginLeft: 10,
+  // Tarjeta pequeña individual de cada indicador.
+  card: {
+    backgroundColor: "#FFF",
+    width: "48%",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    borderLeftWidth: 5,
   },
 
-      // Título de una tarjeta métrica pequeña.
-      cardTitle: {
-        fontSize: 11,
-      color: "#666",
-      fontWeight: "600",
+  // Contenedor del texto a la derecha del ícono en cada tarjeta métrica.
+  info: {
+    marginLeft: 10,
   },
 
-      // Valor principal de una tarjeta métrica pequeña.
-      cardValue: {
-        fontSize: 15,
-      fontWeight: "bold",
-      color: "#333",
+  // Título de una tarjeta métrica pequeña.
+  cardTitle: {
+    fontSize: 11,
+    color: "#666",
+    fontWeight: "600",
   },
 
-      // Caja que contiene la gráfica circular y su título.
-      chartBox: {
-        backgroundColor: "#FFF",
-
-      borderRadius: 20,
-      padding: 15,
-      marginBottom: 20,
-      // MARGEN NEGATIVO para que suba y "pise" el azul
-      elevation: 5,
-      shadowColor: "#000",
-      shadowOffset: {width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      alignItems: "center",
-      zIndex: 2, // Asegura que esté por encima
+  // Valor principal de una tarjeta métrica pequeña.
+  cardValue: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#333",
   },
 
-      // Título descriptivo de la gráfica.
-      chartTitle: {
-        fontSize: 16,
-      fontWeight: "bold",
-      color: "#333",
-      marginBottom: 10,
-      textAlign: "center",
+  // Caja que contiene la gráfica circular y su título.
+  chartBox: {
+    backgroundColor: "#FFF",
+
+    borderRadius: 20,
+    padding: 15,
+    marginBottom: 20,
+    // MARGEN NEGATIVO para que suba y "pise" el azul
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    alignItems: "center",
+    zIndex: 2, // Asegura que esté por encima
   },
 
-      // Estilos heredados para botones de acciones genéricas dentro del proyecto.
-      btnRegistrar: {
-        backgroundColor: "#29c268",
-      width: 120,
-      height: 50,
-
-      marginBottom: 5,
-      marginTop: 5,
-
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 8,
-      borderWidth: 2,
-      borderColor: "#fff",
+  // Título descriptivo de la gráfica.
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+    textAlign: "center",
   },
 
-      // Estilo heredado para un botón de modificar.
-      btnModificar: {
-        backgroundColor: "#ff761a",
-      width: 120,
-      height: 50,
+  // Estilos heredados para botones de acciones genéricas dentro del proyecto.
+  btnRegistrar: {
+    backgroundColor: "#29c268",
+    width: 120,
+    height: 50,
+
+    marginBottom: 5,
+    marginTop: 5,
+
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
 
-      // Estilo heredado para un botón de anular.
-      btnAnular: {
-        backgroundColor: "#d3002e",
-      width: 120,
-      height: 50,
-
-      marginBottom: 5,
-      marginTop: 5,
-
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: 8,
-      borderWidth: 2,
-      borderColor: "#fff",
+  // Estilo heredado para un botón de modificar.
+  btnModificar: {
+    backgroundColor: "#ff761a",
+    width: 120,
+    height: 50,
   },
 
-      // Texto reutilizable de los botones verdes.
-      btnRegisText: {
-        color: "#fff",
-      fontSize: 15,
-      fontWeight: "bold",
+  // Estilo heredado para un botón de anular.
+  btnAnular: {
+    backgroundColor: "#d3002e",
+    width: 120,
+    height: 50,
+
+    marginBottom: 5,
+    marginTop: 5,
+
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
-      reportPillWrapper: {
-        paddingHorizontal: 14,
-      marginTop: 12,
-      marginBottom: 8,
+
+  // Texto reutilizable de los botones verdes.
+  btnRegisText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "bold",
   },
-      reportPill: {
-        flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#ffffff",
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 12,
-      elevation: 3,
-      shadowColor: "#000",
-      shadowOpacity: 0.06,
-      shadowOffset: {width: 0, height: 2 },
-      shadowRadius: 4,
+  reportPillWrapper: {
+    paddingHorizontal: 14,
+    marginTop: 12,
+    marginBottom: 8,
   },
-      reportPillAccent: {
-        width: 8,
-      height: 36,
-      backgroundColor: "#0f766e",
-      borderRadius: 8,
-      marginRight: 10,
+  reportPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
-      reportPillText: {
-        fontSize: 15,
-      fontWeight: "700",
-      color: "#064e3b",
+  reportPillAccent: {
+    width: 8,
+    height: 36,
+    backgroundColor: "#0f766e",
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  reportPillText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#064e3b",
   },
 });
 
-      export default home;
+export default home;
