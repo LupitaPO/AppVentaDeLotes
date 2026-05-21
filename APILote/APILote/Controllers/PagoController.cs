@@ -49,7 +49,7 @@ namespace APILote.Controllers
 
         public class pagoRegistrarRequest
         {
-            public int IdCronograma {  get; set; }
+            public int IdCronograma { get; set; }
             public int IdTipoComprobante { get; set; }
         }
         [HttpPost]

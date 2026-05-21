@@ -38,11 +38,17 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 // Íconos usados para el menú flotante y el botón de cerrar sesión.
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
+import AntDesign from "@expo/vector-icons/AntDesign";
+
 // Instancia de traducción y función auxiliar para cambiar idioma dinámicamente.
 import i18n, {changeLanguage} from "../i18n";
 
 // Tipo que restringe los idiomas válidos manejados por la aplicación.
 import { Languages } from "../localizacion";
+
+import Permisos from "./permisos";
+
+
 
 // Ancho de la pantalla usado para calcular tamaños del dashboard y de la gráfica.
 const screenWidth = Dimensions.get("window").width;
@@ -192,6 +198,12 @@ const home = ({ route, navigation }) => {
                 <Fontisto name="world-o" size={25}/>
               </TouchableOpacity>
             </View>
+          <View>
+              <TouchableOpacity  style={styles.Permisos} onPress={()=> navigation.navigate("Permisos")}>
+                <AntDesign name="setting" size={25}/>
+              </TouchableOpacity>
+            </View>
+
             <View>
               <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
                 <MaterialIcons
@@ -362,8 +374,27 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 999,  
+    zIndex: 999,     // Asegura que esté por encima de otros elementos
   },
+
+  Permisos:{
+    top:5,   // Separación del borde inferior
+    
+    marginTop:5,
+    backgroundColor: '#22c5aa', // Color de fondo del botón
+    width: 45,
+    height: 45,
+    borderRadius: 28,     // Hace que sea circular
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,         // Sombra en Android
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 999,     // Asegura que esté por encima de otros elementos
+  },
+
   btnsalir: {
     backgroundColor: "#f30a0a9c",
     marginTop:5,

@@ -19,14 +19,14 @@ namespace APILote.DATA
                 return null;
             }
         }
-    
+
         public DataTable ventaListar()
         {
             try
             {
                 DataTable Datos = new DataTable();
                 Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "venta_Listar_pa").Tables[0];
-                return Datos;                           
+                return Datos;
             }
             catch (Exception ex)
             {
@@ -50,7 +50,7 @@ namespace APILote.DATA
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "venta_registrar_pa", objventas.IdLote,objventas.IdUsuario,objventas.IdCliente,objventas.IdAsesor,objventas.PrecioVenta,objventas.MontoInicial,objventas.TipoVenta,objventas.TipoPago,objventas.PlazoMeses,objventas.Observacion);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "venta_registrar_pa", objventas.IdLote, objventas.IdUsuario, objventas.IdCliente, objventas.IdAsesor, objventas.PrecioVenta, objventas.MontoInicial, objventas.TipoVenta, objventas.TipoPago, objventas.PlazoMeses, objventas.Observacion);
                 return "Venta Registrada";
             }
             catch (Exception ex)

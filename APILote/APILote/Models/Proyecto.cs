@@ -11,9 +11,9 @@
         public string? ImagenUrl { get; set; }
         public IFormFile? ArchivoPlano { get; set; }
         public DateTime FechaRegistro { get; set; }
-        public DateTime FechaUpdate {  get; set; }
+        public DateTime FechaUpdate { get; set; }
         public DateTime FechaDelete { get; set; }
-        public string Estado {  get; set; }
+        public string Estado { get; set; }
 
     }
 }
