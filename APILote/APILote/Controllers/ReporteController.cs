@@ -99,8 +99,8 @@ namespace APILote.Controllers
         }
 
         [HttpGet]
-        [Route("reporte_Proyectos/{datoBuscar}")]
-        public string reporte_Proyectos(string datoBuscar)
+        [Route("reporte_Proyectos/{datoBuscar?}")]
+        public string reporte_Proyectos(string datoBuscar = "")
         {
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();

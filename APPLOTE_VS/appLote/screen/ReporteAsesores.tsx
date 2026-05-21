@@ -26,6 +26,7 @@ type AsesorReporteItem = {
     Nombre: string;
     Apellidos: string;
     Celular: string;
+    Direccion:string;
     Correo: string;
     Estado: string;
 }
@@ -66,12 +67,13 @@ const COLUMNAS_REPORTE: Array<{
     label: string;
     flex: number;
 }> = [
-    { key: "DNI", label: "DNI", flex: 0.95 },
-    { key: "Nombre", label: "Nombre", flex: 1.2 },
-    { key: "Apellidos", label: "Apellidos", flex: 1.2 },
-    { key: "Celular", label: "Celular", flex: 1.05 },
-    { key: "Correo", label: "Correo", flex: 1.6 },
-    { key: "Estado", label: "Estado", flex: 0.9 },
+    { key: "DNI", label: "DNI", flex: 1.2 },
+    { key: "Nombre", label: "Nombre", flex: 1.8 },
+    { key: "Apellidos", label: "Apellidos", flex: 1.8 },
+    { key: "Celular", label: "Celular", flex: 1.2 },
+    { key: "Direccion", label: "Direccion", flex: 2 },
+    { key: "Correo", label: "Correo", flex: 2.2 },
+    { key: "Estado", label: "Estado", flex: 4 },
 ];
 
 const normalizarEstado = (estado: unknown) => {
@@ -89,6 +91,8 @@ const normalizarEstado = (estado: unknown) => {
     }
     return "Activo";
 };
+// Función para normalizar los datos de asesores, asegurando que siempre haya un valor de texto y un formato consistente. 
+//Según la base de datos
 const normalizarAsesores = (items: ReporteItem[]): AsesorReporteItem[] =>
     items.map((item) => ({
         DNI: String(item.DNI ?? "-"),
@@ -97,8 +101,9 @@ const normalizarAsesores = (items: ReporteItem[]): AsesorReporteItem[] =>
             [item.Apaterno, item.Amaterno].filter(Boolean).join(" ") ||
             String(item.Apellidos ?? "-"),
         Celular: String(item.Celular ?? "-"),
+        Direccion: String(item.Direccion ?? "-"),
         Correo: String(item.Correo ?? "-"),
-        Estado: normalizarEstado(item.Estado),
+        Estado: String(item.Estado),
     }));
 
 const esEstadoActivo = (estado: string) => estado.trim().toLowerCase() === "activo";
@@ -151,27 +156,37 @@ const cargarAsesoresIniciales = async () => {
         setCargando(true);
         setMensaje("");
 
-        const response = await fetch(
-            `${API_URL}/Reporte/reporte_Asesores/*`,
-            {
-                method: "GET",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-            }
-        );
+        // Si no hay filtro => traer todos
+        const filtro = datoBuscar.trim();
+
+        const url = filtro
+            ? `${API_URL}/Reporte/reporte_Asesores/${encodeURIComponent(filtro)}`
+            : `${API_URL}/Asesor/asesor_Listar/`;
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+        });
+
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
+
         const rawData = await response.text();
+
         console.log("API RESPONSE:", rawData);
+
         const asesoresBase = normalizarAsesores(
             parseReporteResponse(rawData)
         );
 
+        // Guardar todos los asesores
         setTodosAsesores(asesoresBase);
 
+        // Mostrar todos en la tabla
         setReporte(asesoresBase);
 
         setBuscado(false);
@@ -179,21 +194,22 @@ const cargarAsesoresIniciales = async () => {
         if (asesoresBase.length === 0) {
             setMensaje("No existen asesores.");
         }
+
     } catch (error) {
+
         console.log("ERROR API:", error);
+
         setTodosAsesores([]);
         setReporte([]);
+
         setMensaje(
             "No se pudo conectar con la API."
         );
+
     } finally {
         setCargando(false);
     }
 };
-
-
-
-
 
     const construirHtmlReporte = () => {
         const numeroDocumento = `RPT-ASR-${horaActual
@@ -443,7 +459,7 @@ const consultarReporte = async () => {
 
                 <View style={styles.searchCard}>
                     <Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
-                    <Text style={styles.fieldLabel}>DNI/nombre:</Text>
+                    <Text style={styles.fieldLabel}>DNI/Nombre:</Text>
                     <TextInput
                         value={datoBuscar}
                         onChangeText={setDatoBuscar}
