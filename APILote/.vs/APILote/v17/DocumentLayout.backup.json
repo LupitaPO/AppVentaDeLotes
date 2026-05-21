@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|c:\\users\\juan hc\\desktop\\appventadelotes\\apilote\\apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|c:\\users\\juan hc\\desktop\\appventadelotes\\apilote\\apilote\\data\\usuariodata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\data\\usuariodata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|c:\\users\\juan hc\\desktop\\appventadelotes\\apilote\\apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|solutionrelative:apilote\\controllers\\usuariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{0CFF1D85-B3B9-47D3-B94D-1CD314947236}|APILote\\APILote.csproj|c:\\users\\juan hc\\desktop\\appventadelotes\\apilote\\apilote\\models\\usuarios.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -26,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 564,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -46,13 +46,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "UsuarioData.cs",
               "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
               "RelativeDocumentMoniker": "APILote\\DATA\\UsuarioData.cs",
               "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
               "RelativeToolTip": "APILote\\DATA\\UsuarioData.cs",
-              "ViewState": "AgIAAE4AAAAAAAAAAAAmwBIAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAABgAAAAAAAAAAAAowD4AAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-20T15:01:58.697Z",
               "EditorCaption": ""
@@ -71,7 +71,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "UsuarioController.cs",
               "DocumentMoniker": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs",
               "RelativeDocumentMoniker": "APILote\\Controllers\\UsuarioController.cs",
