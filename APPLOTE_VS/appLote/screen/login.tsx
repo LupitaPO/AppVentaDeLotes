@@ -60,7 +60,7 @@ const login = ({ navigation }) => {
         // Toma el primer usuario devuelto por la API y normaliza su identificador.
         const usuario = data[0];
         const idUsuario = usuario.IdUsuario || usuario.idUsuario || usuario.Id || usuario.id;
-
+        
         // Reemplaza la pantalla actual por la navegación principal y envía datos del usuario autenticado.
         navigation.replace("MainTabs", {
           rol: usuario.TipoUsuario,
