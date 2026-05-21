@@ -15,7 +15,7 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import { Languages } from "../localizacion";
 import i18n,{changeLanguage} from "../i18n";
 
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 //Revisión
 const asesor = ({ navigation, route }) => {
   const { nombre, rol } = route.params || {};

@@ -15,7 +15,7 @@ import i18n, {changeLanguage}  from "../../i18n";
 import { Languages } from "../../localizacion";
 
 
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const loginRegistrate = ({ navigation }) => {
   const [nombre, setNombre] = useState("");

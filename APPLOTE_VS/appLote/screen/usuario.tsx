@@ -20,7 +20,7 @@ import RegistrarAsesor from "./Asesor/RegistrarAsesor";
 import RegistrarUsuario from "./Usuarios/RegistrarUsuario";
 
 // URL base del backend para consultar y administrar usuarios.
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const usuario = ({navigation, route}) => {
   // Datos recibidos desde navegación para personalizar la pantalla según el contexto del usuario.

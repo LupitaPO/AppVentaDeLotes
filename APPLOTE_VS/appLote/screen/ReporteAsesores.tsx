@@ -15,7 +15,9 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
 import styles from "./ReporteAsesorStyles";
-const API_URL = "http://www.tulote.somee.com";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
 const EMPRESA_CONTACTO = "www.tulote.somee.com";
 const EMPRESA_SIGLAS = "RSF";

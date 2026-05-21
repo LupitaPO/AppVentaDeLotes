@@ -48,7 +48,7 @@ import { Languages } from "../localizacion";
 const screenWidth = Dimensions.get("window").width;
 
 // URL base del backend para consultar el resumen general del dashboard.
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 
 const home = ({ route, navigation }) => {

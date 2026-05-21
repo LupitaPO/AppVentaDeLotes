@@ -30,7 +30,7 @@ import * as Sharing from 'expo-sharing';
 const { height } = Dimensions.get('window');
 
 // URL base del backend donde se consultan ventas, clientes y cronograma.
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 
 const Ventas = ({ navigation, route }) => {
@@ -380,7 +380,7 @@ const Ventas = ({ navigation, route }) => {
                     <MaterialCommunityIcons name="map-marker-radius" size={20} color="#069488" />
                     <View style={{ marginLeft: 8 }}>
                       <Text style={styles.cardLabel}></Text>
-                      <Text style={styles.cardValue}>Proyecto:{venta.Proyecto}</Text>
+                      <Text style={styles.cardValue}>:{venta.Proyecto}</Text>
                       <Text style={styles.cardLabel}>LOTE</Text>
                      <Text style={styles.cardValue}>Manzana:{venta.Manzana}</Text>
                       <Text style={styles.cardValue}>Número:{venta.CodigoLote}</Text>

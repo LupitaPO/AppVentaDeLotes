@@ -17,7 +17,7 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
 // URL base del backend para consultar el módulo de proyectos.
-const API_URL = "http://www.tulote.somee.com";
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 
 const ListarProyectos = ({ navigation, route }) => {
