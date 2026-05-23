@@ -16,7 +16,7 @@ namespace APILote.Controllers
             DataTable Datos = new DataTable();
             CronogramaData objcronograma = new CronogramaData();
             Datos = objcronograma.cronograma_ListarPorVenta(IdUsuario);
-            jsostring = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            jsostring =Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsostring;
         }
     }

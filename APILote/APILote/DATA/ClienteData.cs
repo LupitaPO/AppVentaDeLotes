@@ -11,7 +11,7 @@ namespace APILote.DATA
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "cliente_Actualizar_pa", objClientes.DNI, objClientes.Nombre1, objClientes.Nombre2, objClientes.Apaterno, objClientes.Amaterno, objClientes.Celular, objClientes.Direccion, objClientes.Correo, objClientes.Observaciones);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "cliente_Actualizar_pa", objClientes.DNI, objClientes.Nombre1, objClientes.Nombre2, objClientes.Apaterno, objClientes.Amaterno, objClientes.Celular, objClientes.Direccion, objClientes.Correo,objClientes.Observaciones);
                 return "Datos actualizados correctamente";
             }
             catch (Exception ex)
@@ -27,7 +27,7 @@ namespace APILote.DATA
                 SqlHelper.ExecuteNonQuery(conexion.cnConexion, "cliente_Anular_pa", DNI);
                 return "Estado Actualizado";
             }
-            catch (Exception ex)
+            catch (Exception ex) 
             {
                 return null;
             }
@@ -107,7 +107,7 @@ namespace APILote.DATA
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "cliente_Registrar_pa", objClientes.Nombre1, objClientes.Nombre2, objClientes.Apaterno, objClientes.Amaterno, objClientes.DNI, objClientes.Celular, objClientes.Direccion, objClientes.Correo, objClientes.Observaciones);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "cliente_Registrar_pa", objClientes.Nombre1, objClientes.Nombre2, objClientes.Apaterno, objClientes.Amaterno, objClientes.DNI, objClientes.Celular, objClientes.Direccion, objClientes.Correo,objClientes.Observaciones);
                 return "Datos grabados correctamente";
             }
             catch (Exception ex)

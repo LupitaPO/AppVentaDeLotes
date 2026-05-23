@@ -12,7 +12,7 @@ namespace APILote.Controllers
     {
         [HttpPost]
         [Route("usuario_Actualizar")]
-        public string usuario_Actualizar([FromBody] Usuarios objusuario)
+        public string usuario_Actualizar([FromBody]Usuarios objusuario)
         {
             UsuarioData objusuarioData = new UsuarioData();
             return objusuarioData.usuarioActualizar(objusuario);
@@ -24,7 +24,7 @@ namespace APILote.Controllers
         public string usuario_ActualizarContraseña(int IdUsuario, string ContraseñaActual, string contraseñaNueva)
         {
             UsuarioData objusuarioData = new UsuarioData();
-            return objusuarioData.usuarioActualizarContraseña(IdUsuario, ContraseñaActual, contraseñaNueva);
+            return objusuarioData.usuarioActualizarContraseña(IdUsuario, ContraseñaActual, contraseñaNueva); 
         }
 
 
@@ -57,7 +57,7 @@ namespace APILote.Controllers
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();
             UsuarioData objCliente = new UsuarioData();
-            Datos = objCliente.usuarioLogin(Correo, Contraseña);
+            Datos = objCliente.usuarioLogin(Correo,Contraseña);
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
@@ -96,23 +96,5 @@ namespace APILote.Controllers
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
-
-
-        
-
-        //nuevo 20 de mayo 2026
-        [HttpGet]
-        [Route("formularios_Listar")]
-        public string formulariosListar()
-        {
-            string jsoString = string.Empty;
-            DataTable Datos = new DataTable();
-            UsuarioData objCliente = new UsuarioData();
-
-            Datos = objCliente.formulariosListar();
-            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
-            return jsoString;
-        }
-
     }
 }

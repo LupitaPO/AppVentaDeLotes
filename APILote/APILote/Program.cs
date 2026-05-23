@@ -1,10 +1,8 @@
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. AGREGAR ESTO PARA EVITAR BLOQUEOS DE CONEXIÓN ---
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", builder =>
-    {
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAll", builder => {
         builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 const RegistrarUsuario = ({ navigation, route }) => {
 

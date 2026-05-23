@@ -11,16 +11,13 @@ import {
   Alert,
   SafeAreaView,
   ScrollView,
-  TextInput
 } from "react-native";
-///import para imprimr reporte de cronograma///////
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+
 // Librería de íconos utilizada para navegación y apoyo visual en la interfaz.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 // URL base del backend usada para registrar pagos.
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 const DetallePago = ({ route, navigation }) => {
   // Recibe la cuota seleccionada desde la pantalla anterior.
@@ -31,10 +28,6 @@ const DetallePago = ({ route, navigation }) => {
 
   // Estado dinámico para elegir el comprobante (1: Boleta, 2: Factura, 3: Ticket)
   const [tipoComprobante, setTipoComprobante] = useState(1); 
-
-  // AGREGADO: Estados para almacenar los documentos de identidad
-  const [dni, setDni] = useState("");
-  const [ruc, setRuc] = useState("");
 
   // Toma la cuota actual, arma el payload y registra el pago en la API.
   const realizarPago = async () => {
@@ -50,35 +43,13 @@ const DetallePago = ({ route, navigation }) => {
       return;
     }
 
-    // ==========================================
-    // AGREGADO: VALIDACIONES DE DOCUMENTOS
-    // ==========================================
-    let documentoParaEnviar = "";
-
-    if (idTipoComprobanteFinal === 1) { // Boleta
-      if (dni.trim().length !== 8) {
-        Alert.alert("Validación", "Para una Boleta, el DNI debe tener exactamente 8 dígitos.");
-        return;
-      }
-      documentoParaEnviar = dni.trim();
-    } 
-    else if (idTipoComprobanteFinal === 2) { // Factura
-      if (ruc.trim().length !== 11) {
-        Alert.alert("Validación", "Para una Factura, el RUC debe tener exactamente 11 dígitos.");
-        return;
-      }
-      documentoParaEnviar = ruc.trim();
-    }
-    // Si es Ticket (3), pasa sin pedir ningún documento.
-
     try {
       setCargando(true);
 
       // Objeto que el backend espera para registrar el pago.
       const datosParaEnviar = {
         IdCronograma: idCronogramaFinal,
-        IdTipoComprobante: idTipoComprobanteFinal,
-        DocumentoCliente: documentoParaEnviar
+        IdTipoComprobante: idTipoComprobanteFinal
       };
 
       // Envía la solicitud POST al endpoint de pagos.
@@ -97,11 +68,7 @@ const DetallePago = ({ route, navigation }) => {
       // Si el backend confirma el registro, refresca la pantalla anterior y vuelve atrás.
       if (response.ok && textoRespuesta.trim() === "Pago Registrado Correctamente") {
         Alert.alert("¡Éxito!", "Pago Registrado Correctamente", [
-          { text: "Descargar Comprobante", 
-            onPress: async () => { 
-              await generarPDFComprobante(documentoParaEnviar)
-              route.params?.onRefresh?.(); 
-              navigation.goBack() }}
+          { text: "OK", onPress: () => { route.params?.onRefresh?.(); navigation.goBack() }}
         ]);
       } else {
         Alert.alert("Atención", "Servidor dice: " + (textoRespuesta || "Sin respuesta"));
@@ -112,59 +79,6 @@ const DetallePago = ({ route, navigation }) => {
       setCargando(false);
     }
   };
-
-
-  const generarPDFComprobante = async (documentoEmitido) => {
-  // Definimos las variables de texto según el botón seleccionado
-  const tipoDocumentoTexto = tipoComprobante === 1 ? "BOLETA DE VENTA" : tipoComprobante === 2 ? "FACTURA" : "TICKET DE PAGO";
-  const etiquetaDoc = tipoComprobante === 1 ? "DNI" : tipoComprobante === 2 ? "RUC" : "";
-  const valorDoc = documentoEmitido ? `${etiquetaDoc}: ${documentoEmitido}` : "No requerido";
-
-  const html = `
-    <html>
-      <body style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1 style="text-align: center; color: #069488;">${tipoDocumentoTexto}</h1>
-        <p><strong>Lote / Cuota ID:</strong> ${cuota?.IdCronograma || cuota?.idCronograma || 'N/A'}</p>
-        <p><strong>Documento Cliente:</strong> ${valorDoc}</p>
-        <p><strong>Estado del Pago:</strong> Cancelado</p>
-        <hr/>
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-          <thead>
-            <tr style="background-color: #069488; color: white;">
-              <th style="border: 1px solid #ddd; padding: 10px;">Concepto</th>
-              <th style="border: 1px solid #ddd; padding: 10px;">Vencimiento original</th>
-              <th style="border: 1px solid #ddd; padding: 10px;">Monto Pagado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="border: 1px solid #ddd; padding: 10px;">Pago de Cuota Inmobiliaria</td>
-              <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">${cuota.FechaVencimiento}</td>
-              <td style="border: 1px solid #ddd; padding: 10px; text-align: right;">$${cuota.MontoCuota}</td>
-            </tr>
-          </tbody>
-        </table>
-        <h3 style="text-align: right; margin-top: 20px; color: #069488;">Total: $${cuota.MontoCuota}</h3>
-      </body>
-    </html>
-  `;
-
-  try {
-    // Genera el archivo temporal usando la librería instalada
-    const { uri } = await Print.printToFileAsync({ html: html });
-    
-    // Abre el menú compartir nativo del celular
-    await Sharing.shareAsync(uri, {
-      mimeType: 'application/pdf',
-      dialogTitle: `Compartir ${tipoDocumentoTexto}`,
-      UTI: 'com.adobe.pdf'
-    });
-  } catch (error) {
-    console.error("Error generando el comprobante:", error);
-    Alert.alert("Error PDF", "No se pudo abrir el archivo de impresión.");
-  }
-};
-
 
   return (
     /* Contenedor seguro para respetar bordes del dispositivo y áreas del sistema. */
@@ -216,44 +130,6 @@ const DetallePago = ({ route, navigation }) => {
             <Text style={[styles.selectorText, tipoComprobante === 3 && styles.selectorTextActive]}>Ticket</Text>
           </TouchableOpacity>
         </View>
-
-        {/* ========================================== */}
-        {/* AGREGADO: RENDERIZADO CONDICIONAL DE INPUTS */}
-        {/* ========================================== */}
-        {tipoComprobante === 1 && (
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Número de DNI (8 dígitos):</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ingrese DNI"
-              value={dni}
-              onChangeText={(texto) => setDni(texto.replace(/[^0-9]/g, ''))}
-              keyboardType="number-pad"
-              maxLength={8}
-            />
-          </View>
-        )}
-
-        {tipoComprobante === 2 && (
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Número de RUC (11 dígitos):</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ingrese RUC"
-              value={ruc}
-              onChangeText={(texto) => setRuc(texto.replace(/[^0-9]/g, ''))}
-              keyboardType="number-pad"
-              maxLength={11}
-            />
-          </View>
-        )}
-
-        {tipoComprobante === 3 && (
-          <View style={styles.ticketBox}>
-            <MaterialCommunityIcons name="ticket-confirmation-outline" size={24} color="#069488" />
-            <Text style={styles.ticketText}>El formato Ticket es un comprobante simplificado interno. No requiere documentos de identidad.</Text>
-          </View>
-        )}
 
         {/* Aviso informativo para aclarar cómo se registrará el pago. */}
         <View style={styles.warningBox}>
@@ -396,14 +272,6 @@ const styles = StyleSheet.create({
 
   // Texto del botón principal.
   btnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  
-    // ESTILOS NUEVOS PARA COMPONENTES DINÁMICOS
-  inputGroup: { width: "100%", marginBottom: 20 },
-  inputLabel: { fontSize: 14, fontWeight: "bold", color: "#444", marginBottom: 8 },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16, color: "#333", elevation: 1 },
-  ticketBox: { flexDirection: "row", backgroundColor: "#e4f5f3", borderRadius: 10, padding: 15, alignItems: "center", marginBottom: 20, borderWidth: 1, borderColor: "#bce5e1" },
-  ticketText: { flex: 1, color: "#05756b", fontSize: 13, marginLeft: 10, lineHeight: 18 },
-  
 });
 
 export default DetallePago;

@@ -18,11 +18,11 @@ namespace APILote.DATA
                 return null;
             }
         }
-        public string usuarioActualizarContraseña(int IdUsuario, string ContraseñaActual, string ContraseñaNueva)
+        public string  usuarioActualizarContraseña(int IdUsuario, string ContraseñaActual, string ContraseñaNueva)
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_ActualizarContraseña_pa", IdUsuario, ContraseñaActual, ContraseñaNueva);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_ActualizarContraseña_pa", IdUsuario, ContraseñaActual,ContraseñaNueva);
                 return "Contraseña actualizada";
             }
             catch (Exception ex)
@@ -34,10 +34,10 @@ namespace APILote.DATA
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_Anular_pa", IdUsuario);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_Anular_pa",IdUsuario);
                 return "Usuario anulado correctamnete";
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 return null;
             }
@@ -55,12 +55,12 @@ namespace APILote.DATA
                 return null;
             }
         }
-        public DataTable usuarioLogin(string Correo, string Contraseña)
+        public DataTable usuarioLogin(string Correo,string Contraseña)
         {
             try
             {
                 DataTable Datos = new DataTable();
-                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "usuario_Login_pa", Correo, Contraseña).Tables[0];
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "usuario_Login_pa", Correo,Contraseña).Tables[0];
                 return Datos;
             }
             catch (Exception ex)
@@ -73,7 +73,7 @@ namespace APILote.DATA
             try
             {
                 DataTable Datos = new DataTable();
-                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "usuario_ObtenerPorId_pa", Buscar).Tables[0];
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "usuario_ObtenerPorId_pa",Buscar).Tables[0];
                 return Datos;
             }
             catch (Exception ex)
@@ -85,7 +85,7 @@ namespace APILote.DATA
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_Registrar_pa", objusuarios.Nombre, objusuarios.Correo, objusuarios.Contraseña, objusuarios.TipoUsuario, objusuarios.Celular);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "usuario_Registrar_pa",objusuarios.Nombre, objusuarios.Correo, objusuarios.Contraseña, objusuarios.TipoUsuario,objusuarios.Celular);
                 return "Usuario Registrado";
             }
             catch (Exception ex)
@@ -109,21 +109,6 @@ namespace APILote.DATA
             }
         }
 
-
-
-        //nuevo 20 de mayo 2026
-        public DataTable formulariosListar()
-        {
-            try
-            {
-                DataTable Datos = new DataTable();
-                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "formularios_Listar_pa").Tables[0];
-                return Datos;
-            }
-            catch (Exception ex)
-            {
-                return null;
-            }
-        }
+     
     }
 }

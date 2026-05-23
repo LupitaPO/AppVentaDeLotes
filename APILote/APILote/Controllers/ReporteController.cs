@@ -7,7 +7,7 @@ namespace APILote.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class ReporteController : ControllerBase
+    public class ReporteController: ControllerBase
     {
         [HttpGet]
         [Route("reporte_LotesVendidos")]
@@ -88,7 +88,7 @@ namespace APILote.Controllers
 
         [HttpGet]
         [Route("reporte_Asesores/{datoBuscar?}")]
-        public string reporte_Asesores(string datoBuscar = "*")
+        public string reporte_Asesores(string datoBuscar = "*" )
         {
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();
@@ -99,8 +99,8 @@ namespace APILote.Controllers
         }
 
         [HttpGet]
-        [Route("reporte_Proyectos/{datoBuscar}")]
-        public string reporte_Proyectos(string datoBuscar)
+        [Route("reporte_Proyectos/{datoBuscar?}")]
+        public string reporte_Proyectos(string datoBuscar = "")
         {
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();

@@ -24,7 +24,7 @@ import { Languages } from "../../localizacion";
 
 
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 const Rproyecto = ({ navigation, route }) => {
   const { nombre, rol } = route.params;

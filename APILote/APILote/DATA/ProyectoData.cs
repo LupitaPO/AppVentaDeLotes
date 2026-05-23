@@ -29,7 +29,7 @@ namespace APILote.DATA
             {
                 return null;
             }
-        }
+        } 
         public DataTable proyecto_Listar()
         {
             try
@@ -47,7 +47,7 @@ namespace APILote.DATA
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "proyecto_Registrar_pa", objproyecto.CodProyecto, objproyecto.Nombre, objproyecto.Ubicacion, objproyecto.NumeroHectareas, objproyecto.PartidaRegistral, objproyecto.ImagenUrl);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "proyecto_Registrar_pa", objproyecto.CodProyecto, objproyecto.Nombre, objproyecto.Ubicacion, objproyecto.NumeroHectareas, objproyecto.PartidaRegistral, objproyecto.ImagenUrl );
                 return "Datos Registrados Correctamentes";
             }
             catch (Exception ex)

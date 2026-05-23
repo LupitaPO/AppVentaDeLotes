@@ -30,7 +30,7 @@ import * as Sharing from 'expo-sharing';
 const { height } = Dimensions.get('window');
 
 // URL base del backend donde se consultan ventas, clientes y cronograma.
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 
 const Ventas = ({ navigation, route }) => {
@@ -88,7 +88,7 @@ const Ventas = ({ navigation, route }) => {
 
   // Catálogo de clientes para resolver el nombre completo a partir del IdCliente.
   const [listaClientes, setListaClientes] = useState([]);
-  
+
   // Normaliza diferentes posibles nombres de propiedad para obtener el id de una venta.
   const obtenerIdVenta = (venta) => {
     return venta?.IdVenta ?? venta?.idVenta ?? venta?.Id ?? venta?.id;
@@ -379,11 +379,8 @@ const Ventas = ({ navigation, route }) => {
                   <View style={styles.loteInfo}>
                     <MaterialCommunityIcons name="map-marker-radius" size={20} color="#069488" />
                     <View style={{ marginLeft: 8 }}>
-                      <Text style={styles.cardLabel}></Text>
-                      <Text style={styles.subtext}>Proyecto:{venta.Proyecto}</Text>
                       <Text style={styles.cardLabel}>LOTE</Text>
-                     <Text style={styles.cardValue}>{venta.Manzana}{venta.NumeroLote}</Text>
-                      
+                      <Text style={styles.cardValue}>{venta.IdLote ?? "N/A"}</Text>
                     </View>
                   </View>
                   <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
@@ -418,7 +415,7 @@ const Ventas = ({ navigation, route }) => {
 
       <View style={styles.ctnbtn}>
         <TouchableOpacity onPress={()=> navigation.navigate("RegistrarVenta")} style={styles.btnregistrar}>
-          <Text style={styles.label}>REGISTRAR</Text>
+          <Text>REGISTRAR</Text>
         </TouchableOpacity>
       </View>
 
@@ -523,7 +520,7 @@ const styles = StyleSheet.create({
   // estilos de exit y idioma :
   idioma: {
     top: 5,   // Separación del borde inferior
-    
+
     marginTop: 5,
     backgroundColor: '#22c5aa', // Color de fondo del botón
     width: 45,
@@ -550,8 +547,7 @@ const styles = StyleSheet.create({
   // Estilos base de la pantalla principal y tarjetas de ventas.
   mainContainer: { flex: 1, backgroundColor: "#e4f5f3" },
   ventasContainer: {
-    height: height * 0.8, // Ocupa el 60% de la pantalla
-    padding:10,
+    height: height * 0.6, // Ocupa el 60% de la pantalla
     backgroundColor: '#fff',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -572,7 +568,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     borderRadius: 15,
     padding: 16,
-    marginBottom:12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#edf0f2',
   },
@@ -632,9 +628,9 @@ const styles = StyleSheet.create({
   cuotaMonto: { fontSize: 17, fontWeight: 'bold', color: '#2c3e50' },
   cuotaFecha: { fontSize: 12, color: '#999', marginTop: 4 },
   modalLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  label:{color:"#fff", fontWeight:"bold"},
-  btnregistrar: { width: "80%", height: 60, backgroundColor: "#069488", justifyContent: "center", alignItems: "center",borderRadius:10},
-  ctnbtn:{top:15,alignItems:"center"}
+  label:{color:"#fff"},
+  btnregistrar: { width: "80%", height: 60, backgroundColor: "#27ae60", justifyContent: "center", alignItems: "center",borderRadius:10},
+  ctnbtn:{top:100,alignItems:"center"}
 });
 
 export default Ventas

@@ -4,7 +4,7 @@
     {
         public int Idpago { get; set; }
         public int IdVenta { get; set; }
-        public int IdCronograma { get; set; }
+        public int IdCronograma {  get; set; }
         public int IdTipoComprobante { get; set; }
         public string Serie { get; set; }
         public int Numero { get; set; }

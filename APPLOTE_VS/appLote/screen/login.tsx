@@ -19,9 +19,8 @@ import { Languages } from "../localizacion";
 
 
 // URL base del backend usada para autenticación y actualizaciones iniciales.
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
-// const API_URL = "http://localhost:";
 const login = ({ navigation }) => {
   // Estado del correo ingresado por el usuario.
   const [Correo, setEmail] = useState("");
@@ -60,7 +59,7 @@ const login = ({ navigation }) => {
         // Toma el primer usuario devuelto por la API y normaliza su identificador.
         const usuario = data[0];
         const idUsuario = usuario.IdUsuario || usuario.idUsuario || usuario.Id || usuario.id;
-        
+
         // Reemplaza la pantalla actual por la navegación principal y envía datos del usuario autenticado.
         navigation.replace("MainTabs", {
           rol: usuario.TipoUsuario,

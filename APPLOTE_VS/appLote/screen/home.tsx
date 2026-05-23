@@ -8,7 +8,6 @@ import {
   RefreshControl,
   ScrollView,
   TouchableOpacity,
-
 } from "react-native";
 
 // Hooks de React para manejar estado local y ciclos de vida simples del componente.
@@ -19,7 +18,6 @@ import { PieChart } from "react-native-chart-kit";
 
 // Librería de íconos usada en tarjetas y elementos visuales del dashboard.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
 
 // Import actualmente presente en el archivo, aunque no forma parte del flujo visual del dashboard.
 import { symbolicate } from "react-native/types_generated/Libraries/LogBox/Data/LogBoxSymbolication";
@@ -40,23 +38,17 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 // Íconos usados para el menú flotante y el botón de cerrar sesión.
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
-import AntDesign from "@expo/vector-icons/AntDesign";
-
 // Instancia de traducción y función auxiliar para cambiar idioma dinámicamente.
-import i18n, { changeLanguage } from "../i18n";
+import i18n, {changeLanguage} from "../i18n";
 
 // Tipo que restringe los idiomas válidos manejados por la aplicación.
 import { Languages } from "../localizacion";
-
-
-
-
 
 // Ancho de la pantalla usado para calcular tamaños del dashboard y de la gráfica.
 const screenWidth = Dimensions.get("window").width;
 
 // URL base del backend para consultar el resumen general del dashboard.
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 
 const home = ({ route, navigation }) => {
@@ -67,20 +59,20 @@ const home = ({ route, navigation }) => {
   const { nombre, rol } = route.params || {};
   // Aseguramos que route.params exista
   // console.log("rol recibido:", rol);// Aseguramos que route.params exista
-
+  
   // funcion de idiomas 
   // Estado que controla si el menú flotante está abierto o cerrado.
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Idioma actualmente seleccionado en la interfaz.
-  const [language, setlanguage] = useState<Languages>("es");
+    // Idioma actualmente seleccionado en la interfaz.
+    const [language,setlanguage] = useState<Languages>("es");
 
-  // Alterna entre español e inglés y actualiza el motor de traducciones.
-  const handlechangeLanguage = () => {
-    const lang: Languages = language === "en" ? "es" : "en";
-    changeLanguage(lang);
-    setlanguage(lang);
-  }
+    // Alterna entre español e inglés y actualiza el motor de traducciones.
+    const handlechangeLanguage = ()=> {
+      const lang: Languages = language === "en" ? "es" :"en";
+      changeLanguage(lang);
+      setlanguage(lang);
+    }
 
   // Objeto con los datos resumidos que devuelve el dashboard desde la API.
   const [datos, setDatos] = useState(null);
@@ -175,22 +167,21 @@ const home = ({ route, navigation }) => {
             <Text style={styles.textheader}>{i18n.t("Dtitle")}</Text>
             <Text style={styles.textheader2}>{nombre || "Usuario"}</Text>
           </View>
-
+      
         </View>
-      </View>
-      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
-      {/* funcion de boton desplegable patra idioma y exit */}
+  {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+  {/* funcion de boton desplegable patra idioma y exit */}
 
       {/* Menú flotante para cambiar idioma y cerrar sesión. */}
       <View style={styles.containerFlotante}>
-        <TouchableOpacity
-          style={styles.btnPrincipal}
+        <TouchableOpacity 
+          style={styles.btnPrincipal} 
           onPress={() => setIsMenuOpen(!isMenuOpen)}
         >
-          <MaterialIcons
-            name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
-            size={28}
-            color="white"
+          <MaterialIcons 
+          name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
+          size={28} 
+          color="white" 
           />
         </TouchableOpacity>
         {isMenuOpen && (
@@ -198,33 +189,26 @@ const home = ({ route, navigation }) => {
 
             <View>
               <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
-                <Fontisto name="world-o" size={25} />
+                <Fontisto name="world-o" size={25}/>
               </TouchableOpacity>
             </View>
-
-            <View>
-              <TouchableOpacity style={styles.Permisos} onPress={() => navigation.navigate("Permisos")}>
-                <AntDesign name="setting" size={25} />
-              </TouchableOpacity>
-            </View>
-
             <View>
               <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
                 <MaterialIcons
-                  name="exit-to-app"
-                  size={28}
-                  color="white"
+                name="exit-to-app"
+                size={28}
+                color="white"
                 />
               </TouchableOpacity>
             </View>
 
           </View>
         )}
+        
+      </View>
+  {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
 
       </View>
-      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
-
-
 
       {/* Contenedor desplazable del dashboard con soporte para refresco manual. */}
       <ScrollView
@@ -239,9 +223,9 @@ const home = ({ route, navigation }) => {
           <View
             style={styles.container}
 
-          // refreshControl={<RefreshControl
-          // refreshing={refreshing}
-          // onRefresh={cargarDashboard} />}
+            // refreshControl={<RefreshControl
+            // refreshing={refreshing}
+            // onRefresh={cargarDashboard} />}
           >
             <Text style={styles.header}>{i18n.t("Dmsj")}</Text>
 
@@ -330,7 +314,6 @@ const home = ({ route, navigation }) => {
       </ScrollView>
     </View>
   );
-
 };
 
 const styles = StyleSheet.create({
@@ -342,15 +325,15 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 999,       // Siempre al frente
     alignItems: 'center',
-
-
+    
+    
   },
   menuDesplegado: {
     // Los botones aparecen antes (arriba) del principal, 
     // o puedes ponerlos después para que bajen.
-    alignItems: "center",
-    marginBottom: 8,
-    gap: 10,
+    alignItems:"center",
+    marginBottom: 8, 
+    gap: 10,          
   },
   btnPrincipal: {
     backgroundColor: '#333', // Un color neutro o el de tu app
@@ -364,10 +347,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
   },
   // estilos de exit y idioma :
-  idioma: {
-    top: 5,   // Separación del borde inferior
-
-    marginTop: 5,
+  idioma:{
+    top:5,   // Separación del borde inferior
+    
+    marginTop:5,
     backgroundColor: '#22c5aa', // Color de fondo del botón
     width: 45,
     height: 45,
@@ -379,38 +362,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 999,     // Asegura que esté por encima de otros elementos
+    zIndex: 999,  
   },
-
-  Permisos: {
-    top: 5,   // Separación del borde inferior
-
-    marginTop: 5,
-    backgroundColor: '#22c5aa', // Color de fondo del botón
-    width: 45,
-    height: 45,
-    borderRadius: 28,     // Hace que sea circular
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,         // Sombra en Android
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 999,     // Asegura que esté por encima de otros elementos
-  },
-
   btnsalir: {
     backgroundColor: "#f30a0a9c",
-    marginTop: 5,
+    marginTop:5,
     height: 40,
     width: 40,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
   },
-  // Estilos generales del encabezado y del dashboard.
-
+// Estilos generales del encabezado y del dashboard.
+  
   headerContainer: {
     position: "relative",
     top: 0,

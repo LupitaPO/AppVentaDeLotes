@@ -82,7 +82,7 @@ namespace APILote.Controllers
             if (objproyecto.ArchivoPlano != null)
             {
                 // Carpeta que creaste en ApiLotes
-                string carpeta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "planos");
+                string carpeta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","uploads", "planos");
 
                 if (!Directory.Exists(carpeta)) Directory.CreateDirectory(carpeta);
 

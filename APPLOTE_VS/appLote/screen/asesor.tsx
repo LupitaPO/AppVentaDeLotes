@@ -15,7 +15,7 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import { Languages } from "../localizacion";
 import i18n,{changeLanguage} from "../i18n";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 //Revisión
 const asesor = ({ navigation, route }) => {
   const { nombre, rol } = route.params || {};
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   btnRegistrar: {
-    backgroundColor: "#069488",
+    backgroundColor: "#29c268",
     width: 378,
     height: 50,
     marginBottom: 5,

@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 
 const RegistrarLote = ({ route, navigation }) => {

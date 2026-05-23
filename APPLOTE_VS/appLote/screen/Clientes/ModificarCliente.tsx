@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 const ModificarCliente = ({ navigation, route }) => {
   const { cliente } = route.params || {};

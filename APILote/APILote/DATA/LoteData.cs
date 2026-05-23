@@ -6,11 +6,11 @@ namespace APILote.DATA
 {
     public class LoteData
     {
-        public string loteActualizar(Lotes objLotes, Medidas objMedidas)
+        public string loteActualizar(Lotes objLotes,Medidas objMedidas)
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "lote_Actualizar_pa", objLotes.IdLote, objLotes.IdProyecto, objLotes.CodigoLote, objLotes.Ubicacion, objMedidas.Frente, objMedidas.Fondo, objMedidas.Derecha, objMedidas.Izquierda, objMedidas.Perimetro, objMedidas.TamañoM2, objLotes.NumeroLote, objLotes.Manzana, objLotes.Precio, objLotes.Descripcion, objLotes.ImagenUrl);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "lote_Actualizar_pa", objLotes.IdLote, objLotes.IdProyecto,objLotes.CodigoLote, objLotes.Ubicacion, objMedidas.Frente, objMedidas.Fondo, objMedidas.Derecha, objMedidas.Izquierda, objMedidas.Perimetro, objMedidas.TamañoM2, objLotes.NumeroLote, objLotes.Manzana,objLotes.Precio,objLotes.Descripcion,objLotes.ImagenUrl);
                 return "Lote actualizado correctamente";
             }
             catch (Exception ex)
@@ -94,14 +94,14 @@ namespace APILote.DATA
                 return null;
             }
         }
-        public string loteRegistrar(Lotes objLotes, Medidas objMedidas)
+        public string loteRegistrar(Lotes objLotes,Medidas objMedidas)
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "lote_Registrar_pa", objLotes.IdProyecto, objLotes.CodigoLote, objLotes.Ubicacion, objMedidas.Frente, objMedidas.Fondo, objMedidas.Derecha,
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "lote_Registrar_pa", objLotes.IdProyecto,objLotes.CodigoLote, objLotes.Ubicacion, objMedidas.Frente, objMedidas.Fondo, objMedidas.Derecha,
                     objMedidas.Izquierda, objMedidas.Perimetro, objMedidas.TamañoM2, objLotes.NumeroLote, objLotes.Manzana, objLotes.Precio, objLotes.Descripcion, objLotes.ImagenUrl);
-                return "Lote agregado correctamente";
-
+                return "Lote agregado correctamente";                                                                                                                     
+         
             }
             catch (Exception ex)
             {

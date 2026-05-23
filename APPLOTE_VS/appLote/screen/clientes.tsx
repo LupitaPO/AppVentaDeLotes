@@ -18,7 +18,7 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 
 // URL base del backend usada para consultar y actualizar datos de clientes.
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_URL = "http://www.tulote.somee.com";
 
 
 const clientes = ({ navigation, route }) => {
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
 
   // Estilos del botón principal para registrar clientes.
   btnRegistrar: {
-    backgroundColor: "#069488",
+    backgroundColor: "#29c268",
     width: 378,
     height: 50,
     marginBottom: 5,

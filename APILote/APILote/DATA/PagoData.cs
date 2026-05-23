@@ -18,7 +18,7 @@ namespace APILote.DATA
             {
                 return null;
             }
-
+            
         }
         public DataTable pagoListarPorVenta(int IdVenta)
         {
@@ -32,7 +32,7 @@ namespace APILote.DATA
             {
                 return null;
             }
-
+            
         }
         public DataTable pagoObtenerSaldoPendiente(int Idventa)
         {
@@ -46,13 +46,13 @@ namespace APILote.DATA
             {
                 return null;
             }
-
+           
         }
         public string pagoRegistrar(int IdCronograma, int IdTipoComprobante)
         {
             try
             {
-                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "pago_Registrar_pa", IdCronograma, IdTipoComprobante);
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion, "pago_Registrar_pa", IdCronograma,IdTipoComprobante);
                 return "Pago Registrado Correctamente";
             }
             catch (Exception ex)

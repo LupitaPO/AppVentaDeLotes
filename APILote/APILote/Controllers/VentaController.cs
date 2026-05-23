@@ -17,7 +17,7 @@ namespace APILote.Controllers
             string jsoString = string.Empty;
             DataTable Datos = new DataTable();
             VentaData objCliente = new VentaData();
-            Datos = objCliente.ventaCancelar(IdVenta, Observaciones);
+            Datos = objCliente.ventaCancelar(IdVenta,Observaciones);
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
