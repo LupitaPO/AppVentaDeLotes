@@ -66,8 +66,8 @@ const usuario = ({navigation, route}) => {
   };
 
   // Envía la solicitud para anular un usuario según su identificador.
-  const anularUsuario = async (objUsuario) => {
-    const esActivo = objUsuario.Estado === "A";
+  const anularUsuario = async (IdUsuario) => {
+    const esActivo = IdUsuario.Estado === "A";
     const accionTexto = esActivo ? "anular" : "restaurar";
     const exitoTexto = esActivo ? "anulado" : "restaurado";
 
