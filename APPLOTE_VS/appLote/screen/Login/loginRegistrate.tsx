@@ -14,7 +14,7 @@ import { useState } from "react";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import i18n, { changeLanguage } from "../../i18n";
-import { Languages } from "../../localizacion";
+import { Languages } from "../../localizacion";s
 
 // llamo de url de somee desde el archivo .env
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
