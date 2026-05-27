@@ -1,42 +1,70 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. AGREGAR ESTO PARA EVITAR BLOQUEOS DE CONEXIÓN ---
-builder.Services.AddCors(options => {
-    options.AddPolicy("AllowAll", builder => {
-        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+// ===============================================
+// 1. ACTIVAR CORS
+// Permite que tu API sea consumida desde cualquier frontend
+// ===============================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
-// -------------------------------------------------------
 
-
-// Add services to the container.
-
+// ===============================================
+// 2. AGREGAR CONTROLADORES
+// Necesario para que funcionen tus Controllers
+// ===============================================
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// ===============================================
+// 3. ACTIVAR SWAGGER
+// Necesario para ver la documentación en navegador
+// ===============================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// ===============================================
+// 4. ACTIVAR SWAGGER SIEMPRE
+// Así funciona en Development y también fuera de Development
+// ===============================================
+app.UseSwagger();
+
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    app.UseHttpsRedirection();
-}
-// --- 3. ACTIVAR LA POLÍTICA DE CONEXIÓN ---
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "API Venta de Lotes V1");
+    options.RoutePrefix = "swagger";
+});
+
+// ===============================================
+// 5. ACTIVAR CORS
+// Debe ir antes de MapControllers
+// ===============================================
 app.UseCors("AllowAll");
-// ------------------------------------------
 
+// ===============================================
+// 6. ARCHIVOS ESTÁTICOS
+// Si no tienes wwwroot, puedes comentar esta línea
+// ===============================================
+// app.UseStaticFiles();
 
-app.UseStaticFiles();
-
+// ===============================================
+// 7. AUTORIZACIÓN
+// ===============================================
 app.UseAuthorization();
 
+// ===============================================
+// 8. MAPEAR CONTROLLERS
+// Aquí se conectan las rutas de tus controllers
+// ===============================================
 app.MapControllers();
 
+// ===============================================
+// 9. EJECUTAR API
+// ===============================================
 app.Run();

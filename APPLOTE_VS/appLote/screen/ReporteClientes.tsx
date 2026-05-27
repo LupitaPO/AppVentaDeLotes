@@ -7,6 +7,7 @@ import {
 	ScrollView,
 	Alert,
 	Image,
+	Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRef } from "react";
@@ -15,9 +16,11 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
 import styles from "./ReporteClientesStyles";
+import { API_URL } from "../config/apiUrl";
+import i18n from "../i18n";
 
 // ATAMAINE: URL base del backend .NET donde consultamos la lista real de clientes.
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+// ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 // ATAMAINE: Datos fijos que usamos para personalizar la cabecera y pie del PDF.
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
 const EMPRESA_CONTACTO = "www.tulote.somee.com";
@@ -114,25 +117,26 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
 	}
 };
 
-// ATAMAINE: Dejamos una estructura fija para que la tabla entre completa en pantalla y no se desborde.
+// ATAMAINE: Ajustamos las proporciones para que DNI, celular, correo y estado respiren mejor en pantallas pequeñas.
 const COLUMNAS_REPORTE: Array<{
 	key: keyof ClienteReporteItem;
 	label: string;
 	flex: number;
 }> = [
-	{ key: "DNI", label: "DNI", flex: 0.95 },
-	{ key: "Nombre", label: "Nombre", flex: 1.2 },
+	{ key: "DNI", label: "DNI", flex: 0.9 },
+	{ key: "Nombre", label: "Nombre", flex: 1.1 },
 	{ key: "Apellidos", label: "Apellidos", flex: 1.2 },
-	{ key: "Celular", label: "Celular", flex: 1.05 },
-	{ key: "Correo", label: "Correo", flex: 1.6 },
-	{ key: "Estado", label: "Estado", flex: 0.9 },
+	{ key: "Celular", label: "Celular", flex: 1.25 },
+	{ key: "Correo", label: "Correo", flex: 1.3 },
+	{ key: "Estado", label: "Estado", flex: 0.85 },
 ];
 
 // ATAMAINE: Unificamos el texto del estado para mostrarlo limpio en pantalla segun lo que venga en la API.
 const normalizarEstado = (estado: unknown) => {
-	const estadoTexto = String(estado ?? "").trim().toLowerCase();
-	const estadosActivos = ["activo", "a", "1", "true", "vigente", "registrado"];
-	const estadosInactivos = ["inactivo", "i", "0", "false", "anulado", "borrado", "desactivado"];
+        const estadoTexto = String(estado ?? "").trim().toLowerCase();
+        const estadosActivos = ["activo", "a", "1", "true", "vigente", "registrado"];
+        // ATAMAINE: La API puede devolver "X" para registros anulados; en el reporte siempre se muestra como Inactivo.
+        const estadosInactivos = ["inactivo", "i", "x", "0", "false", "anulado", "borrado", "desactivado"];
 
 	if (estadosActivos.includes(estadoTexto)) {
 		return "Activo";
@@ -150,20 +154,95 @@ const normalizarEstado = (estado: unknown) => {
 };
 
 // ATAMAINE: Normalizamos los datos del cliente para que el reporte siempre tenga las mismas columnas visibles.
+const separarNombreCompleto = (item: ReporteItem) => {
+        const nombresApi = [item.Nombre1, item.Nombre2].filter(Boolean).join(" ").trim();
+        const apellidosApi = [item.Apaterno, item.Amaterno].filter(Boolean).join(" ").trim();
+
+        if (nombresApi || apellidosApi) {
+                return {
+                        nombre: nombresApi || String(item.Nombre ?? "-"),
+                        apellidos: apellidosApi || String(item.Apellidos ?? "-"),
+                };
+        }
+
+        // ATAMAINE: El endpoint de reporte filtrado devuelve NombreCompleto; lo separamos para no mostrar guiones.
+        const nombreCompleto = String(item.NombreCompleto ?? item.Nombre ?? "").trim();
+        if (!nombreCompleto) {
+                return {
+                        nombre: "-",
+                        apellidos: String(item.Apellidos ?? "-"),
+                };
+        }
+
+        const partes = nombreCompleto.split(/\s+/).filter(Boolean);
+        if (partes.length >= 4) {
+                return {
+                        nombre: partes.slice(0, 2).join(" "),
+                        apellidos: partes.slice(2).join(" "),
+                };
+        }
+
+        if (partes.length >= 2) {
+                return {
+                        nombre: partes[0],
+                        apellidos: partes.slice(1).join(" "),
+                };
+        }
+
+        return {
+                nombre: nombreCompleto,
+                apellidos: String(item.Apellidos ?? "-"),
+        };
+};
+
 const normalizarClientes = (items: ReporteItem[]): ClienteReporteItem[] =>
-	items.map((item) => ({
-		DNI: String(item.DNI ?? "-"),
-		Nombre: [item.Nombre1, item.Nombre2].filter(Boolean).join(" ") || String(item.Nombre ?? "-"),
-		Apellidos:
-			[item.Apaterno, item.Amaterno].filter(Boolean).join(" ") ||
-			String(item.Apellidos ?? "-"),
-		Celular: String(item.Celular ?? "-"),
-		Correo: String(item.Correo ?? "-"),
-		Estado: normalizarEstado(item.Estado),
-	}));
+        items.map((item) => {
+                const nombreSeparado = separarNombreCompleto(item);
+
+                return {
+                        DNI: String(item.DNI ?? "-"),
+                        Nombre: nombreSeparado.nombre,
+                        Apellidos: nombreSeparado.apellidos,
+                        Celular: String(item.Celular ?? "-"),
+                        Correo: String(item.Correo ?? "-"),
+                        Estado: normalizarEstado(item.Estado),
+                };
+        });
 
 // ATAMAINE: Detectamos estados para pintarlos distinto dentro de la tabla sin cambiar la data real.
 const esEstadoActivo = (estado: string) => estado.trim().toLowerCase() === "activo";
+
+// ATAMAINE: Desde el boton Ver saltamos al tab de clientes y mandamos el DNI para remarcar la tarjeta real.
+const abrirClienteRegistrado = (navigation: any, item: ClienteReporteItem) => {
+	navigation.navigate("MainTabs", {
+		screen: i18n.t("btcliente"),
+		params: {
+			clienteSeleccionadoDNI: item.DNI,
+			clienteSeleccionadoNombre: `${item.Nombre} ${item.Apellidos}`.trim(),
+		},
+	});
+};
+
+const obtenerLogoPdfUri = () => {
+	// ATAMAINE: En web Image.resolveAssetSource puede no existir; evitamos pantalla blanca al abrir reportes.
+	const resolver = (Image as any).resolveAssetSource;
+	if (typeof resolver !== "function") {
+		return "";
+	}
+
+	return resolver(require("../assets/splash-icon.png"))?.uri || "";
+};
+
+const consultarClientesRegistrados = async (signal?: AbortSignal) => {
+	const response = await fetch(`${API_URL}/Cliente/cliente_Listar`, { signal });
+
+	if (!response.ok) {
+		throw new Error(`HTTP ${response.status}`);
+	}
+
+	const rawData = await response.text();
+	return normalizarClientes(parseReporteResponse(rawData));
+};
 
 const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 	const [datoBuscar, setDatoBuscar] = useState("");
@@ -193,37 +272,18 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		try {
 			setCargando(true);
 			setMensaje("");
-			console.log("📡 Llamando API (cargarClientesIniciales): " + API_URL + "/Reporte/reporte_Clientes/*");
-			const response = await fetch(`${API_URL}/Reporte/reporte_Clientes/${"*"}`);
+			const clientesBase = await consultarClientesRegistrados();
 
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			const rawData = await response.text();
-			console.log("✅ Respuesta cruda del API (Clientes):", rawData);
-			let clientesBase = normalizarClientes(parseReporteResponse(rawData));
-
-			// Si no devolvieron array, intentamos endpoints alternativos por compatibilidad
-			if (!clientesBase.length) {
-				console.log("⚠️ Respuesta vacía, intentando endpoint alternativo /Reporte/reporte_Clientes");
-				try {
-					const alt = await fetch(`${API_URL}/Reporte/reporte_Clientes`);
-					if (alt.ok) {
-						const rawAlt = await alt.text();
-						console.log("✅ Respuesta alternativa cruda:", rawAlt);
-						clientesBase = normalizarClientes(parseReporteResponse(rawAlt));
-					}
-				} catch (e) {
-					// ignore
-				}
-			}
-			console.log("✅ Clientes normalizados cargados:", clientesBase.length, clientesBase);
 			setTodosClientes(clientesBase);
 			setReporte(clientesBase);
 			setBuscado(false);
+			setUltimoFiltro("");
+
+			if (!clientesBase.length) {
+				setMensaje("No existen clientes registrados.");
+			}
 		} catch (error) {
-			console.error("❌ Error al cargar clientes base:", error);
+			console.error("Error al cargar clientes registrados:", error);
 			setTodosClientes([]);
 			setReporte([]);
 			setMensaje("No se pudo cargar la lista de clientes.");
@@ -267,11 +327,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 					return;
 				}
 
-				// Si no hay filtro, traemos la lista completa
-				const resp = await fetch(`${API_URL}/Reporte/reporte_Clientes/*`, { signal });
-				if (!resp.ok) return;
-				const raw = await resp.text();
-				const clientes = normalizarClientes(parseReporteResponse(raw));
+				const clientes = await consultarClientesRegistrados(signal);
 				if (!mounted) return;
 				setTodosClientes(clientes);
 				// Si no estamos mostrando resultados filtrados, mantenemos el listado inferior al dia
@@ -290,7 +346,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 			clearInterval(iv);
 			if (fetchControllerRef.current) fetchControllerRef.current.abort();
 		};
-	}, [buscado]);
+	}, [buscado, ultimoFiltro]);
 
 	const limpiarFiltro = async () => {
 		setDatoBuscar("");
@@ -301,19 +357,11 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		// Volver a cargar desde el API en tiempo real para asegurar datos frescos
 		try {
 			setCargando(true);
-			console.log("📡 Recargando lista completa de clientes (limpiar filtro)");
-			const response = await fetch(`${API_URL}/Reporte/reporte_Clientes/*`);
-
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			const rawData = await response.text();
-			const clientesBase = normalizarClientes(parseReporteResponse(rawData));
+			const clientesBase = await consultarClientesRegistrados();
 			setTodosClientes(clientesBase);
 			setReporte(clientesBase);
 		} catch (error) {
-			console.error("❌ Error al recargar clientes al limpiar filtro:", error);
+			console.error("Error al recargar clientes al limpiar filtro:", error);
 			setTodosClientes([]);
 			setReporte([]);
 			setMensaje("No se pudo recargar la lista de clientes.");
@@ -331,10 +379,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		month: "2-digit",
 		day: "2-digit",
 	});
-	const logoPdfUri = Image.resolveAssetSource(require("../assets/splash-icon.png"))?.uri || "";
-
-	// Marca de verificación para ayudar a confirmar que el bundle actualizó
-	const buildLoadedAt = new Date().toLocaleString();
+	const logoPdfUri = obtenerLogoPdfUri();
 
 	const clienteParaPdf = buscado && ultimoFiltro ? reporte : todosClientes;
 
@@ -445,6 +490,18 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 
 		try {
 			const html = construirHtmlReporte();
+			// ATAMAINE: En navegador abrimos la impresion web para guardar como PDF sin depender de expo-sharing.
+			if (Platform.OS === "web" && typeof window !== "undefined") {
+				const printWindow = window.open("", "_blank");
+				if (printWindow) {
+					printWindow.document.open();
+					printWindow.document.write(html);
+					printWindow.document.close();
+					printWindow.focus();
+					setTimeout(() => printWindow.print(), 300);
+					return;
+				}
+			}
 			await Print.printAsync({ html });
 			const { uri } = await Print.printToFileAsync({ html });
 			const puedeCompartir = await Sharing.isAvailableAsync();
@@ -475,21 +532,13 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 				setCargando(true);
 				setMensaje("");
 				setUltimoFiltro("");
-				console.log("📡 Consultando lista completa de clientes (filtro vacío)");
-				const response = await fetch(`${API_URL}/Reporte/reporte_Clientes/*`);
-
-				if (!response.ok) {
-					throw new Error(`HTTP ${response.status}`);
-				}
-
-				const rawData = await response.text();
-				const clientesBase = normalizarClientes(parseReporteResponse(rawData));
+				const clientesBase = await consultarClientesRegistrados();
 				setTodosClientes(clientesBase);
 				setReporte(clientesBase);
 				setBuscado(false);
 				return;
 			} catch (error) {
-				console.error("❌ Error al consultar lista completa (filtro vacío):", error);
+				console.error("Error al consultar lista completa:", error);
 				setTodosClientes([]);
 				setReporte([]);
 				setMensaje("No se pudo consultar la lista de clientes.");
@@ -502,9 +551,6 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 			setCargando(true);
 			setMensaje("");
 			setUltimoFiltro(filtro);
-
-			// ATAMAINE: Llamamos al API con el filtro en TIEMPO REAL para buscar por DNI o nombre en la base de datos.
-			console.log("🔍 Búsqueda en tiempo real con filtro:", filtro);
 
 			// Cancelar petición previa si existe
 			if (fetchControllerRef.current) {
@@ -519,9 +565,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 			}
 
 			const rawData = await response.text();
-			console.log("✅ Respuesta del API (búsqueda):", rawData);
 			const filtrados = normalizarClientes(parseReporteResponse(rawData));
-			console.log("✅ Resultados después de normalizar:", filtrados.length, filtrados);
 
 			setReporte(filtrados);
 			setBuscado(true);
@@ -530,7 +574,10 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 				setMensaje("No se encontraron registros para ese criterio.");
 			}
 		} catch (error) {
-			console.error("❌ Error al consultar reporte desde API:", error);
+			if ((error as Error).name === "AbortError") {
+				return;
+			}
+			console.error("Error al consultar reporte desde API:", error);
 			setReporte([]);
 			setBuscado(true);
 			setMensaje("No se pudo consultar el reporte en este momento.");
@@ -539,29 +586,37 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		}
 	};
 
-	// Mostrar listado inferior: siempre mostrar los clientes completos obtenidos desde el API
-	// (almacenados en `todosClientes`). La búsqueda seguirá mostrando sus resultados
-	// en el área de 'Resultados encontrados' / mensajes, pero la tabla principal
-	// reflejará la lista completa registrada en el backend.
-	const listadoMostrar = todosClientes;
+	const listadoMostrar = buscado ? reporte : todosClientes;
 
 	return (
 		<View style={styles.container}>
 			<View style={styles.backgroundGlowTop} />
 			<View style={styles.backgroundGlowBottom} />
-			<ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+			<ScrollView
+				style={styles.scrollView}
+				contentContainerStyle={styles.scrollContent}
+				showsVerticalScrollIndicator={false}
+			>
 				<LinearGradient
-					colors={["#2d7f7b", "#235e63", "#22364d"]}
+					colors={["#0f766e", "#155e63", "#172554"]}
 					start={{ x: 0, y: 0 }}
 					end={{ x: 1, y: 1 }}
 					style={styles.heroCard}
 				>
 					<View style={styles.headerRow}>
 						<TouchableOpacity
-							style={styles.backButton}
+							style={styles.backButtonTouch}
 							onPress={() => navigation.goBack()}
 						>
-							<MaterialCommunityIcons name="arrow-left" size={22} color="#ffffff" />
+							{/* ATAMAINE: Boton de retorno con brillo suave para mantener la misma linea visual de reportes. */}
+							<LinearGradient
+								colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.12)"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={styles.backButton}
+							>
+								<MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+							</LinearGradient>
 						</TouchableOpacity>
 						<View style={styles.heroContent}>
 							<View style={styles.liveBadge}>
@@ -571,7 +626,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 							<Text style={styles.title}>Gestion Integral</Text>
 							<Text style={styles.title}>de Clientes</Text>
 							<Text style={styles.subtitle}>
-								Gestiona la informacion de los clientes en tiempo real.
+								Consulta clientes por DNI o nombre con datos reales en tiempo real.
 							</Text>
 						</View>
 					</View>
@@ -612,30 +667,52 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 
 					<View style={styles.actionRow}>
 						<TouchableOpacity style={styles.primaryAction} onPress={() => consultarReporte()}>
-							<View style={[styles.actionSurface, styles.primaryActionSurface]}>
+							{/* ATAMAINE: Gradiente interno para destacar la accion principal sin cambiar la funcion de busqueda. */}
+							<LinearGradient
+								colors={["#ffffff", "#edf5ff"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.primaryActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.primaryActionBadge]}>
 									<MaterialCommunityIcons name="magnify" size={18} color="#2563eb" />
 								</View>
 								<Text style={styles.primaryActionText}>Buscar</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 
-						<TouchableOpacity style={styles.newAction} activeOpacity={0.85}>
-							<View style={[styles.actionSurface, styles.newActionSurface]}>
+						<TouchableOpacity
+							style={styles.newAction}
+							activeOpacity={0.85}
+							onPress={() => navigation.navigate("RegistrarCliente", { onRefresh: cargarClientesIniciales })}
+						>
+							{/* ATAMAINE: Nuevo cliente abre el formulario real y al volver refresca el reporte desde la API. */}
+							<LinearGradient
+								colors={["#ffffff", "#e8fff8"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.newActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.newActionBadge]}>
 									<MaterialCommunityIcons name="plus-circle-outline" size={18} color="#0f766e" />
 								</View>
 								<Text style={styles.newActionText}>Nuevo</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 
 						<TouchableOpacity style={styles.clearAction} onPress={limpiarFiltro}>
-							<View style={[styles.actionSurface, styles.clearActionSurface]}>
+							{/* ATAMAINE: Gradiente neutro para limpiar el filtro de forma visualmente consistente. */}
+							<LinearGradient
+								colors={["#ffffff", "#f4f7fb"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.clearActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.clearActionBadge]}>
 									<MaterialCommunityIcons name="close-circle-outline" size={18} color="#64748b" />
 								</View>
 								<Text style={styles.clearActionText}>Limpiar</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 					</View>
 
@@ -645,19 +722,24 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 							onPress={generarPDF}
 							disabled={!reporte.length || cargando}
 						>
-							<View style={[styles.actionSurface, styles.secondaryActionSurface]}>
+							{/* ATAMAINE: PDF conserva su acento dorado con una superficie mas radiante. */}
+							<LinearGradient
+								colors={["#ffffff", "#fff7e6"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.secondaryActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.secondaryActionBadge]}>
 									<MaterialCommunityIcons name="file-pdf-box" size={18} color="#f59e0b" />
 								</View>
 								<Text style={styles.secondaryActionText}>PDF</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 					</View>
 				</View>
 
 				<View style={styles.contentCard}>
-					<Text style={styles.contentTitle}>Listado de Clientes</Text>
-					<Text style={styles.smallNote}>UI cargada: {buildLoadedAt} (verificar recarga)</Text>
+					<Text style={styles.contentTitle}>Listado del Reporte</Text>
 					{cargando && (
 						<ActivityIndicator size="large" color="#069488" style={styles.loader} />
 					)}
@@ -669,7 +751,9 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 					) : null}
 
 					{!cargando && buscado && reporte.length > 0 ? (
-						<Text style={styles.resultCounter}>Resultados encontrados: {reporte.length}</Text>
+						<Text style={styles.resultCounter}>
+							Mostrando {reporte.length} resultado{reporte.length === 1 ? "" : "s"} para: {ultimoFiltro}
+						</Text>
 					) : null}
 
 					{!cargando && buscado && reporte.length === 0 && !mensaje ? (
@@ -729,14 +813,26 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 												</Text>
 												</View>
 											) : (
-												<Text style={styles.tableDataText} numberOfLines={2}>
+												<Text
+													style={[
+														styles.tableDataText,
+														columna.key === "Celular" ? styles.tableDataTextTight : null,
+													]}
+													numberOfLines={columna.key === "Celular" ? 1 : 2}
+													adjustsFontSizeToFit={columna.key === "Celular"}
+													minimumFontScale={0.78}
+												>
 												{String(item[columna.key] ?? "-")}
 												</Text>
 											)}
 										</View>
 									))}
 									<View style={styles.tableActionCell}>
-										<TouchableOpacity style={styles.verButton} activeOpacity={0.8}>
+										<TouchableOpacity
+											style={styles.verButton}
+											activeOpacity={0.8}
+											onPress={() => abrirClienteRegistrado(navigation, item)}
+										>
 											<Text style={styles.verButtonText}>Ver</Text>
 										</TouchableOpacity>
 									</View>

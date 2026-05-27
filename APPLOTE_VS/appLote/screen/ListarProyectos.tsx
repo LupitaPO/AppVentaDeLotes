@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 
 // imports para idiomas 
@@ -35,12 +35,14 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
   }
 
   // Datos recibidos desde la navegación para personalizar la vista y las acciones disponibles.
-  const { nombre, rol, idUsuario, onRefresh } = route.params || {};
+  const { nombre, rol, idUsuario, onRefresh, proyectoSeleccionadoId, proyectoSeleccionadoNombre, loteSeleccionadoCodigo } = route.params || {};
   {
   }
 
   // Lista de proyectos cargados desde el servidor.
   const [proyectos, setProyectos] = useState([]);
+  const scrollProyectosRef = useRef<ScrollView | null>(null);
+  const posicionesProyectosRef = useRef<Record<string, number>>({});
 
   // Estado para mostrar indicador de carga mientras se consulta la API.
   const [cargando, setCargando] = useState(true);
@@ -96,6 +98,20 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
       obtenerProyectos();
     }, []),
   );
+
+  // ATAMAINE: Desde reportes bajamos hasta el proyecto marcado, ya sea por ID o por nombre.
+  useEffect(() => {
+    if ((!proyectoSeleccionadoId && !proyectoSeleccionadoNombre) || cargando) return;
+    const timer = setTimeout(() => {
+      const clave = String(proyectoSeleccionadoId || proyectoSeleccionadoNombre || "");
+      const posicion = posicionesProyectosRef.current[clave];
+      if (typeof posicion === "number") {
+        scrollProyectosRef.current?.scrollTo({ y: Math.max(posicion - 18, 0), animated: true });
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [proyectoSeleccionadoId, proyectoSeleccionadoNombre, cargando, proyectos]);
 
   // Mientras los datos llegan, muestra un indicador de carga a pantalla completa.
   if (cargando)
@@ -174,11 +190,27 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
       {/* Área principal con la lista desplazable de proyectos. */}
       <View style={styles.form}>
         <ScrollView
+          ref={scrollProyectosRef}
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 20 }}
           showsVerticalScrollIndicator={true}
         >
-          {proyectos.map((proyecto, index) => (
+          {proyectoSeleccionadoId || proyectoSeleccionadoNombre ? (
+            <View style={styles.selectedNotice}>
+              <Text style={styles.selectedNoticeText}>
+                Proyecto seleccionado desde reporte: {proyectoSeleccionadoNombre || proyectoSeleccionadoId}
+                {loteSeleccionadoCodigo ? ` | Lote: ${loteSeleccionadoCodigo}` : ""}
+              </Text>
+            </View>
+          ) : null}
+
+          {proyectos.map((proyecto, index) => {
+            // ATAMAINE: Marcamos por ID cuando existe; para lotes usamos nombre del proyecto relacionado.
+            const coincideId = proyectoSeleccionadoId && String(proyecto.IdProyecto || "") === String(proyectoSeleccionadoId);
+            const coincideNombre = proyectoSeleccionadoNombre && String(proyecto.Nombre || "").trim().toLowerCase() === String(proyectoSeleccionadoNombre).trim().toLowerCase();
+            const estaSeleccionado = Boolean(coincideId || coincideNombre);
+
+            return (
             /* Cada tarjeta representa un proyecto y permite abrir su detalle. */
             <TouchableOpacity
               key={
@@ -186,7 +218,15 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
                   ? proyecto.IdProyecto.toString()
                   : index.toString()
               }
-              style={styles.card}
+              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+              onLayout={(event) => {
+                if (proyecto.IdProyecto) {
+                  posicionesProyectosRef.current[String(proyecto.IdProyecto)] = event.nativeEvent.layout.y;
+                }
+                if (proyecto.Nombre) {
+                  posicionesProyectosRef.current[String(proyecto.Nombre)] = event.nativeEvent.layout.y;
+                }
+              }}
               onPress={() =>
                 navigation.navigate("DetalleProyecto", {
                   idProyecto: proyecto.IdProyecto,
@@ -196,6 +236,11 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
                 })
               }
             >
+              {estaSeleccionado ? (
+                <View style={styles.selectedBadge}>
+                  <Text style={styles.selectedBadgeText}>Seleccionado</Text>
+                </View>
+              ) : null}
               <View style={styles.grid}>
                 <Text style={styles.cardTitle}>
                   {proyecto.Nombre || "Proyecto sin nombre"}
@@ -248,7 +293,7 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
                 Fecha Registro: {proyecto.FechaRegistro || "N/A"}
               </Text>
             </TouchableOpacity>
-          ))}
+          )})}
         </ScrollView>
       </View>
 
@@ -365,6 +410,44 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     elevation: 3,
+  },
+  // ATAMAINE: Resaltado premium para ubicar proyectos abiertos desde reportes o lotes.
+  cardSeleccionada: {
+    borderWidth: 2,
+    borderColor: "#2563eb",
+    backgroundColor: "#eff6ff",
+    shadowColor: "#2563eb",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  selectedNotice: {
+    backgroundColor: "#dbeafe",
+    borderLeftWidth: 5,
+    borderLeftColor: "#2563eb",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  selectedNoticeText: {
+    color: "#1d4ed8",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  selectedBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#2563eb",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  selectedBadgeText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "900",
   },
   cardTitle: {
     fontSize: 18,

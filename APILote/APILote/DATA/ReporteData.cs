@@ -109,5 +109,60 @@ namespace APILote.DATA
                 return null;
             }
         }
+
+        public DataTable reporte_Lotes(string estadoLote, string nombreProyecto, decimal? precioDesde)
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "reporte_Lotes_pa",
+                    estadoLote,
+                    nombreProyecto,
+                    precioDesde
+                ).Tables[0];
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+        // =====================================================
+        // ATAMAINE - MÉTODO DATA PARA REPORTE DE USUARIOS
+        // Este método llama al procedimiento almacenado:
+        // dbo.reporte_Usuarios_pa
+        // =====================================================
+
+        public DataTable reporte_Usuarios(string nombre, string tipoUsuario)
+        {
+            try
+            {
+                // Tabla donde se guardará el resultado del procedimiento
+                DataTable Datos = new DataTable();
+
+                // Ejecutamos el procedimiento almacenado de SQL Server
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "reporte_Usuarios_pa",
+                    nombre,
+                    tipoUsuario
+                ).Tables[0];
+
+                // Retornamos los datos al Controller
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                // Si ocurre un error, retornamos null
+                return null;
+            }
+        }
+
+
+
     }
 }

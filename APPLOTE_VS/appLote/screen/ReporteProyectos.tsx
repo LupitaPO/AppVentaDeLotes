@@ -7,6 +7,7 @@ import {
 	ScrollView,
 	Alert,
 	Image,
+	Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRef } from "react";
@@ -14,10 +15,12 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
-import styles from "./ReporteProyectosStyles";
+import { reporteProyectosStyles as styles } from "./ReporteProyectosStyles";
+import { API_URL } from "../config/apiUrl";
+import i18n from "../i18n";
 
-// ATAMAINE: URL base del backend .NET donde consultamos la lista real de clientes.
-const API_URL = "http://www.tulote.somee.com";
+// ATAMAINE: URL base del backend .NET donde consultamos la lista real de proyectos.
+// ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 // ATAMAINE: Datos fijos que usamos para personalizar la cabecera y pie del PDF.
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
 const EMPRESA_CONTACTO = "www.tulote.somee.com";
@@ -26,14 +29,15 @@ const EMPRESA_SIGLAS = "RSF";
 // ATAMAINE: Tipo genérico para leer la respuesta cruda del backend antes de normalizarla.
 type ReporteItem = Record<string, unknown>;
 
-// ATAMAINE: Estructura final que la pantalla usa para pintar la tabla y exportar el PDF.
+// ATAMAINE: Estructura final que la pantalla usa para pintar proyectos reales del API.
 type ProyectoReporteItem = {
-	DNI: string;
-	Nombre: string;
-	Apellidos: string;
-	Celular: string;
-	Correo: string;
-	Estado: string;
+        IdProyecto: string;
+        CodProyecto: string;
+        Nombre: string;
+        Ubicacion: string;
+        Hectareas: string;
+        PartidaRegistral: string;
+        Estado: string;
 };
 
 // ATAMAINE: Propiedad de navegacion que llega desde React Navigation.
@@ -114,25 +118,27 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
 	}
 };
 
-// ATAMAINE: Dejamos una estructura fija para que la tabla entre completa en pantalla y no se desborde.
+// ATAMAINE: Ajustamos columnas propias de proyectos para que entren en móvil sin campos de clientes.
 const COLUMNAS_REPORTE: Array<{
 	key: keyof ProyectoReporteItem;
 	label: string;
 	flex: number;
 }> = [
-	{ key: "DNI", label: "DNI", flex: 0.95 },
-	{ key: "Nombre", label: "Nombre", flex: 1.2 },
-	{ key: "Apellidos", label: "Apellidos", flex: 1.2 },
-	{ key: "Celular", label: "Celular", flex: 1.05 },
-	{ key: "Correo", label: "Correo", flex: 1.6 },
-	{ key: "Estado", label: "Estado", flex: 0.9 },
+        { key: "IdProyecto", label: "ID", flex: 0.55 },
+        { key: "CodProyecto", label: "Cod.", flex: 0.72 },
+        { key: "Nombre", label: "Proyecto", flex: 1.15 },
+        { key: "Ubicacion", label: "Ubicacion", flex: 1.1 },
+        { key: "Hectareas", label: "Has.", flex: 0.62 },
+        { key: "PartidaRegistral", label: "Partida", flex: 1.0 },
+        { key: "Estado", label: "Estado", flex: 0.82 },
 ];
 
 // ATAMAINE: Unificamos el texto del estado para mostrarlo limpio en pantalla segun lo que venga en la API.
 const normalizarEstado = (estado: unknown) => {
-	const estadoTexto = String(estado ?? "").trim().toLowerCase();
-	const estadosActivos = ["activo", "a", "1", "true", "vigente", "registrado"];
-	const estadosInactivos = ["inactivo", "i", "0", "false", "anulado", "borrado", "desactivado"];
+        const estadoTexto = String(estado ?? "").trim().toLowerCase();
+        const estadosActivos = ["activo", "a", "1", "true", "vigente", "registrado"];
+        // ATAMAINE: La API puede devolver "X" para registros anulados; en el reporte siempre se muestra como Inactivo.
+        const estadosInactivos = ["inactivo", "i", "x", "0", "false", "anulado", "borrado", "desactivado"];
 
 	if (estadosActivos.includes(estadoTexto)) {
 		return "Activo";
@@ -149,21 +155,54 @@ const normalizarEstado = (estado: unknown) => {
 	return "Activo";
 };
 
-// ATAMAINE: Normalizamos los datos del cliente para que el reporte siempre tenga las mismas columnas visibles.
+// ATAMAINE: Normalizamos proyectos desde proyecto_Listar o reporte_Proyectos para una tabla estable.
 const normalizarProyectos = (items: ReporteItem[]): ProyectoReporteItem[] =>
-	items.map((item) => ({
-		DNI: String(item.DNI ?? "-"),
-		Nombre: [item.Nombre1, item.Nombre2].filter(Boolean).join(" ") || String(item.Nombre ?? "-"),
-		Apellidos:
-			[item.Apaterno, item.Amaterno].filter(Boolean).join(" ") ||
-			String(item.Apellidos ?? "-"),
-		Celular: String(item.Celular ?? "-"),
-		Correo: String(item.Correo ?? "-"),
-		Estado: normalizarEstado(item.Estado),
-	}));
+        items.map((item) => ({
+                IdProyecto: String(item.IdProyecto ?? item.ID ?? item.Id ?? "-"),
+                // ATAMAINE: Mostramos el codigo y partida porque el API de reporte de proyectos los devuelve como datos reales.
+                CodProyecto: String(item.CodProyecto ?? item.Codigo ?? item.CodigoProyecto ?? "-"),
+                Nombre: String(item.Nombre ?? item.Proyecto ?? "-"),
+                Ubicacion: String(item.Ubicacion ?? item.Direccion ?? "-"),
+                Hectareas: String(item.NumeroHectareas ?? item.Hectareas ?? "-"),
+                PartidaRegistral: String(item.PartidaRegistral ?? item.Partida ?? "-"),
+                Estado: normalizarEstado(item.Estado),
+        }));
 
 // ATAMAINE: Detectamos estados para pintarlos distinto dentro de la tabla sin cambiar la data real.
 const esEstadoActivo = (estado: string) => estado.trim().toLowerCase() === "activo";
+
+// ATAMAINE: Desde Ver abrimos el tab de proyectos y enviamos el ID/nombre para remarcar el proyecto exacto.
+const abrirProyectoRegistrado = (navigation: any, item: ProyectoReporteItem) => {
+	navigation.navigate("MainTabs", {
+		screen: i18n.t("btProyectos"),
+		params: {
+			proyectoSeleccionadoId: item.IdProyecto,
+			proyectoSeleccionadoNombre: item.Nombre,
+		},
+	});
+};
+
+const obtenerLogoPdfUri = () => {
+	// ATAMAINE: En web Image.resolveAssetSource puede no existir; evitamos pantalla blanca al abrir reportes.
+	const resolver = (Image as any).resolveAssetSource;
+	if (typeof resolver !== "function") {
+		return "";
+	}
+
+	return resolver(require("../assets/splash-icon.png"))?.uri || "";
+};
+
+// ATAMAINE: Fuente principal del listado: proyectos registrados directamente desde el modulo Proyecto.
+const consultarProyectosRegistrados = async (signal?: AbortSignal) => {
+	const response = await fetch(`${API_URL}/Proyecto/proyecto_Listar`, { signal });
+
+	if (!response.ok) {
+		throw new Error(`HTTP ${response.status}`);
+	}
+
+	const rawData = await response.text();
+	return normalizarProyectos(parseReporteResponse(rawData));
+};
 
 const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 	const [datoBuscar, setDatoBuscar] = useState("");
@@ -193,37 +232,18 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 		try {
 			setCargando(true);
 			setMensaje("");
-			console.log("📡 Llamando API (cargarProyectosIniciales): " + API_URL + "/Reporte/reporte_Proyectos/*");
-			const response = await fetch(`${API_URL}/Reporte/reporte_Proyectos/${"*"}`);
+			const proyectosBase = await consultarProyectosRegistrados();
 
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			const rawData = await response.text();
-			console.log("✅ Respuesta cruda del API (Proyectos):", rawData);
-			let proyectosBase = normalizarProyectos(parseReporteResponse(rawData));
-
-			// Si no devolvieron array, intentamos endpoints alternativos por compatibilidad
-			if (!proyectosBase.length) {
-				console.log("⚠️ Respuesta vacía, intentando endpoint alternativo /Reporte/reporte_Proyectos/*");
-				try {
-					const alt = await fetch(`${API_URL}/Reporte/reporte_Proyectos/${"*"}`);
-					if (alt.ok) {
-						const rawAlt = await alt.text();
-						console.log("✅ Respuesta alternativa cruda:", rawAlt);
-						proyectosBase = normalizarProyectos(parseReporteResponse(rawAlt));
-					}
-				} catch (e) {
-					// ignore
-				}
-			}
-			console.log("✅ Proyectos normalizados cargados:", proyectosBase.length, proyectosBase);
 			setTodosProyectos(proyectosBase);
 			setReporte(proyectosBase);
 			setBuscado(false);
+			setUltimoFiltro("");
+
+			if (!proyectosBase.length) {
+				setMensaje("No existen proyectos registrados.");
+			}
 		} catch (error) {
-			console.error("❌ Error al cargar proyectos base:", error);
+			console.error("Error al cargar proyectos registrados:", error);
 			setTodosProyectos([]);
 			setReporte([]);
 			setMensaje("No se pudo cargar la lista de proyectos.");
@@ -267,11 +287,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 					return;
 				}
 
-				// Si no hay filtro, traemos la lista completa
-				const resp = await fetch(`${API_URL}/Reporte/reporte_Proyectos/*`, { signal });
-				if (!resp.ok) return;
-				const raw = await resp.text();
-				const proyectos = normalizarProyectos(parseReporteResponse(raw));
+				const proyectos = await consultarProyectosRegistrados(signal);
 				if (!mounted) return;
 				setTodosProyectos(proyectos);
 				// Si no estamos mostrando resultados filtrados, mantenemos el listado inferior al dia
@@ -290,7 +306,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 			clearInterval(iv);
 			if (fetchControllerRef.current) fetchControllerRef.current.abort();
 		};
-	}, [buscado]);
+	}, [buscado, ultimoFiltro]);
 
 	const limpiarFiltro = async () => {
 		setDatoBuscar("");
@@ -301,19 +317,11 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 		// Volver a cargar desde el API en tiempo real para asegurar datos frescos
 		try {
 			setCargando(true);
-			console.log("📡 Recargando lista completa de proyectos (limpiar filtro)");
-			const response = await fetch(`${API_URL}/Reporte/reporte_Proyectos/*`);
-
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-
-			const rawData = await response.text();
-			const proyectosBase = normalizarProyectos(parseReporteResponse(rawData));
+			const proyectosBase = await consultarProyectosRegistrados();
 			setTodosProyectos(proyectosBase);
 			setReporte(proyectosBase);
 		} catch (error) {
-			console.error("❌ Error al recargar proyectos al limpiar filtro:", error);
+			console.error("Error al recargar proyectos al limpiar filtro:", error);
 			setTodosProyectos([]);
 			setReporte([]);
 			setMensaje("No se pudo recargar la lista de proyectos.");
@@ -331,10 +339,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 		month: "2-digit",
 		day: "2-digit",
 	});
-	const logoPdfUri = Image.resolveAssetSource(require("../assets/splash-icon.png"))?.uri || "";
-
-	// Marca de verificación para ayudar a confirmar que el bundle actualizó
-	const buildLoadedAt = new Date().toLocaleString();
+	const logoPdfUri = obtenerLogoPdfUri();
 
 	const proyectoParaPdf = buscado && ultimoFiltro ? reporte : todosProyectos;
 
@@ -353,15 +358,16 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 			? `<img src="${escapeHtml(logoPdfUri)}" style="width: 68px; height: 68px; border-radius: 16px; object-fit: contain; background: white; padding: 8px; border: 1px solid rgba(255,255,255,0.18);" />`
 			: `<div style="width: 68px; height: 68px; border-radius: 16px; background: white; color: #0f766e; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; border: 1px solid rgba(255,255,255,0.18);">${escapeHtml(EMPRESA_SIGLAS)}</div>`;
 
-		const columnasPdf = [
-			{ label: "N°", width: "8%" },
-			{ label: "DNI", width: "11%" },
-			{ label: "Nombre", width: "14%" },
-			{ label: "Apellidos", width: "17%" },
-			{ label: "Celular", width: "12%" },
-			{ label: "Correo", width: "23%" },
-			{ label: "Estado", width: "15%" },
-		];
+                const columnasPdf = [
+                        { label: "N°", width: "7%" },
+                        { label: "ID", width: "8%" },
+                        { label: "Cod.", width: "10%" },
+                        { label: "Proyecto", width: "20%" },
+                        { label: "Ubicacion", width: "20%" },
+                        { label: "Hectareas", width: "10%" },
+                        { label: "Partida", width: "13%" },
+                        { label: "Estado", width: "12%" },
+                ];
 
 		const colgroupHtml = columnasPdf.map((columna) => `<col style="width: ${columna.width};" />`).join("");
 
@@ -445,6 +451,18 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 		try {
 			const html = construirHtmlReporte();
+			// ATAMAINE: En navegador abrimos la impresion web para guardar como PDF sin depender de expo-sharing.
+			if (Platform.OS === "web" && typeof window !== "undefined") {
+				const printWindow = window.open("", "_blank");
+				if (printWindow) {
+					printWindow.document.open();
+					printWindow.document.write(html);
+					printWindow.document.close();
+					printWindow.focus();
+					setTimeout(() => printWindow.print(), 300);
+					return;
+				}
+			}
 			await Print.printAsync({ html });
 			const { uri } = await Print.printToFileAsync({ html });
 			const puedeCompartir = await Sharing.isAvailableAsync();
@@ -475,21 +493,13 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				setCargando(true);
 				setMensaje("");
 				setUltimoFiltro("");
-				console.log("📡 Consultando lista completa de proyectos (filtro vacío)");
-				const response = await fetch(`${API_URL}/Reporte/reporte_Proyectos/*`);
-
-				if (!response.ok) {
-					throw new Error(`HTTP ${response.status}`);
-				}
-
-				const rawData = await response.text();
-				const proyectosBase = normalizarProyectos(parseReporteResponse(rawData));
+				const proyectosBase = await consultarProyectosRegistrados();
 				setTodosProyectos(proyectosBase);
 				setReporte(proyectosBase);
 				setBuscado(false);
 				return;
 			} catch (error) {
-				console.error("❌ Error al consultar lista completa (filtro vacío):", error);
+				console.error("Error al consultar lista completa de proyectos:", error);
 				setTodosProyectos([]);
 				setReporte([]);
 				setMensaje("No se pudo consultar la lista de proyectos.");
@@ -503,25 +513,20 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 			setMensaje("");
 			setUltimoFiltro(filtro);
 
-			// ATAMAINE: Llamamos al API con el filtro en TIEMPO REAL para buscar por DNI o nombre en la base de datos.
-			console.log("🔍 Búsqueda en tiempo real con filtro:", filtro);
-
 			// Cancelar petición previa si existe
 			if (fetchControllerRef.current) {
 				try { fetchControllerRef.current.abort(); } catch (e) {}
 			}
 			fetchControllerRef.current = new AbortController();
 			const signal = fetchControllerRef.current.signal;
-			const response = await fetch(`${API_URL}/Reporte/reporte_Proyecto/${encodeURIComponent(filtro)}`, { signal });
+			const response = await fetch(`${API_URL}/Reporte/reporte_Proyectos/${encodeURIComponent(filtro)}`, { signal });
 
 			if (!response.ok) {
 				throw new Error(`HTTP ${response.status}`);
 			}
 
 			const rawData = await response.text();
-			console.log("✅ Respuesta del API (búsqueda):", rawData);
 			const filtrados = normalizarProyectos(parseReporteResponse(rawData));
-			console.log("✅ Resultados después de normalizar:", filtrados.length, filtrados);
 
 			setReporte(filtrados);
 			setBuscado(true);
@@ -530,7 +535,10 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				setMensaje("No se encontraron registros para ese criterio.");
 			}
 		} catch (error) {
-			console.error("❌ Error al consultar reporte desde API:", error);
+			if ((error as Error).name === "AbortError") {
+				return;
+			}
+			console.error("Error al consultar reporte de proyectos:", error);
 			setReporte([]);
 			setBuscado(true);
 			setMensaje("No se pudo consultar el reporte en este momento.");
@@ -539,29 +547,40 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 		}
 	};
 
-	// Mostrar listado inferior: siempre mostrar los clientes completos obtenidos desde el API
-	// (almacenados en `todosClientes`). La búsqueda seguirá mostrando sus resultados
-	// en el área de 'Resultados encontrados' / mensajes, pero la tabla principal
-	// reflejará la lista completa registrada en el backend.
-	const listadoMostrar = todosProyectos;
+	const listadoMostrar = buscado ? reporte : todosProyectos;
+	// ATAMAINE: Estas columnas usan ajuste fino para que codigo, hectareas y partida no rompan la fila.
+	const esColumnaProyectoCorta = (key: keyof ProyectoReporteItem) =>
+		key === "Hectareas" || key === "PartidaRegistral" || key === "CodProyecto";
 
 	return (
 		<View style={styles.container}>
 			<View style={styles.backgroundGlowTop} />
 			<View style={styles.backgroundGlowBottom} />
-			<ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+			<ScrollView
+				style={styles.scrollView}
+				contentContainerStyle={styles.scrollContent}
+				showsVerticalScrollIndicator={false}
+			>
 				<LinearGradient
-					colors={["#2d7f7b", "#235e63", "#22364d"]}
+					colors={["#0f766e", "#155e63", "#172554"]}
 					start={{ x: 0, y: 0 }}
 					end={{ x: 1, y: 1 }}
 					style={styles.heroCard}
 				>
 					<View style={styles.headerRow}>
 						<TouchableOpacity
-							style={styles.backButton}
+							style={styles.backButtonTouch}
 							onPress={() => navigation.goBack()}
 						>
-							<MaterialCommunityIcons name="arrow-left" size={22} color="#ffffff" />
+							{/* ATAMAINE: Boton de retorno con brillo suave para mantener el patron visual de reportes. */}
+							<LinearGradient
+								colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.12)"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={styles.backButton}
+							>
+								<MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+							</LinearGradient>
 						</TouchableOpacity>
 						<View style={styles.heroContent}>
 							<View style={styles.liveBadge}>
@@ -569,9 +588,9 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 								<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
 							</View>
 							<Text style={styles.title}>Gestion Integral</Text>
-							<Text style={styles.title}>de Clientes</Text>
+							<Text style={styles.title}>de Proyectos</Text>
 							<Text style={styles.subtitle}>
-								Gestiona la informacion de los clientes en tiempo real.
+								Consulta proyectos por nombre, ubicacion o codigo con datos reales en tiempo real.
 							</Text>
 						</View>
 					</View>
@@ -599,11 +618,11 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 				<View style={styles.searchCard}>
 					<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
-					<Text style={styles.fieldLabel}>DNI/nombre:</Text>
+					<Text style={styles.fieldLabel}>Proyecto/ubicacion:</Text>
 					<TextInput
 						value={datoBuscar}
 						onChangeText={setDatoBuscar}
-						placeholder="Ingresar por DNI o nombre"
+						placeholder="Ingresar proyecto o ubicacion"
 						placeholderTextColor="#8ba8ae"
 						style={styles.input}
 						returnKeyType="search"
@@ -612,30 +631,52 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 					<View style={styles.actionRow}>
 						<TouchableOpacity style={styles.primaryAction} onPress={() => consultarReporte()}>
-							<View style={[styles.actionSurface, styles.primaryActionSurface]}>
+							{/* ATAMAINE: Gradiente interno para destacar la accion principal sin alterar la busqueda real. */}
+							<LinearGradient
+								colors={["#ffffff", "#edf5ff"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.primaryActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.primaryActionBadge]}>
 									<MaterialCommunityIcons name="magnify" size={18} color="#2563eb" />
 								</View>
 								<Text style={styles.primaryActionText}>Buscar</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 
-						<TouchableOpacity style={styles.newAction} activeOpacity={0.85}>
-							<View style={[styles.actionSurface, styles.newActionSurface]}>
+						<TouchableOpacity
+							style={styles.newAction}
+							activeOpacity={0.85}
+							onPress={() => navigation.navigate("Rproyecto", { onRefresh: cargarProyectosIniciales })}
+						>
+							{/* ATAMAINE: Gradiente verde suave para registrar nuevo proyecto desde el reporte. */}
+							<LinearGradient
+								colors={["#ffffff", "#e8fff8"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.newActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.newActionBadge]}>
 									<MaterialCommunityIcons name="plus-circle-outline" size={18} color="#0f766e" />
 								</View>
 								<Text style={styles.newActionText}>Nuevo</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 
 						<TouchableOpacity style={styles.clearAction} onPress={limpiarFiltro}>
-							<View style={[styles.actionSurface, styles.clearActionSurface]}>
+							{/* ATAMAINE: Gradiente neutro para limpiar filtros sin romper la jerarquia visual. */}
+							<LinearGradient
+								colors={["#ffffff", "#f4f7fb"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.clearActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.clearActionBadge]}>
 									<MaterialCommunityIcons name="close-circle-outline" size={18} color="#64748b" />
 								</View>
 								<Text style={styles.clearActionText}>Limpiar</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 					</View>
 
@@ -645,19 +686,24 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 							onPress={generarPDF}
 							disabled={!reporte.length || cargando}
 						>
-							<View style={[styles.actionSurface, styles.secondaryActionSurface]}>
+							{/* ATAMAINE: PDF mantiene el acento dorado con una superficie radiante. */}
+							<LinearGradient
+								colors={["#ffffff", "#fff7e6"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={[styles.actionSurface, styles.secondaryActionSurface]}
+							>
 								<View style={[styles.actionIconBadge, styles.secondaryActionBadge]}>
 									<MaterialCommunityIcons name="file-pdf-box" size={18} color="#f59e0b" />
 								</View>
 								<Text style={styles.secondaryActionText}>PDF</Text>
-							</View>
+							</LinearGradient>
 						</TouchableOpacity>
 					</View>
 				</View>
 
 				<View style={styles.contentCard}>
-					<Text style={styles.contentTitle}>Listado de Proyectos</Text>
-					<Text style={styles.smallNote}>UI cargada: {buildLoadedAt} (verificar recarga)</Text>
+					<Text style={styles.contentTitle}>Listado del Reporte</Text>
 					{cargando && (
 						<ActivityIndicator size="large" color="#069488" style={styles.loader} />
 					)}
@@ -669,7 +715,9 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 					) : null}
 
 					{!cargando && buscado && reporte.length > 0 ? (
-						<Text style={styles.resultCounter}>Resultados encontrados: {reporte.length}</Text>
+						<Text style={styles.resultCounter}>
+							Mostrando {reporte.length} resultado{reporte.length === 1 ? "" : "s"} para: {ultimoFiltro}
+						</Text>
 					) : null}
 
 					{!cargando && buscado && reporte.length === 0 && !mensaje ? (
@@ -729,14 +777,26 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 												</Text>
 												</View>
 											) : (
-												<Text style={styles.tableDataText} numberOfLines={2}>
+												<Text
+													style={[
+														styles.tableDataText,
+														esColumnaProyectoCorta(columna.key) ? styles.tableDataTextTight : null,
+													]}
+													numberOfLines={2}
+													adjustsFontSizeToFit={esColumnaProyectoCorta(columna.key)}
+													minimumFontScale={0.78}
+												>
 												{String(item[columna.key] ?? "-")}
 												</Text>
 											)}
 										</View>
 									))}
 									<View style={styles.tableActionCell}>
-										<TouchableOpacity style={styles.verButton} activeOpacity={0.8}>
+										<TouchableOpacity
+											style={styles.verButton}
+											activeOpacity={0.8}
+											onPress={() => abrirProyectoRegistrado(navigation, item)}
+										>
 											<Text style={styles.verButtonText}>Ver</Text>
 										</TouchableOpacity>
 									</View>

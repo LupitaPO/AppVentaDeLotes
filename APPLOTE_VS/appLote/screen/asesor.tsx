@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons } from "@expo/vector-icons";
@@ -18,10 +18,12 @@ import i18n,{changeLanguage} from "../i18n";
 const API_URL = "http://www.tulote.somee.com";
 //Revisión
 const asesor = ({ navigation, route }) => {
-  const { nombre, rol } = route.params || {};
+  const { nombre, rol, asesorSeleccionadoDNI, asesorSeleccionadoNombre } = route.params || {};
   const tabBarHeight = useBottomTabBarHeight();
   const [asesores, setAsesores] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const scrollAsesoresRef = useRef<ScrollView | null>(null);
+  const posicionesAsesoresRef = useRef<Record<string, number>>({});
 
 // funcion de idiomas //////////////////////////////////////////////
 
@@ -73,6 +75,19 @@ const asesor = ({ navigation, route }) => {
   useFocusEffect(() => {
     obtenerAsesores();
   });
+
+  // ATAMAINE: Si llegamos desde ReporteAsesores, movemos la lista hasta el asesor marcado.
+  useEffect(() => {
+    if (!asesorSeleccionadoDNI || cargando) return;
+    const timer = setTimeout(() => {
+      const posicion = posicionesAsesoresRef.current[String(asesorSeleccionadoDNI)];
+      if (typeof posicion === "number") {
+        scrollAsesoresRef.current?.scrollTo({ y: Math.max(posicion - 18, 0), animated: true });
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [asesorSeleccionadoDNI, cargando, asesores]);
 
   if (cargando)
     return (
@@ -131,11 +146,19 @@ const cerrarSesion = () => {
       </View>
   {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
       <ScrollView
+        ref={scrollAsesoresRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: tabBarHeight + 20 }}
         showsVerticalScrollIndicator={true}
       >
         <Text style={styles.subtitle}>Selecciona un Asesor:</Text>
+        {asesorSeleccionadoDNI ? (
+          <View style={styles.selectedNotice}>
+            <Text style={styles.selectedNoticeText}>
+              Asesor seleccionado desde reporte: {asesorSeleccionadoNombre || asesorSeleccionadoDNI}
+            </Text>
+          </View>
+        ) : null}
 
         {asesores.map((asesorItem, index) => {
           const nombreCompleto = [
@@ -146,11 +169,18 @@ const cerrarSesion = () => {
           ]
             .filter(Boolean)
             .join(" ");
+          // ATAMAINE: La marca visual se hace por DNI para coincidir con el registro del reporte.
+          const estaSeleccionado = String(asesorItem.DNI || "") === String(asesorSeleccionadoDNI || "");
 
           return (
             <TouchableOpacity
               key={asesorItem.IdAsesor ? asesorItem.IdAsesor.toString() : index.toString()}
-              style={styles.card}
+              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+              onLayout={(event) => {
+                if (asesorItem.DNI) {
+                  posicionesAsesoresRef.current[String(asesorItem.DNI)] = event.nativeEvent.layout.y;
+                }
+              }}
               onPress={() =>
                 Alert.alert(
                   "Opciones para Asesor",
@@ -176,6 +206,11 @@ const cerrarSesion = () => {
                 )
               }
             >
+              {estaSeleccionado ? (
+                <View style={styles.selectedBadge}>
+                  <Text style={styles.selectedBadgeText}>Seleccionado</Text>
+                </View>
+              ) : null}
               <Text style={styles.cardTitle}>{nombreCompleto || "Asesor sin nombre"}</Text>
               <Text style={styles.cardText}>DNI: {asesorItem.DNI || "N/A"}</Text>
               <Text style={styles.cardText}>Celular: {asesorItem.Celular || "N/A"}</Text>
@@ -280,6 +315,44 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     elevation: 3,
+  },
+  // ATAMAINE: Resaltado premium para ubicar el asesor seleccionado desde el reporte.
+  cardSeleccionada: {
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    backgroundColor: "#ecfffb",
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  selectedNotice: {
+    backgroundColor: "#ccfbf1",
+    borderLeftWidth: 5,
+    borderLeftColor: "#0f766e",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  selectedNoticeText: {
+    color: "#0f766e",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  selectedBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#0f766e",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  selectedBadgeText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "900",
   },
   cardTitle: {
     fontSize: 18,

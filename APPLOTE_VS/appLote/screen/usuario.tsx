@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -18,19 +18,22 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 import RegistrarAsesor from "./Asesor/RegistrarAsesor";
 import RegistrarUsuario from "./Usuarios/RegistrarUsuario";
+import { API_URL } from "../config/apiUrl";
 
 // URL base del backend para consultar y administrar usuarios.
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+// ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
 const usuario = ({navigation, route}) => {
   // Datos recibidos desde navegación para personalizar la pantalla según el contexto del usuario.
-  const { nombre, rol } = route.params || {};
+  const { nombre, rol, usuarioSeleccionadoId, usuarioSeleccionadoNombre } = route.params || {};
 
   // Altura de la barra inferior para dejar espacio visual al final del listado.
   const tabBarHeight = useBottomTabBarHeight();
 
   // Lista de usuarios recuperada desde la API.
   const [usuarios, setUsuarios] = useState([]);
+  const scrollUsuariosRef = useRef<ScrollView | null>(null);
+  const posicionesUsuariosRef = useRef<Record<string, number>>({});
 
   // Estado que controla el indicador de carga mientras llegan los datos.
   const [cargando, setCargando] = useState(true);
@@ -98,6 +101,19 @@ const usuario = ({navigation, route}) => {
     obtenerUsuarios();
   });
 
+  // ATAMAINE: Si llegamos desde ReporteUsuarios, ubicamos visualmente el usuario marcado.
+  useEffect(() => {
+    if (!usuarioSeleccionadoId || cargando) return;
+    const timer = setTimeout(() => {
+      const posicion = posicionesUsuariosRef.current[String(usuarioSeleccionadoId)];
+      if (typeof posicion === "number") {
+        scrollUsuariosRef.current?.scrollTo({ y: Math.max(posicion - 18, 0), animated: true });
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [usuarioSeleccionadoId, cargando, usuarios]);
+
   // Mientras se obtienen los usuarios, muestra un spinner de carga.
   if (cargando)
     return (
@@ -160,11 +176,19 @@ const cerrarSesion = () => {
 
       {/* Lista desplazable con todos los usuarios registrados. */}
       <ScrollView
+        ref={scrollUsuariosRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: tabBarHeight + 20 }}
         showsVerticalScrollIndicator={true}
       >
         <Text style={styles.subtitle}>Selecciona un Usuario:</Text>
+        {usuarioSeleccionadoId ? (
+          <View style={styles.selectedNotice}>
+            <Text style={styles.selectedNoticeText}>
+              Usuario seleccionado desde reporte: {usuarioSeleccionadoNombre || usuarioSeleccionadoId}
+            </Text>
+          </View>
+        ) : null}
 
         {usuarios.map((usuario, index) => {
           // Construye el nombre mostrado usando los campos disponibles del usuario.
@@ -174,11 +198,18 @@ const cerrarSesion = () => {
           
           const estaActivo = usuario.Estado === "A";
           const textoBotonestado = estaActivo ? "Anular" : "Restaurar";
+          // ATAMAINE: Comparamos por IdUsuario para marcar el registro real de la pantalla de usuarios.
+          const estaSeleccionado = String(usuario.IdUsuario || "") === String(usuarioSeleccionadoId || "");
           return (
             /* Cada tarjeta representa un usuario y abre acciones de administración. */
             <TouchableOpacity
               key={usuario.IdUsuario ? usuario.IdUsuario.toString() : index.toString()}
-              style={styles.card}
+              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+              onLayout={(event) => {
+                if (usuario.IdUsuario) {
+                  posicionesUsuariosRef.current[String(usuario.IdUsuario)] = event.nativeEvent.layout.y;
+                }
+              }}
               onPress={() =>
                 Alert.alert(
                   "Opciones para Usuarios",
@@ -204,6 +235,11 @@ const cerrarSesion = () => {
                 )
               }
             >
+              {estaSeleccionado ? (
+                <View style={styles.selectedBadge}>
+                  <Text style={styles.selectedBadgeText}>Seleccionado</Text>
+                </View>
+              ) : null}
               <Text style={styles.cardTitle}>{nombreCompleto || "Asesor sin nombre"}</Text>
               <Text style={styles.cardText}>Celular: {usuario.Celular || "N/A"}</Text>
               <Text style={styles.cardText}>Correo: {usuario.Correo || "N/A"}</Text>
@@ -310,6 +346,44 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     elevation: 3,
+  },
+  // ATAMAINE: Resaltado premium para ubicar usuarios abiertos desde el reporte.
+  cardSeleccionada: {
+    borderWidth: 2,
+    borderColor: "#0891b2",
+    backgroundColor: "#ecfeff",
+    shadowColor: "#0891b2",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  selectedNotice: {
+    backgroundColor: "#cffafe",
+    borderLeftWidth: 5,
+    borderLeftColor: "#0891b2",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  selectedNoticeText: {
+    color: "#0e7490",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  selectedBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#0891b2",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  selectedBadgeText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "900",
   },
   cardTitle: {
     fontSize: 18,

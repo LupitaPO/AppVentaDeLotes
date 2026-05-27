@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -23,13 +23,15 @@ const API_URL = "http://www.tulote.somee.com";
 
 const clientes = ({ navigation, route }) => {
   // Datos recibidos desde la navegación para personalizar la vista según el usuario.
-  const { nombre, rol } = route.params || {};
+  const { nombre, rol, clienteSeleccionadoDNI, clienteSeleccionadoNombre } = route.params || {};
 
   // Altura de la barra inferior para dejar espacio visual al final del ScrollView.
   const tabBarHeight = useBottomTabBarHeight();
 
   // Lista de clientes obtenida desde la API.
   const [clientes, setClientes] = useState([]);
+  const scrollClientesRef = useRef<ScrollView | null>(null);
+  const posicionesClientesRef = useRef<Record<string, number>>({});
 
   // Controla el indicador de carga mientras se consultan los datos.
   const [cargando, setCargando] = useState(true);
@@ -96,6 +98,19 @@ const clientes = ({ navigation, route }) => {
     obtenerClientes();
   });
 
+  // ATAMAINE: Si llegamos desde ReporteClientes, bajamos hasta la tarjeta marcada para ubicarla rapido.
+  useEffect(() => {
+    if (!clienteSeleccionadoDNI || cargando) return;
+    const timer = setTimeout(() => {
+      const posicion = posicionesClientesRef.current[String(clienteSeleccionadoDNI)];
+      if (typeof posicion === "number") {
+        scrollClientesRef.current?.scrollTo({ y: Math.max(posicion - 18, 0), animated: true });
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [clienteSeleccionadoDNI, cargando, clientes]);
+
   // Muestra un spinner mientras se completa la carga inicial.
   if (cargando)
     return (
@@ -158,11 +173,19 @@ const cerrarSesion = () => {
 
       {/* Lista desplazable de clientes registrados. */}
       <ScrollView
+        ref={scrollClientesRef}
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: tabBarHeight - 50 }}
         showsVerticalScrollIndicator={true}
       >
         <Text style={styles.subtitle}>Selecciona un Cliente:</Text>
+        {clienteSeleccionadoDNI ? (
+          <View style={styles.selectedNotice}>
+            <Text style={styles.selectedNoticeText}>
+              Cliente seleccionado desde reporte: {clienteSeleccionadoNombre || clienteSeleccionadoDNI}
+            </Text>
+          </View>
+        ) : null}
 
         {clientes.map((cliente, index) => {
           // Construye el nombre completo uniendo los nombres y apellidos disponibles.
@@ -175,11 +198,19 @@ const cerrarSesion = () => {
             .filter(Boolean)
             .join(" ");
 
+          // ATAMAINE: Comparamos por DNI para pintar exactamente el cliente tocado desde el reporte.
+          const estaSeleccionado = String(cliente.DNI || "") === String(clienteSeleccionadoDNI || "");
+
           return (
             /* Cada tarjeta representa un cliente y abre opciones de gestión. */
             <TouchableOpacity
               key={cliente.IdCliente ? cliente.IdCliente.toString() : index.toString()}
-              style={styles.card}
+              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+              onLayout={(event) => {
+                if (cliente.DNI) {
+                  posicionesClientesRef.current[String(cliente.DNI)] = event.nativeEvent.layout.y;
+                }
+              }}
               onPress={() =>
                 Alert.alert(
                   "Opciones para Cliente",
@@ -201,6 +232,11 @@ const cerrarSesion = () => {
                 )
               }
             >
+              {estaSeleccionado ? (
+                <View style={styles.selectedBadge}>
+                  <Text style={styles.selectedBadgeText}>Seleccionado</Text>
+                </View>
+              ) : null}
               <Text style={styles.cardTitle}>{nombreCompleto || "Cliente sin nombre"}</Text>
               <Text style={styles.cardText}>DNI: {cliente.DNI || "N/A"}</Text>
               <Text style={styles.cardText}>Celular: {cliente.Celular || "N/A"}</Text>
@@ -306,6 +342,44 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     elevation: 3,
+  },
+  // ATAMAINE: Resaltado premium para identificar el cliente abierto desde el reporte.
+  cardSeleccionada: {
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    backgroundColor: "#ecfffb",
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  selectedNotice: {
+    backgroundColor: "#ccfbf1",
+    borderLeftWidth: 5,
+    borderLeftColor: "#0f766e",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  selectedNoticeText: {
+    color: "#0f766e",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  selectedBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#0f766e",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  selectedBadgeText: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "900",
   },
   cardTitle: {
     fontSize: 18,

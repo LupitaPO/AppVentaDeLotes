@@ -7,6 +7,7 @@ import {
     ScrollView,
     Alert,
     Image,
+    Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRef } from "react";
@@ -15,8 +16,10 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
 import styles from "./ReporteAsesorStyles";
+import { API_URL } from "../config/apiUrl";
+import i18n from "../i18n";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+// ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
 const EMPRESA_CONTACTO = "www.tulote.somee.com";
@@ -57,6 +60,18 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
             return Array.isArray(nested) ? nested : [];
         }
 
+        const keys = ["d", "Data", "data", "result", "Resultado", "resultados", "Resultados"];
+        for (const key of keys) {
+            const value = (parsed as Record<string, unknown>)[key];
+            if (Array.isArray(value)) {
+                return value as ReporteItem[];
+            }
+            if (typeof value === "string") {
+                const nested = JSON.parse(value);
+                return Array.isArray(nested) ? nested : [];
+            }
+        }
+
         return [];
     } catch (error) {
         console.error("Error al parsear reporte:", error);
@@ -64,24 +79,25 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
     }
 };
 
+// ATAMAINE: Ajustamos las proporciones para que DNI, celular, correo y estado respiren mejor en pantallas pequeñas.
 const COLUMNAS_REPORTE: Array<{
     key: keyof AsesorReporteItem;
     label: string;
     flex: number;
 }> = [
-    { key: "DNI", label: "DNI", flex: 1.2 },
-    { key: "Nombre", label: "Nombre", flex: 1.8 },
-    { key: "Apellidos", label: "Apellidos", flex: 1.8 },
-    { key: "Celular", label: "Celular", flex: 1.2 },
-    { key: "Direccion", label: "Direccion", flex: 2 },
-    { key: "Correo", label: "Correo", flex: 2.2 },
-    { key: "Estado", label: "Estado", flex: 4 },
+    { key: "DNI", label: "DNI", flex: 0.9 },
+    { key: "Nombre", label: "Nombre", flex: 1.1 },
+    { key: "Apellidos", label: "Apellidos", flex: 1.2 },
+    { key: "Celular", label: "Celular", flex: 1.25 },
+    { key: "Correo", label: "Correo", flex: 1.3 },
+    { key: "Estado", label: "Estado", flex: 0.85 },
 ];
 
 const normalizarEstado = (estado: unknown) => {
     const estadoTexto = String(estado ?? "").trim().toLowerCase();
     const estadosActivos = ["activo", "a", "1", "true", "vigente", "registrado"];
-    const estadosInactivos = ["inactivo", "i", "0", "false", "anulado", "borrado", "desactivado"];
+    // ATAMAINE: La API puede devolver "X" para registros anulados; en el reporte siempre se muestra como Inactivo.
+    const estadosInactivos = ["inactivo", "i", "x", "0", "false", "anulado", "borrado", "desactivado"];
     if (estadosActivos.includes(estadoTexto)) {
         return "Activo";
     }
@@ -95,20 +111,95 @@ const normalizarEstado = (estado: unknown) => {
 };
 // Función para normalizar los datos de asesores, asegurando que siempre haya un valor de texto y un formato consistente. 
 //Según la base de datos
+const separarNombreCompletoAsesor = (item: ReporteItem) => {
+    const nombresApi = [item.Nombre1, item.Nombre2].filter(Boolean).join(" ").trim();
+    const apellidosApi = [item.Apaterno, item.Amaterno].filter(Boolean).join(" ").trim();
+
+    if (nombresApi || apellidosApi) {
+        return {
+            nombre: nombresApi || String(item.Nombre ?? "-"),
+            apellidos: apellidosApi || String(item.Apellidos ?? "-"),
+        };
+    }
+
+    // ATAMAINE: El endpoint de reporte filtrado puede devolver NombreCompleto; lo separamos para mostrar data completa.
+    const nombreCompleto = String(item.NombreCompleto ?? item.Nombre ?? "").trim();
+    if (!nombreCompleto) {
+        return {
+            nombre: "-",
+            apellidos: String(item.Apellidos ?? "-"),
+        };
+    }
+
+    const partes = nombreCompleto.split(/\s+/).filter(Boolean);
+    if (partes.length >= 4) {
+        return {
+            nombre: partes.slice(0, 2).join(" "),
+            apellidos: partes.slice(2).join(" "),
+        };
+    }
+
+    if (partes.length >= 2) {
+        return {
+            nombre: partes[0],
+            apellidos: partes.slice(1).join(" "),
+        };
+    }
+
+    return {
+        nombre: nombreCompleto,
+        apellidos: String(item.Apellidos ?? "-"),
+    };
+};
+
 const normalizarAsesores = (items: ReporteItem[]): AsesorReporteItem[] =>
-    items.map((item) => ({
-        DNI: String(item.DNI ?? "-"),
-        Nombre: [item.Nombre1, item.Nombre2].filter(Boolean).join(" ") || String(item.Nombre ?? "-"),
-        Apellidos:
-            [item.Apaterno, item.Amaterno].filter(Boolean).join(" ") ||
-            String(item.Apellidos ?? "-"),
-        Celular: String(item.Celular ?? "-"),
-        Direccion: String(item.Direccion ?? "-"),
-        Correo: String(item.Correo ?? "-"),
-        Estado: String(item.Estado),
-    }));
+    items.map((item) => {
+        const nombreSeparado = separarNombreCompletoAsesor(item);
+
+        return {
+            DNI: String(item.DNI ?? "-"),
+            Nombre: nombreSeparado.nombre,
+            Apellidos: nombreSeparado.apellidos,
+            Celular: String(item.Celular ?? "-"),
+            Direccion: String(item.Direccion ?? "-"),
+            Correo: String(item.Correo ?? "-"),
+            Estado: normalizarEstado(item.Estado),
+        };
+    });
 
 const esEstadoActivo = (estado: string) => estado.trim().toLowerCase() === "activo";
+
+// ATAMAINE: Desde Ver abrimos el tab real de asesores y enviamos el DNI para resaltar la tarjeta correcta.
+const abrirAsesorRegistrado = (navigation: any, item: AsesorReporteItem) => {
+    navigation.navigate("MainTabs", {
+        screen: i18n.t("btAsesor"),
+        params: {
+            asesorSeleccionadoDNI: item.DNI,
+            asesorSeleccionadoNombre: `${item.Nombre} ${item.Apellidos}`.trim(),
+        },
+    });
+};
+
+const obtenerLogoPdfUri = () => {
+    // ATAMAINE: En web Image.resolveAssetSource puede no existir; evitamos pantalla blanca al abrir reportes.
+    const resolver = (Image as any).resolveAssetSource;
+    if (typeof resolver !== "function") {
+        return "";
+    }
+
+    return resolver(require("../assets/splash-icon.png"))?.uri || "";
+};
+
+const consultarAsesoresRegistrados = async (signal?: AbortSignal) => {
+    const response = await fetch(`${API_URL}/Asesor/asesor_Listar`, { signal });
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    const rawData = await response.text();
+    return normalizarAsesores(parseReporteResponse(rawData));
+};
 
 const ReporteAsesores = ({ navigation }: ReporteAsesorProps) => {
     const [datoBuscar, setDatoBuscar] = useState("");
@@ -119,6 +210,8 @@ const ReporteAsesores = ({ navigation }: ReporteAsesorProps) => {
     const [mensaje, setMensaje] = useState("");
     const [ultimoFiltro, setUltimoFiltro] = useState("");
     const [horaActual, setHoraActual] = useState(new Date());
+    const fetchControllerRef = useRef<AbortController | null>(null);
+    const debounceTimerRef = useRef<any>(null);
 
 
 
@@ -130,12 +223,25 @@ const ReporteAsesores = ({ navigation }: ReporteAsesorProps) => {
         return () => clearInterval(timer);
     }, []);
 
-    const limpiarFiltro = () => {
+    const limpiarFiltro = async () => {
         setDatoBuscar("");
         setUltimoFiltro("");
         setMensaje("");
         setBuscado(false);
-        setReporte(todosAsesores);
+
+        try {
+            setCargando(true);
+            const asesoresBase = await consultarAsesoresRegistrados();
+            setTodosAsesores(asesoresBase);
+            setReporte(asesoresBase);
+        } catch (error) {
+            console.error("Error al recargar asesores al limpiar filtro:", error);
+            setTodosAsesores([]);
+            setReporte([]);
+            setMensaje("No se pudo recargar la lista de asesores.");
+        } finally {
+            setCargando(false);
+        }
     };
 
     const horaFormateada = horaActual.toLocaleTimeString("es-PE", {
@@ -147,71 +253,88 @@ const ReporteAsesores = ({ navigation }: ReporteAsesorProps) => {
         month: "2-digit",
         day: "2-digit",
     });
-    const logoPdfUri = Image.resolveAssetSource(require("../assets/splash-icon.png"))?.uri || "";
+    const logoPdfUri = obtenerLogoPdfUri();
     const asesorParaPdf = buscado && ultimoFiltro ? reporte : todosAsesores;
-// Cargar datos iniciales al montar el componente
-    useEffect(() => {
-    cargarAsesoresIniciales();
-}, []);
 const cargarAsesoresIniciales = async () => {
     try {
         setCargando(true);
         setMensaje("");
 
-        // Si no hay filtro => traer todos
-        const filtro = datoBuscar.trim();
-
-        const url = filtro
-            ? `${API_URL}/Reporte/reporte_Asesores/${encodeURIComponent(filtro)}`
-            : `${API_URL}/Asesor/asesor_Listar/`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const rawData = await response.text();
-
-        console.log("API RESPONSE:", rawData);
-
-        const asesoresBase = normalizarAsesores(
-            parseReporteResponse(rawData)
-        );
-
-        // Guardar todos los asesores
+        const asesoresBase = await consultarAsesoresRegistrados();
         setTodosAsesores(asesoresBase);
-
-        // Mostrar todos en la tabla
         setReporte(asesoresBase);
-
         setBuscado(false);
+        setUltimoFiltro("");
 
         if (asesoresBase.length === 0) {
-            setMensaje("No existen asesores.");
+            setMensaje("No existen asesores registrados.");
         }
 
     } catch (error) {
-
-        console.log("ERROR API:", error);
-
+        console.error("Error al cargar asesores registrados:", error);
         setTodosAsesores([]);
         setReporte([]);
-
-        setMensaje(
-            "No se pudo conectar con la API."
-        );
-
+        setMensaje("No se pudo cargar la lista de asesores.");
     } finally {
         setCargando(false);
     }
 };
+
+    useEffect(() => {
+        cargarAsesoresIniciales();
+    }, []);
+
+    useEffect(() => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        debounceTimerRef.current = setTimeout(() => {
+            consultarReporte(datoBuscar);
+        }, 600);
+
+        return () => {
+            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        };
+    }, [datoBuscar]);
+
+    useEffect(() => {
+        let mounted = true;
+        const refresh = async () => {
+            try {
+                const controller = new AbortController();
+                fetchControllerRef.current = controller;
+
+                if (buscado && ultimoFiltro) {
+                    const response = await fetch(`${API_URL}/Reporte/reporte_Asesores/${encodeURIComponent(ultimoFiltro)}`, {
+                        signal: controller.signal,
+                    });
+                    if (!response.ok) return;
+                    const rawData = await response.text();
+                    const filtrados = normalizarAsesores(parseReporteResponse(rawData));
+                    if (!mounted) return;
+                    setReporte(filtrados);
+                    return;
+                }
+
+                const asesoresBase = await consultarAsesoresRegistrados(controller.signal);
+                if (!mounted) return;
+                setTodosAsesores(asesoresBase);
+                if (!buscado) setReporte(asesoresBase);
+            } catch (error) {
+                // Refresco silencioso para mantener la pantalla viva sin interrumpir al usuario.
+            }
+        };
+
+        refresh();
+        const interval = setInterval(refresh, 15000);
+
+        return () => {
+            mounted = false;
+            clearInterval(interval);
+            if (fetchControllerRef.current) fetchControllerRef.current.abort();
+        };
+    }, [buscado, ultimoFiltro]);
 
     const construirHtmlReporte = () => {
         const numeroDocumento = `RPT-ASR-${horaActual
@@ -340,6 +463,18 @@ const cargarAsesoresIniciales = async () => {
 
         try {
             const html = construirHtmlReporte();
+            // ATAMAINE: En navegador abrimos la impresion web para guardar como PDF sin depender de expo-sharing.
+            if (Platform.OS === "web" && typeof window !== "undefined") {
+                const printWindow = window.open("", "_blank");
+                if (printWindow) {
+                    printWindow.document.open();
+                    printWindow.document.write(html);
+                    printWindow.document.close();
+                    printWindow.focus();
+                    setTimeout(() => printWindow.print(), 300);
+                    return;
+                }
+            }
             await Print.printAsync({ html });
             const { uri } = await Print.printToFileAsync({ html });
             const puedeCompartir = await Sharing.isAvailableAsync();
@@ -362,24 +497,43 @@ const cargarAsesoresIniciales = async () => {
 
 
     // Función para consultar el reporte según el filtro ingresado
-const consultarReporte = async () => {
-    const filtro = datoBuscar.trim();
+const consultarReporte = async (filtroParam?: string) => {
+    const filtro = (filtroParam !== undefined ? filtroParam : datoBuscar).toString().trim();
 
     if (!filtro) {
-        setReporte(todosAsesores);
-        setBuscado(false);
-        setUltimoFiltro("");
-        setMensaje("");
-        return;
+        try {
+            setCargando(true);
+            setMensaje("");
+            setUltimoFiltro("");
+            const asesoresBase = await consultarAsesoresRegistrados();
+            setTodosAsesores(asesoresBase);
+            setReporte(asesoresBase);
+            setBuscado(false);
+            return;
+        } catch (error) {
+            console.error("Error al consultar lista completa de asesores:", error);
+            setTodosAsesores([]);
+            setReporte([]);
+            setMensaje("No se pudo consultar la lista de asesores.");
+        } finally {
+            setCargando(false);
+        }
     }
+
     try {
         setCargando(true);
         setMensaje("");
         setUltimoFiltro(filtro);
+        if (fetchControllerRef.current) {
+            try { fetchControllerRef.current.abort(); } catch (error) {}
+        }
+        fetchControllerRef.current = new AbortController();
+
         const response = await fetch(
             `${API_URL}/Reporte/reporte_Asesores/${encodeURIComponent(filtro)}`,
             {
                 method: "GET",
+                signal: fetchControllerRef.current.signal,
                 headers: {
                     Accept: "application/json",
                     "Content-Type": "application/json",
@@ -390,7 +544,6 @@ const consultarReporte = async () => {
             throw new Error(`HTTP ${response.status}`);
         }
         const rawData = await response.text();
-        console.log("BUSQUEDA:", rawData);
         const filtrados = normalizarAsesores(
             parseReporteResponse(rawData)
         );
@@ -402,7 +555,10 @@ const consultarReporte = async () => {
             );
         }
     } catch (error) {
-        console.log("ERROR BUSQUEDA:", error);
+        if ((error as Error).name === "AbortError") {
+            return;
+        }
+        console.error("Error al consultar reporte de asesores:", error);
         setReporte([]);
         setBuscado(true);
         setMensaje(
@@ -413,24 +569,35 @@ const consultarReporte = async () => {
     }
 };
 
-   
-
+    const listadoMostrar = buscado ? reporte : todosAsesores;
 
 
     return (
         <View style={styles.container}>
             <View style={styles.backgroundGlowTop} />
             <View style={styles.backgroundGlowBottom} />
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
                 <LinearGradient
-                    colors={["#2d7f7b", "#235e63", "#22364d"]}
+                    colors={["#0f766e", "#155e63", "#172554"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.heroCard}
                 >
                     <View style={styles.headerRow}>
-                        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                            <MaterialCommunityIcons name="arrow-left" size={22} color="#ffffff" />
+                        <TouchableOpacity style={styles.backButtonTouch} onPress={() => navigation.goBack()}>
+                            {/* ATAMAINE: Boton de retorno con brillo suave para que combine con la cabecera premium. */}
+                            <LinearGradient
+                                colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.12)"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.backButton}
+                            >
+                                <MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
+                            </LinearGradient>
                         </TouchableOpacity>
                         <View style={styles.heroContent}>
                             <View style={styles.liveBadge}>
@@ -440,7 +607,7 @@ const consultarReporte = async () => {
                             <Text style={styles.title}>Gestion Integral</Text>
                             <Text style={styles.title}>de Asesores</Text>
                             <Text style={styles.subtitle}>
-                                Gestiona la informacion de los asesores en tiempo real.
+                                Consulta asesores por DNI o nombre con datos reales en tiempo real.
                             </Text>
                         </View>
                     </View>
@@ -448,7 +615,11 @@ const consultarReporte = async () => {
                     <View style={styles.statsRow}>
                         <View style={styles.statCard}>
                             <Text style={styles.statLabel}>Asesores Registrados</Text>
-                            <Text style={styles.statValue}>{todosAsesores.length}</Text>
+                            {cargando ? (
+                                <ActivityIndicator size="small" color="#ffffff" style={{ marginVertical: 6 }} />
+                            ) : (
+                                <Text style={styles.statValue}>{Math.max(todosAsesores.length, reporte.length)}</Text>
+                            )}
                             <Text style={styles.statCaption}>Asesores totales</Text>
                         </View>
                         <View style={styles.statCard}>
@@ -469,35 +640,57 @@ const consultarReporte = async () => {
                         placeholderTextColor="#8ba8ae"
                         style={styles.input}
                         returnKeyType="search"
-                        onSubmitEditing={consultarReporte}
+                        onSubmitEditing={() => consultarReporte()}
                     />
 
                     <View style={styles.actionRow}>
-                        <TouchableOpacity style={styles.primaryAction} onPress={consultarReporte}>
-                            <View style={[styles.actionSurface, styles.primaryActionSurface]}>
+                        <TouchableOpacity style={styles.primaryAction} onPress={() => consultarReporte()}>
+                            {/* ATAMAINE: Gradiente interno para que la accion principal se vea mas viva sin perder el color base. */}
+                            <LinearGradient
+                                colors={["#ffffff", "#edf5ff"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={[styles.actionSurface, styles.primaryActionSurface]}
+                            >
                                 <View style={[styles.actionIconBadge, styles.primaryActionBadge]}>
                                     <MaterialCommunityIcons name="magnify" size={18} color="#2563eb" />
                                 </View>
                                 <Text style={styles.primaryActionText}>Buscar</Text>
-                            </View>
+                            </LinearGradient>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.newAction} activeOpacity={0.85}>
-                            <View style={[styles.actionSurface, styles.newActionSurface]}>
+                        <TouchableOpacity
+                            style={styles.newAction}
+                            activeOpacity={0.85}
+                            onPress={() => navigation.navigate("RegistrarAsesor", { onRefresh: cargarAsesoresIniciales })}
+                        >
+                            {/* ATAMAINE: Gradiente verde suave para destacar el registro sin romper la paleta. */}
+                            <LinearGradient
+                                colors={["#ffffff", "#e8fff8"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={[styles.actionSurface, styles.newActionSurface]}
+                            >
                                 <View style={[styles.actionIconBadge, styles.newActionBadge]}>
                                     <MaterialCommunityIcons name="plus-circle-outline" size={18} color="#0f766e" />
                                 </View>
                                 <Text style={styles.newActionText}>Nuevo</Text>
-                            </View>
+                            </LinearGradient>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.clearAction} onPress={limpiarFiltro}>
-                            <View style={[styles.actionSurface, styles.clearActionSurface]}>
+                            {/* ATAMAINE: Gradiente neutro para limpiar sin competir con buscar o nuevo. */}
+                            <LinearGradient
+                                colors={["#ffffff", "#f4f7fb"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={[styles.actionSurface, styles.clearActionSurface]}
+                            >
                                 <View style={[styles.actionIconBadge, styles.clearActionBadge]}>
                                     <MaterialCommunityIcons name="close-circle-outline" size={18} color="#64748b" />
                                 </View>
                                 <Text style={styles.clearActionText}>Limpiar</Text>
-                            </View>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
 
@@ -507,18 +700,24 @@ const consultarReporte = async () => {
                             onPress={generarPDF}
                             disabled={!reporte.length || cargando}
                         >
-                            <View style={[styles.actionSurface, styles.secondaryActionSurface]}>
+                            {/* ATAMAINE: PDF mantiene el acento dorado con fondo radiante para lectura rapida. */}
+                            <LinearGradient
+                                colors={["#ffffff", "#fff7e6"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={[styles.actionSurface, styles.secondaryActionSurface]}
+                            >
                                 <View style={[styles.actionIconBadge, styles.secondaryActionBadge]}>
                                     <MaterialCommunityIcons name="file-pdf-box" size={18} color="#f59e0b" />
                                 </View>
                                 <Text style={styles.secondaryActionText}>PDF</Text>
-                            </View>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 <View style={styles.contentCard}>
-                    <Text style={styles.contentTitle}>Listado de Asesores</Text>
+                    <Text style={styles.contentTitle}>Listado del Reporte</Text>
                     {cargando && <ActivityIndicator size="large" color="#069488" style={styles.loader} />}
 
                     {!cargando && mensaje ? (
@@ -528,7 +727,9 @@ const consultarReporte = async () => {
                     ) : null}
 
                     {!cargando && buscado && reporte.length > 0 ? (
-                        <Text style={styles.resultCounter}>Resultados encontrados: {reporte.length}</Text>
+                        <Text style={styles.resultCounter}>
+                            Mostrando {reporte.length} resultado{reporte.length === 1 ? "" : "s"} para: {ultimoFiltro}
+                        </Text>
                     ) : null}
 
                     {!cargando && buscado && reporte.length === 0 && !mensaje ? (
@@ -543,7 +744,7 @@ const consultarReporte = async () => {
                         </View>
                     ) : null}
 
-                    {!cargando && reporte.length > 0 ? (
+                    {!cargando && listadoMostrar.length > 0 ? (
                         <View style={styles.tableWrapper}>
                             <View style={styles.tableTopAccent} />
                             <View style={styles.tableHeaderRow}>
@@ -557,7 +758,7 @@ const consultarReporte = async () => {
                                 </View>
                             </View>
 
-                            {reporte.map((item, index) => (
+                            {listadoMostrar.map((item, index) => (
                                 <View
                                     key={index}
                                     style={[
@@ -588,14 +789,26 @@ const consultarReporte = async () => {
                                                     </Text>
                                                 </View>
                                             ) : (
-                                                <Text style={styles.tableDataText} numberOfLines={2}>
+                                                <Text
+                                                    style={[
+                                                        styles.tableDataText,
+                                                        columna.key === "Celular" ? styles.tableDataTextTight : null,
+                                                    ]}
+                                                    numberOfLines={columna.key === "Celular" ? 1 : 2}
+                                                    adjustsFontSizeToFit={columna.key === "Celular"}
+                                                    minimumFontScale={0.78}
+                                                >
                                                     {String(item[columna.key] ?? "-")}
                                                 </Text>
                                             )}
                                         </View>
                                     ))}
                                     <View style={styles.tableActionCell}>
-                                        <TouchableOpacity style={styles.verButton} activeOpacity={0.8}>
+                                        <TouchableOpacity
+                                            style={styles.verButton}
+                                            activeOpacity={0.8}
+                                            onPress={() => abrirAsesorRegistrado(navigation, item)}
+                                        >
                                             <Text style={styles.verButtonText}>Ver</Text>
                                         </TouchableOpacity>
                                     </View>

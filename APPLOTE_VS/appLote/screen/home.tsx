@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ScrollView,
   TouchableOpacity,
+  useWindowDimensions,
 } from "react-native";
 
 // Hooks de React para manejar estado local y ciclos de vida simples del componente.
@@ -43,15 +44,20 @@ import i18n, {changeLanguage} from "../i18n";
 
 // Tipo que restringe los idiomas válidos manejados por la aplicación.
 import { Languages } from "../localizacion";
+import { API_URL } from "../config/apiUrl";
 
 // Ancho de la pantalla usado para calcular tamaños del dashboard y de la gráfica.
 const screenWidth = Dimensions.get("window").width;
 
-// URL base del backend para consultar el resumen general del dashboard.
-const API_URL = "http://www.tulote.somee.com";
+// ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
 
 const home = ({ route, navigation }) => {
+  const { width } = useWindowDimensions();
+  const esPantallaPc = width >= 900;
+  const anchoContenido = esPantallaPc ? 720 : width;
+  const anchoGrafico = Math.max(300, Math.min(anchoContenido - 60, 680));
+
   // Altura de la barra inferior para dejar espacio visual al final del contenido.
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -156,10 +162,10 @@ const home = ({ route, navigation }) => {
     });
   };
   return (
-    <View>
+    <View style={styles.root}>
       {/* Cabecera superior con saludo al usuario y menú de acciones rápidas. */}
       <View
-        style={{ width: "100%", height: "11%", backgroundColor: "#ffffff" }}
+        style={styles.topHeader}
       >
         {/* Contenedor del encabezado con nombre del usuario actual. */}
         <View style={styles.headerContainer}>
@@ -213,6 +219,7 @@ const home = ({ route, navigation }) => {
       {/* Contenedor desplazable del dashboard con soporte para refresco manual. */}
       <ScrollView
         style={{ flexGrow: 1 }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={cargarDashboard} />
@@ -221,7 +228,10 @@ const home = ({ route, navigation }) => {
         {/* El contenido del resumen solo se muestra para roles distintos de Cliente. */}
         {rol !== "Cliente" && (
           <View
-            style={styles.container}
+            style={[
+              styles.container,
+              esPantallaPc && styles.containerDesktop,
+            ]}
 
             // refreshControl={<RefreshControl
             // refreshing={refreshing}
@@ -244,7 +254,7 @@ const home = ({ route, navigation }) => {
               <Text style={styles.chartTitle}>{i18n.t("Dmsj3")}</Text>
               <PieChart
                 data={pieData} // <--- AQUÍ ES DONDE SE LLAMA A LA CONSTANTE
-                width={screenWidth - 60}
+                width={anchoGrafico}
                 height={200}
                 chartConfig={{
                   color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -317,6 +327,25 @@ const home = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+
+  // ATAMAINE: Raiz con flex real para que web no corte el dashboard ni esconda Reportes.
+  root: {
+    flex: 1,
+    backgroundColor: "#e4f5f3",
+  },
+
+  // ATAMAINE: Header con alto estable en PC y celular, evitando porcentajes que deforman web.
+  topHeader: {
+    width: "100%",
+    minHeight: 104,
+    backgroundColor: "#ffffff",
+  },
+
+  // ATAMAINE: El scroll crece en navegador y mantiene el contenido visible sobre la tab bar.
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: "#e4f5f3",
+  },
 
   // Estilos del menú flotante superior derecho.
   containerFlotante: {
@@ -408,11 +437,19 @@ const styles = StyleSheet.create({
   // Contenedor principal del contenido del dashboard.
   container: {
     width: "100%",
-    minHeight: screenWidth,
+    minHeight: "100%",
     backgroundColor: "#e4f5f3",
     paddingTop: 20,
     padding: 10,
     paddingBottom: 50,
+  },
+
+  // ATAMAINE: En laptop mantenemos el dashboard como vista movil centrada, no estirada a toda la pantalla.
+  containerDesktop: {
+    maxWidth: 760,
+    alignSelf: "center",
+    width: "100%",
+    paddingHorizontal: 18,
   },
 
   // Título principal del resumen del panel.

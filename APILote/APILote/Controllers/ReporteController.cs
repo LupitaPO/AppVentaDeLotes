@@ -110,6 +110,55 @@ namespace APILote.Controllers
             return jsoString;
         }
 
+
+        [HttpGet]
+        [Route("reporte_Lotes")]
+        public string reporte_Lotes(
+        string estadoLote = null,
+        string nombreProyecto = null,
+        decimal? precioDesde = null
+)
+        {
+            string jsoString = string.Empty;
+            DataTable Datos = new DataTable();
+            ReporteData objLotes = new ReporteData();
+            Datos = objLotes.reporte_Lotes(estadoLote, nombreProyecto, precioDesde);
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsoString;
+        }
+
+
+        // =====================================================
+        // ATAMAINE - ENDPOINT API PARA REPORTE DE USUARIOS
+        // Ruta final:
+        // GET: api/Reporte/reporte_Usuarios
+        // =====================================================
+
+        [HttpGet]
+        [Route("reporte_Usuarios")]
+        public string reporte_Usuarios(
+            string nombre = null,
+            string tipoUsuario = null
+        )
+        {
+            // Variable donde se guardará el JSON final
+            string jsoString = string.Empty;
+            // Tabla para recibir los datos desde DATA
+            DataTable Datos = new DataTable();
+            // Instancia de la clase DATA
+            ReporteData objUsuarios = new ReporteData();
+            // Llamamos al método que ejecuta el procedimiento almacenado
+            Datos = objUsuarios.reporte_Usuarios(nombre, tipoUsuario);
+            // Convertimos el DataTable a JSON
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            // Retornamos el JSON al navegador / Swagger / frontend
+            return jsoString;
+        }
+
+
+
+
+
         [HttpGet]
         [Route("test2")]
         public string test2()
