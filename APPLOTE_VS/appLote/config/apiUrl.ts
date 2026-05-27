@@ -9,3 +9,4 @@ export const API_URL =
 	(Platform.OS === "web" ? "http://localhost:3001" : "http://www.tulote.somee.com");
 
 export const API_REAL_URL = "http://www.tulote.somee.com";
+ 
