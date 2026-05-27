@@ -103,5 +103,17 @@ namespace APILote.Controllers
             return objproyectodata.proyecto_Registrar(objproyecto);
         }
 
+        [HttpGet]
+        [Route("proyecto_ListarSelect")]
+        public string proyecto_ListarSelect()
+        {
+            string jsostring = string.Empty;
+            DataTable Datos = new DataTable();
+            ProyectoData objproyecto = new ProyectoData();
+            Datos = objproyecto.proyectoListarSelect();
+            jsostring = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsostring;
+        }
+
     }
 }

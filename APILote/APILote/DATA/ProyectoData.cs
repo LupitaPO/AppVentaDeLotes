@@ -55,5 +55,19 @@ namespace APILote.DATA
                 return null;
             }
         }
+
+        public DataTable proyectoListarSelect()
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "proyecto_Listar_Select").Tables[0];
+                return Datos;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
     }
 }

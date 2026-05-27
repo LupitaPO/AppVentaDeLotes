@@ -108,5 +108,22 @@ namespace APILote.DATA
                 return null;
             }
         }
+
+        public DataTable loteEstadoListar()
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "lote_Estado_Listar_pa").Tables[0];
+                return Datos;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
+
     }
 }

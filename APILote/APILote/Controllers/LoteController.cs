@@ -106,5 +106,16 @@ namespace APILote.Controllers
         return objlotedata.loteRegistrar(objlote, objlote.Medida);
         }
 
+        [HttpGet]
+        [Route("lote_EstadoListar")]
+        public string lote_EstadoListar()
+        {
+            string jsostring = string.Empty;
+            DataTable Datos = new DataTable();
+            LoteData objlote = new LoteData();
+            Datos = objlote.loteEstadoListar();
+            jsostring = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsostring;
+        }
     }
 }
