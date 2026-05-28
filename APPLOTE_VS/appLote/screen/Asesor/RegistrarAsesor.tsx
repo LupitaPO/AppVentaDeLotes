@@ -160,66 +160,118 @@ const RegistrarAsesor = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+ // Fondo principal de la pantalla suave y consistente
   container: {
     flex: 1,
-    backgroundColor: "#e4f5f3",
-    padding: 20,
+    backgroundColor: "#f4fcfb", // Fondo premium unificado sutil (reemplaza el turquesa saturado)
+    paddingHorizontal: 16,
     paddingTop: 50,
   },
+  
+  // Título principal del formulario en tipografía robusta
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#069488",
+    fontWeight: "900", // Peso visual fuerte idéntico al login y dashboards
+    color: "#111827",  // Tono oscuro principal para alta legibilidad
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
+  
   scrollView: {
     flex: 1,
   },
+  
+  // Etiquetas de los campos adaptadas al diseño móvil unificado
   label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#000000",
-    marginTop: 15,
-    marginBottom: 3,
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#111827",  // Texto oscuro limpio
+    marginTop: 16,
+    marginBottom: 8,
   },
+  
+  // Campos de texto estilizados exactamente como el login y asesor nativo
   input: {
+    height: 48,
+    backgroundColor: "#fbfffe", // Blanco menta muy limpio
     borderWidth: 1,
-    borderColor: "#f1f1f1",
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    marginBottom: 5,
+    borderColor: "#d5e7e3",    // Contorno esmeralda suave
+    borderRadius: 15,          // Curvatura idéntica a tus otras pantallas
+    paddingHorizontal: 14,
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#111827",
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 1,
+    marginBottom: 6,
   },
+  
+  // Distribución en columnas para campos compartidos (en paralelo)
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    marginBottom: 8,
   },
+  
   column: {
-    width: "48%",
+    width: '48%',
   },
+  
+  // Botón Guardar / Confirmar (Diseño responsivo premium insignia)
   btnGuardar: {
-    backgroundColor: "#29c268",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#10b981", // Verde éxito moderno de tu marca
+    width: "100%",
+    maxWidth: 420,
+    height: 52,
+    alignSelf: "center",
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 10,
+    borderRadius: 12,
+    shadowColor: "#10b981",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+    marginTop: 24,
+    marginBottom: 12,
   },
+  
+  // Botón Cancelar sólido y perfectamente simétrico al de Guardar
   btnCancelar: {
-    backgroundColor: "#d3002e",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#ef4444", // Rojo moderno plano y vivo
+    width: "100%",
+    maxWidth: 420,
+    height: 52, // Altura idéntica a btnGuardar para balance visual perfecto
+    alignSelf: "center",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    borderRadius: 12,
+    shadowColor: "#ef4444", // Sombra roja nativa del mismo tono
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 14,
+    elevation: 4,
+    marginBottom: 24,
   },
+  
+  // Texto interno del botón de guardar
   btnText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  
+  // Texto blanco para contraste óptimo sobre el botón de cancelar sólido
+  btnCancelarText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "900", // Mismo peso visual que el botón guardar
   },
 });
+
 
 export default RegistrarAsesor;
