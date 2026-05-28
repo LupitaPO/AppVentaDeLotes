@@ -326,125 +326,129 @@ const home = ({ route, navigation }) => {
   );
 };
 
+const { height: screenHeight } = Dimensions.get("window");
 const styles = StyleSheet.create({
 
   // ATAMAINE: Raiz con flex real para que web no corte el dashboard ni esconda Reportes.
-  root: {
+ root: {
     flex: 1,
-    backgroundColor: "#e4f5f3",
+    backgroundColor: "#f4fcfb", // Fondo premium muy limpio con ligero tinte verde
   },
 
-  // ATAMAINE: Header con alto estable en PC y celular, evitando porcentajes que deforman web.
+  // Header estable
   topHeader: {
     width: "100%",
     minHeight: 104,
     backgroundColor: "#ffffff",
   },
 
-  // ATAMAINE: El scroll crece en navegador y mantiene el contenido visible sobre la tab bar.
   scrollContent: {
     flexGrow: 1,
-    backgroundColor: "#e4f5f3",
+    backgroundColor: "#f4fcfb",
   },
 
-  // Estilos del menú flotante superior derecho.
+  // Contenedor del menú flotante superior derecho
   containerFlotante: {
     position: 'absolute',
-    top: 40,           // Ajusta según la pantalla
+    top: 40,           
     right: 20,
-    zIndex: 999,       // Siempre al frente
+    zIndex: 999,       
     alignItems: 'center',
-    
-    
   },
+  
   menuDesplegado: {
-    // Los botones aparecen antes (arriba) del principal, 
-    // o puedes ponerlos después para que bajen.
-    alignItems:"center",
+    alignItems: "center",
     marginBottom: 8, 
     gap: 10,          
   },
+
+  // Botón hamburguesa/principal flotante adaptado a la marca
   btnPrincipal: {
-    backgroundColor: '#333', // Un color neutro o el de tu app
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    backgroundColor: '#069488', // El color insignia de tu app
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
+    elevation: 4,
+    shadowColor: '#0f766e',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
-  // estilos de exit y idioma :
-  idioma:{
-    top:5,   // Separación del borde inferior
-    
-    marginTop:5,
-    backgroundColor: '#22c5aa', // Color de fondo del botón
-    width: 45,
-    height: 45,
-    borderRadius: 28,     // Hace que sea circular
+
+  // Botón de idioma estilizado para que comparta el look con las otras pantallas
+  idioma: {
+    top:5,
+    backgroundColor: '#ffffff', 
+    width: 42,
+    height: 42,
+    borderRadius: 21,     
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,         // Sombra en Android
-    shadowColor: '#000',  // Sombra en iOS
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    elevation: 3,         
+    shadowColor: '#0f172a',  
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 999,  
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
+
+  // Botón salir refinado para que no rompa el esquema con un rojo puro brillante
   btnsalir: {
-    backgroundColor: "#f30a0a9c",
-    marginTop:5,
-    height: 40,
-    width: 40,
+    backgroundColor: "#ef4444", // Rojo plano moderno y estilizado
+    height: 42,
+    width: 42,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: 21, // Redondeado idéntico al de idioma para simetría
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
-// Estilos generales del encabezado y del dashboard.
-  
+
+  // Encabezado del dashboard corregido
   headerContainer: {
-    position: "relative",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 5,
     backgroundColor: "#ffffff",
     paddingTop: 40,
     height: 99,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    elevation: 5,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderColor: "rgba(15,23,42,0.05)",
+    elevation: 4,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
 
-  // Texto fijo del saludo del encabezado.
   textheader: {
-    fontWeight: "500",
-    padding: 10,
-    color: "#069488",
-    fontSize: 17,
+    fontWeight: "600",
+    color: "#64748b", // Gris elegante para subtextos
+    fontSize: 14,
   },
 
-  // Nombre del usuario mostrado en el encabezado.
   textheader2: {
-    fontWeight: "bold",
+    fontWeight: "900", // Peso visual fuerte premium
     fontSize: 22,
     color: "#069488",
   },
 
-  // Contenedor principal del contenido del dashboard.
   container: {
     width: "100%",
-    minHeight: "100%",
-    backgroundColor: "#e4f5f3",
+    minHeight: screenHeight,
+    backgroundColor: "#f4fcfb",
     paddingTop: 20,
-    padding: 10,
-    paddingBottom: 50,
+    paddingHorizontal: 16,
+    paddingBottom: 60,
   },
 
-  // ATAMAINE: En laptop mantenemos el dashboard como vista movil centrada, no estirada a toda la pantalla.
   containerDesktop: {
     maxWidth: 760,
     alignSelf: "center",
@@ -452,179 +456,196 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
 
-  // Título principal del resumen del panel.
   header: {
     fontSize: 22,
-    fontWeight: "bold",
+    fontWeight: "900",
     marginBottom: 20,
-    color: "#069488",
+    color: "#111827", // Color oscuro legible en vez de saturar con verde
   },
 
-  // Tarjeta destacada para la métrica económica principal.
+  // Tarjeta de métrica principal económica (Gradiente o Sólido Premium)
   mainBox: {
-    backgroundColor: "#09caba",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    padding: 20,
-    borderRadius: 15,
+    backgroundColor: "#069488", // Verde esmeralda insignia
+    padding: 24,
+    borderRadius: 20,
     marginBottom: 20,
+    borderLeftWidth: 6,
+    borderLeftColor: "#09caba", // Resalte sutil
+    elevation: 6,
+    shadowColor: "#069488",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
   },
 
-  // Etiqueta pequeña dentro de la tarjeta principal.
   mainTitle: {
-    color: "#ffffff",
-    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
     textTransform: "uppercase",
+    marginBottom: 4,
   },
 
-  // Valor monetario principal mostrado en el dashboard.
   mainAmount: {
-    color: "#FFF",
-    fontSize: 28,
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontSize: 32,
+    fontWeight: "900",
   },
 
-  // Distribución en grilla para las tarjetas de métricas.
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
 
-  // Tarjeta pequeña individual de cada indicador.
+  // Tarjetas pequeñas individuales adaptadas a loginPanel
   card: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#ffffff",
     width: "48%",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
     flexDirection: "row",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(6, 148, 136, 0.08)",
     borderLeftWidth: 5,
+    borderLeftColor: "#069488", // Borde esmeralda identificador
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
   },
 
-  // Contenedor del texto a la derecha del ícono en cada tarjeta métrica.
   info: {
     marginLeft: 10,
+    flex: 1,
   },
 
-  // Título de una tarjeta métrica pequeña.
   cardTitle: {
     fontSize: 11,
-    color: "#666",
-    fontWeight: "600",
+    color: "#64748b",
+    fontWeight: "700",
+    textTransform: "uppercase",
+    marginBottom: 2,
   },
 
-  // Valor principal de una tarjeta métrica pequeña.
   cardValue: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#111827",
   },
 
-  // Caja que contiene la gráfica circular y su título.
+  // Caja de gráficos adaptada al estilo limpio
   chartBox: {
-    backgroundColor: "#FFF",
-
+    backgroundColor: "#ffffff",
     borderRadius: 20,
-    padding: 15,
-    marginBottom: 20,
-    // MARGEN NEGATIVO para que suba y "pise" el azul
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "rgba(6, 148, 136, 0.08)",
+    elevation: 4,
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
     alignItems: "center",
-    zIndex: 2, // Asegura que esté por encima
   },
 
-  // Título descriptivo de la gráfica.
   chartTitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
+    fontWeight: "900",
+    color: "#111827",
+    marginBottom: 14,
     textAlign: "center",
   },
 
-  // Estilos heredados para botones de acciones genéricas dentro del proyecto.
+  // Botones de acciones refinados para evitar bordes blancos bruscos
   btnRegistrar: {
-    backgroundColor: "#29c268",
+    backgroundColor: "#10b981", // Verde éxito moderno
     width: 120,
-    height: 50,
-
-    marginBottom: 5,
-    marginTop: 5,
-
+    height: 46,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#fff",
+    borderRadius: 12,
+    shadowColor: "#10b981",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
-  // Estilo heredado para un botón de modificar.
   btnModificar: {
-    backgroundColor: "#ff761a",
+    backgroundColor: "#f97316", // Naranja premium plano
     width: 120,
-    height: 50,
-  },
-
-  // Estilo heredado para un botón de anular.
-  btnAnular: {
-    backgroundColor: "#d3002e",
-    width: 120,
-    height: 50,
-
-    marginBottom: 5,
-    marginTop: 5,
-
+    height: 46,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#fff",
+    borderRadius: 12,
+    shadowColor: "#f97316",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
-  // Texto reutilizable de los botones verdes.
+  btnAnular: {
+    backgroundColor: "#ef4444", 
+    width: 120,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    shadowColor: "#ef4444",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
   btnRegisText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
   },
+
   reportPillWrapper: {
-    paddingHorizontal: 14,
-    marginTop: 12,
-    marginBottom: 8,
+    paddingHorizontal: 0, 
+    marginTop: 8,
+    marginBottom: 16,
   },
+
+  // Píldora de reporte perfectamente integrada
   reportPill: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    elevation: 3,
-    shadowColor: "#000",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(6, 148, 136, 0.08)",
+    elevation: 4,
+    shadowColor: "#087c72",
     shadowOpacity: 0.06,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 14,
   },
+
   reportPillAccent: {
-    width: 8,
-    height: 36,
-    backgroundColor: "#0f766e",
-    borderRadius: 8,
-    marginRight: 10,
+    width: 6,
+    height: 28,
+    backgroundColor: "#069488",
+    borderRadius: 4,
+    marginRight: 12,
   },
+
   reportPillText: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "#064e3b",
+    fontWeight: "800",
+    color: "#111827",
   },
 });
 

@@ -94,7 +94,7 @@ const loginCambiarContraseña = ({ navigation }) => {
           style={styles.regresar}
           onPress={() => navigation.replace("Login")}
         >
-          <Text style={{color:"#fff", fontWeight:"bold"}}>{i18n.t("Comeback")}</Text>
+          <Text style={{color:"#000000", fontWeight:"bold"}}>{i18n.t("Comeback")}</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>
@@ -102,75 +102,96 @@ const loginCambiarContraseña = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+ container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#f8fafc", // Fondo gris claro muy sutil idéntico a los anteriores
   },
-  idioma:{
+  idioma: {
     position: 'absolute',
-
-    top: 10,           // Separación del borde inferior
-    right: 10,   
-             // Separación del borde derecho
-    backgroundColor: '#22c5aa', // Color de fondo del botón
-    width: 56,
-    height: 56,
-    borderRadius: 28,     // Hace que sea circular
+    top: 20,           
+    right: 20,   
+    backgroundColor: '#ffffff', // Fondo blanco limpio
+    width: 48,
+    height: 48,
+    borderRadius: 24,     
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,         // Sombra en Android
-    shadowColor: '#000',  // Sombra en iOS
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    borderWidth: 1,
+    borderColor: '#e5e7eb', // Borde gris claro premium
+    elevation: 4,         
+    shadowColor: '#0f172a',  
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     zIndex: 999,  
   },
   card: {
-    paddingTop:35,
-    elevation: 50,
+    paddingTop: 36,
     width: "90%",
+    maxWidth: 520, // Previene deformaciones en pantallas grandes
     height: "85%",
-    borderRadius: 10,
-    padding: 20,
-    boxShadow:
-      "-4px 4px 4px -4px rgba(0, 0, 0, 0.1), -4px 4px 4px 4px rgba(0, 0, 0, 0.06)",
-    backgroundColor: "#a1f3ec",
+    borderRadius: 26, // Bordes redondeados modernos consistentes
+    padding: 24,
+    backgroundColor: "rgba(255, 255, 255, 0.96)", // Blanco limpio en vez del turquesa
+    borderWidth: 1,
+    borderColor: "rgba(6, 148, 136, 0.12)",
+    // Sombras nativas idénticas a tus pantallas previas
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
+    elevation: 12,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
+    color: "#111827",
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: "900", // Tipografía fuerte y moderna
+    marginBottom: 20,
+    textAlign: "left"
+
   },
   btnAsesor: {
-    backgroundColor: "#FFF",
-    paddingLeft: 10,
-    borderRadius: 10,
-    marginBottom: 10,
-    height: 60,
+    backgroundColor: "#fbfffe", // Consistencia con las cajas de texto anteriores
+    paddingHorizontal: 16,
+    borderRadius: 15,
+    marginBottom: 14,
+    height: 64,
     width: "100%",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#d5e7e3",
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   txtAsesor: {
-    paddingBottom: 5,
-    color: "#069488",
-    fontWeight: "600",
-    fontSize: 18,
+    paddingBottom: 3,
+    color: "#069488", // Verde esmeralda de tu marca
+    fontWeight: "700",
+    fontSize: 16,
   },
   txtnum: {
-    color: "#000",
-    fontSize: 14,
-    fontWeight: "bold",
+    color: "#475569", // Gris oscuro legible para subtextos
+    fontSize: 13.5,
+    fontWeight: "600",
   },
   regresar: {
-    backgroundColor: "#09caba",
+    backgroundColor: "transparent", // Botón tipo contorno (Outline) para balancear la UI
+    borderWidth: 1.5,
+    borderColor: "#079487",
     padding: 10,
     justifyContent: "center",
-    alignItems:"center",
-    height: 40,
-    width: 90,
-    borderRadius: 10,
+    alignItems: "center",
+    height: 44,
+    width: 110,
+    borderRadius: 12,
     marginTop: "auto",
+    alignSelf: "center", // Centrado en la base de la tarjeta
   },
 });
 

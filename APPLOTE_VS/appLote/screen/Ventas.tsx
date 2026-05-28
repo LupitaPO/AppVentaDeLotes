@@ -413,9 +413,11 @@ const Ventas = ({ navigation, route }) => {
         <Text style={styles.footerText}>Desliza para ver más lotes</Text>
       </View>
 
+      
+
       <View style={styles.ctnbtn}>
         <TouchableOpacity onPress={()=> navigation.navigate("RegistrarVenta")} style={styles.btnregistrar}>
-          <Text>REGISTRAR</Text>
+          <Text style={{color:"#fff",fontWeight:"bold"}}>REGISTRAR VENTA</Text>
         </TouchableOpacity>
       </View>
 
@@ -488,113 +490,200 @@ const Ventas = ({ navigation, route }) => {
   );
 };
 
+const { height: screenHeight } = Dimensions.get("window");
 const styles = StyleSheet.create({
-  // Estilos del menú flotante superior derecho.
+  // Contenedor del menú flotante superior derecho
   containerFlotante: {
     position: 'absolute',
-    top: 40,           // Ajusta según la pantalla
+    top: 40,           
     right: 20,
-    zIndex: 999,       // Siempre al frente
+    zIndex: 999,       
     alignItems: 'center',
-
-
   },
   menuDesplegado: {
-    // Los botones aparecen antes (arriba) del principal, 
-    // o puedes ponerlos después para que bajen.
     alignItems: "center",
     marginBottom: 8,
     gap: 10,
   },
   btnPrincipal: {
-    backgroundColor: '#333', // Un color neutro o el de tu app
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    backgroundColor: '#069488', // Verde insignia de tu app
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
+    elevation: 4,
+    shadowColor: '#0f766e',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
-  // estilos de exit y idioma :
   idioma: {
-    top: 5,   // Separación del borde inferior
-
-    marginTop: 5,
-    backgroundColor: '#22c5aa', // Color de fondo del botón
-    width: 45,
-    height: 45,
-    borderRadius: 28,     // Hace que sea circular
+    top:5,
+    backgroundColor: '#ffffff', // Fondo blanco limpio consistente
+    width: 42,
+    height: 42,
+    borderRadius: 21,     
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,         // Sombra en Android
-    shadowColor: '#000',  // Sombra en iOS
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    elevation: 3,         
+    shadowColor: '#0f172a',  
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 999,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   btnsalir: {
-    backgroundColor: "#f30a0a9c",
-    marginTop: 5,
-    height: 40,
-    width: 40,
+    backgroundColor: "#ef4444", // Rojo plano moderno y estilizado
+    height: 42,
+    width: 42,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: 21, // Redondeado idéntico al de idioma para simetría
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
-  // Estilos base de la pantalla principal y tarjetas de ventas.
-  mainContainer: { flex: 1, backgroundColor: "#e4f5f3" },
+
+  // Estilos base de la pantalla principal y tarjetas de ventas
+  mainContainer: { 
+    flex: 1, 
+    backgroundColor: "#f4fcfb" // Fondo premium unificado suave
+  },
   ventasContainer: {
-    height: height * 0.6, // Ocupa el 60% de la pantalla
-    backgroundColor: '#fff',
+    height: screenHeight * 0.8, // Usa screenHeight de forma segura
+    backgroundColor: '#ffffff',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     paddingTop: 50,
     paddingHorizontal: 20,
-    elevation: 5,
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: "rgba(6, 148, 136, 0.08)",
+    elevation: 6,
+    shadowColor: '#087c72',
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
   },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a' },
-  sectionTitle: { fontSize: 14, color: '#666', marginBottom: 15 },
-  scrollVentas: { flex: 1 },
-  scrollContent: { paddingBottom: 20 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 10 
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: '900', // Tipografía robusta idéntica al login y home
+    color: '#111827' 
+  },
+  sectionTitle: { 
+    fontSize: 13.5, 
+    color: '#64748b', 
+    fontWeight: "600",
+    marginBottom: 15 
+  },
+  scrollVentas: { 
+    flex: 1 
+  },
+  scrollContent: { 
+    paddingBottom: 20 
+  },
 
+  // Tarjetas del listado estilizadas como el loginPanel/cards
   card: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 15,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#edf0f2',
+    borderColor: 'rgba(6, 148, 136, 0.08)',
+    borderLeftWidth: 5,
+    borderLeftColor: "#069488", // Distintivo de marca esmeralda
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  loteInfo: { flexDirection: 'row', alignItems: 'center' },
-  cardLabel: { fontSize: 10, color: '#999', fontWeight: 'bold' },
-  cardValue: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  cardHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
+  loteInfo: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  cardLabel: { 
+    fontSize: 11, 
+    color: '#64748b', 
+    fontWeight: '700',
+    textTransform: "uppercase"
+  },
+  cardValue: { 
+    fontSize: 18, 
+    fontWeight: '900', 
+    color: '#111827' 
+  },
 
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  priceText: { fontSize: 18, fontWeight: 'bold', color: '#069488' },
-  subtext: { fontSize: 12, color: '#777' },
-  badge: { backgroundColor: '#e0f2f1', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { color: '#069488', fontSize: 12, fontWeight: 'bold' },
+  cardFooter: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-end' 
+  },
+  priceText: { 
+    fontSize: 18, 
+    fontWeight: '900', 
+    color: '#069488' 
+  },
+  subtext: { 
+    fontSize: 12, 
+    color: '#64748b',
+    fontWeight: '500'
+  },
+  badge: { 
+    backgroundColor: '#e8fff8', // Verde menta muy sutil y limpio
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 8 
+  },
+  badgeText: { 
+    color: '#069488', 
+    fontSize: 12, 
+    fontWeight: '800' 
+  },
 
-  // Estilos del texto guía inferior.
-  footerHint: { alignItems: 'center', marginTop: 20, opacity: 0.4 },
-  footerText: { fontSize: 12, marginTop: 4 },
+  // Texto guía inferior
+  footerHint: { 
+    alignItems: 'center', 
+    marginTop: 20, 
+    opacity: 0.5 
+  },
+  footerText: { 
+    fontSize: 12, 
+    color: '#64748b',
+    fontWeight: '600',
+    marginTop: 4 
+  },
 
-  // Estilos del modal y de las cuotas del cronograma.
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  // Modal y Cronograma premium
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(15, 23, 42, 0.4)', // Fondo oscuro suavizado
+    justifyContent: 'flex-end' 
+  },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     height: '75%',
-    padding: 24
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 148, 136, 0.08)',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -602,35 +691,98 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#f1f5f9',
     paddingBottom: 15
   },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1a1a1a' },
-  modalSubtitle: { fontSize: 14, color: '#069488', fontWeight: '600' },
-  modalScroll: { paddingBottom: 30 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  modalTitle: { 
+    fontSize: 22, 
+    fontWeight: '900', 
+    color: '#111827' 
+  },
+  modalSubtitle: { 
+    fontSize: 14, 
+    color: '#069488', 
+    fontWeight: '800' 
+  },
+  modalScroll: { 
+    paddingBottom: 30 
+  },
+  grid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between' 
+  },
+  
+  // Mini tarjetas de cuotas refinadas
   miniCard: {
     width: '48%',
     backgroundColor: '#ffffff',
     padding: 15,
-    borderRadius: 15,
+    borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#eee',
-    // Sombra suave
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    borderColor: 'rgba(6, 148, 136, 0.08)',
+    borderLeftWidth: 4,
+    borderLeftColor: '#09caba', // Sub-acento turquesa limpio
+    elevation: 3,
+    shadowColor: '#087c72',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 }
   },
-  cuotaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
-  cuotaTitle: { fontSize: 11, color: '#888', fontWeight: 'bold', textTransform: 'uppercase' },
-  cuotaMonto: { fontSize: 17, fontWeight: 'bold', color: '#2c3e50' },
-  cuotaFecha: { fontSize: 12, color: '#999', marginTop: 4 },
-  modalLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  label:{color:"#fff"},
-  btnregistrar: { width: "80%", height: 60, backgroundColor: "#27ae60", justifyContent: "center", alignItems: "center",borderRadius:10},
-  ctnbtn:{top:100,alignItems:"center"}
+  cuotaHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 5 
+  },
+  cuotaTitle: { 
+    fontSize: 10.5, 
+    color: '#64748b', 
+    fontWeight: '700', 
+    textTransform: 'uppercase' 
+  },
+  cuotaMonto: { 
+    fontSize: 17, 
+    fontWeight: '900', 
+    color: '#111827' 
+  },
+  cuotaFecha: { 
+    fontSize: 12, 
+    color: '#94a3b8', 
+    fontWeight: '500',
+    marginTop: 4 
+  },
+  modalLoading: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  label: { 
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: 16
+  },
+  
+  // Botón registrar adaptado al diseño de botones del Login
+  btnregistrar: { 
+    width: "85%", 
+    height: 52, 
+    backgroundColor: "#069488", // Verde éxito unificado
+    justifyContent: "center", 
+    alignItems: "center",
+    borderRadius: 12,
+    shadowColor: "#069488",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  ctnbtn: { 
+    marginTop: 24, // Cambiado top por un margen relativo limpio para evitar desbordes
+    alignItems: "center",
+    width: "100%"
+  }
 });
 
 export default Ventas

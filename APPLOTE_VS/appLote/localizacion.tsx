@@ -65,7 +65,7 @@ export const traslations = {
         btnRegister: "Register User",
         Comeback: "Come back",
         // texto de login soporte de contraseña 
-        titleSuport: "Click on any of our available        numbers:",
+        titleSuport: "Click on any of our       available numbers:",
         msjbss: "Business hours 8:00am - 5:00pm.",
         Incharge: "In charge",
         // texto bottomtabs
