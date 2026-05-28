@@ -552,125 +552,268 @@ const DetallePago = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  // Fondo principal de la pantalla.
-  container: { flex: 1, backgroundColor: "#f4f7f6" },
+// Fondo principal de la pantalla suave y unificado
+  container: { 
+    flex: 1, 
+    backgroundColor: "#f4fcfb" 
+  },
 
-  // Estilos del encabezado superior.
+  // Estilos del encabezado superior estilizado
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#fff",
-    elevation: 2
+    paddingTop: 40,
+    paddingHorizontal: 16,
+    height: 99,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderColor: "rgba(15,23,42,0.05)",
+    elevation: 4,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
 
-  // Título principal del encabezado.
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#333" },
+  // Título principal del encabezado consistente
+  headerTitle: { 
+    fontSize: 20, 
+    fontWeight: "900", 
+    color: "#111827" 
+  },
 
-  // Espaciado interno del contenido desplazable.
-  content: { padding: 20 },
+  // Espaciado interno del contenido desplazable
+  content: { 
+    padding: 16 
+  },
 
-  // Tarjeta con el resumen visual de la cuota seleccionada.
+  // Tarjeta con el resumen visual de la cuota seleccionada
   infoCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     borderRadius: 20,
-    padding: 25,
+    padding: 24,
     alignItems: "center",
-    elevation: 3,
-    marginBottom: 25
+    borderWidth: 1,
+    borderColor: "rgba(6, 148, 136, 0.08)",
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 4,
+    marginBottom: 24
   },
 
-  // Posición del ícono central de la tarjeta informativa.
-  iconCenter: { marginBottom: 15 },
+  // Posición del ícono central de la tarjeta informativa
+  iconCenter: { 
+    marginBottom: 12 
+  },
 
-  // Etiqueta descriptiva del monto.
-  label: { fontSize: 14, color: "#888", fontWeight: "600" },
+  // Etiqueta descriptiva del monto
+  label: { 
+    fontSize: 12, 
+    color: "#64748b", 
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5
+  },
 
-  // Monto principal mostrado en grande.
-  monto: { fontSize: 40, fontWeight: "bold", color: "#069488", marginVertical: 10 },
+  // Monto principal mostrado en tipografía robusta de gran impacto
+  monto: { 
+    fontSize: 38, 
+    fontWeight: "900", 
+    color: "#069488", 
+    marginVertical: 8 
+  },
 
-  // Separador visual entre el monto y los demás datos de la cuota.
-  divider: { width: "100%", height: 1, backgroundColor: "#eee", marginVertical: 15 },
+  // Separador visual fino entre el monto y los demás datos de la cuota
+  divider: { 
+    width: "100%", 
+    height: 1, 
+    backgroundColor: "#f1f5f9", 
+    marginVertical: 16 
+  },
 
-  // Texto secundario para fecha de vencimiento y estado.
-  subLabel: { fontSize: 15, color: "#555", marginBottom: 5 },
+  // Texto secundario para fecha de vencimiento y estado
+  subLabel: { 
+    fontSize: 14, 
+    color: "#475569", 
+    fontWeight: "600",
+    marginBottom: 6 
+  },
 
-  stateLabel: { fontSize: 15, color: "#555", marginBottom: 5, fontWeight: "bold" },
+  stateLabel: { 
+    fontSize: 14, 
+    color: "#111827", 
+    marginBottom: 6, 
+    fontWeight: "900" 
+  },
 
-  // Título de la sección de selección del comprobante.
-  sectionTitle: { fontSize: 16, fontWeight: "bold", color: "#444", marginBottom: 15 },
+  // Título de la sección de selección del comprobante
+  sectionTitle: { 
+    fontSize: 15, 
+    fontWeight: "900", 
+    color: "#111827", 
+    marginBottom: 14 
+  },
 
-  // Estilos ajustados para 3 botones en una fila
-  // Contenedor horizontal de los botones de tipo de comprobante.
+  // Contenedor horizontal de los botones de tipo de comprobante
   comprobanteContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 25,
-    gap: 8
+    marginBottom: 24,
+    gap: 10
   },
 
-  // Estilo base de cada botón selector.
+  // Estilo base de cada botón selector refinado
   selector: {
     flex: 1,
-    paddingVertical: 15,
+    paddingVertical: 14,
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#e2e8f0",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2
   },
 
-  // Estilo visual del selector actualmente activo.
-  selectorActive: { backgroundColor: "#069488", borderColor: "#069488" },
+  // Estilo visual del selector actualmente activo (Verde insignia)
+  selectorActive: { 
+    backgroundColor: "#069488", 
+    borderColor: "#069488",
+    shadowColor: "#069488",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4
+  },
 
-  // Texto del selector en estado normal.
-  selectorText: { fontWeight: "600", color: "#666", fontSize: 13 },
+  // Texto del selector en estado normal
+  selectorText: { 
+    fontWeight: "700", 
+    color: "#64748b", 
+    fontSize: 13 
+  },
 
-  // Texto del selector cuando está activo.
-  selectorTextActive: { color: "#fff" },
+  // Texto del selector cuando está activo
+  selectorTextActive: { 
+    color: "#ffffff",
+    fontWeight: "900" 
+  },
 
-  // Caja de advertencia/información debajo del selector.
+  // Caja de advertencia/información debajo del selector pulida
   warningBox: {
     flexDirection: "row",
-    backgroundColor: "#fff3cd",
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: "#fffbeb", // Tono ámbar/amarillo premium suave
+    padding: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#ffeeba"
+    borderColor: "#fde68a",
+    alignItems: "center",
+    marginBottom: 24
   },
 
-  // Texto informativo dentro de la caja de advertencia.
-  warningText: { flex: 1, fontSize: 13, color: "#856404", marginLeft: 10 },
+  // Texto informativo dentro de la caja de advertencia
+  warningText: { 
+    flex: 1, 
+    fontSize: 13.5, 
+    color: "#b45309", // Tono marrón/ámbar oscuro legible
+    fontWeight: "600",
+    marginLeft: 10,
+    lineHeight: 18
+  },
 
-  // Contenedor del botón inferior fijo.
-  footer: { padding: 20, backgroundColor: "#fff" },
+  // Contenedor del botón inferior fijo adaptado
+  footer: {   
+    bottom: 50,
+    padding: 16, 
+    backgroundColor: "#ffffff",
+    borderTopWidth: 1,
+    borderColor: "rgba(15,23,42,0.05)",
+  },
 
-  // Botón principal para confirmar el pago.
+  // Botón principal para confirmar el pago (Consistencia con btnRegistrar)
   btnPago: {
     backgroundColor: "#069488",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    padding: 18,
-    borderRadius: 15,
-    gap: 10
+    height: 55,
+    borderRadius: 12,
+    gap: 10,
+    shadowColor: "#069488",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
   },
 
-  // Estilo aplicado cuando el botón está deshabilitado.
-  btnDeshabilitado: { backgroundColor: "#ccc" },
+  // Estilo aplicado cuando el botón está deshabilitado
+  btnDeshabilitado: { 
+    backgroundColor: "#cbd5e1",
+    shadowOpacity: 0,
+    elevation: 0
+  },
 
-  // Texto del botón principal.
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  // Texto del botón principal
+  btnText: { 
+    color: "#ffffff", 
+    fontSize: 16, 
+    fontWeight: "900" 
+  },
 
-  // ESTILOS NUEVOS PARA COMPONENTES DINÁMICOS
-  inputGroup: { width: "100%", marginBottom: 20 },
-  inputLabel: { fontSize: 14, fontWeight: "bold", color: "#444", marginBottom: 8 },
-  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#ddd", borderRadius: 10, padding: 12, fontSize: 16, color: "#333", elevation: 1 },
-  ticketBox: { flexDirection: "row", backgroundColor: "#e4f5f3", borderRadius: 10, padding: 15, alignItems: "center", marginBottom: 20, borderWidth: 1, borderColor: "#bce5e1" },
-  ticketText: { flex: 1, color: "#05756b", fontSize: 13, marginLeft: 10, lineHeight: 18 },
-
+  // COMPONENTES DINÁMICOS (Inputs adaptados a textInputMobile)
+  inputGroup: { 
+    width: "100%", 
+    marginBottom: 20 
+  },
+  inputLabel: { 
+    fontSize: 13, 
+    fontWeight: "700", 
+    color: "#111827", 
+    marginBottom: 8 
+  },
+  input: { 
+    height: 48,
+    backgroundColor: "#fbfffe", 
+    borderWidth: 1, 
+    borderColor: "#d5e7e3", 
+    borderRadius: 15, 
+    paddingHorizontal: 14, 
+    fontSize: 15, 
+    fontWeight: "500",
+    color: "#111827", 
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 1 
+  },
+  
+  // Caja de comprobante adjunto/ticket integrada limpiamente con la marca
+  ticketBox: { 
+    flexDirection: "row", 
+    backgroundColor: "#e8fff8", 
+    borderRadius: 14, 
+    padding: 16, 
+    alignItems: "center", 
+    marginBottom: 20, 
+    borderWidth: 1, 
+    borderColor: "rgba(20, 184, 166, 0.15)" 
+  },
+  ticketText: { 
+    flex: 1, 
+    color: "#0f766e", 
+    fontSize: 13.5, 
+    fontWeight: "600",
+    marginLeft: 10, 
+    lineHeight: 19 
+  },
 });
+
 
 export default DetallePago;

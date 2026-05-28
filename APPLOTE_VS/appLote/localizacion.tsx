@@ -28,7 +28,7 @@ export const traslations = {
         btcliente: "Clientes",
         btVentas: "Ventas",
         // texto para el dashboard
-        Dtitle: "Bienvenido",
+        Dtitle: "Bienvenido:  ",
         Dmsj: "Panel de Ventas",
         Dmsj2: "Cartera Total por Cobrar",
         Dmsj3: "Ocupación de Lotes",
@@ -76,7 +76,7 @@ export const traslations = {
         btcliente: "Customers",
         btVentas: "Sales",
         // texto para el dashboard
-        Dtitle: "Welcome:",
+        Dtitle: "Welcome:  ",
         Dmsj: "Sales Dashboard",
         Dmsj2: "Total Accounts Receivable",
         Dmsj3: "Occupation of Lots",

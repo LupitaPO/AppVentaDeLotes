@@ -14,7 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 // imports para idiomas 
 import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import i18n, {changeLanguage} from "../i18n";
+import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
 import RegistrarAsesor from "./Asesor/RegistrarAsesor";
 import RegistrarUsuario from "./Usuarios/RegistrarUsuario";
@@ -23,7 +23,7 @@ import { API_URL } from "../config/apiUrl";
 // URL base del backend para consultar y administrar usuarios.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
-const usuario = ({navigation, route}) => {
+const usuario = ({ navigation, route }) => {
   // Datos recibidos desde navegación para personalizar la pantalla según el contexto del usuario.
   const { nombre, rol, usuarioSeleccionadoId, usuarioSeleccionadoNombre } = route.params || {};
 
@@ -38,22 +38,22 @@ const usuario = ({navigation, route}) => {
   // Estado que controla el indicador de carga mientras llegan los datos.
   const [cargando, setCargando] = useState(true);
 
-// funcion de idiomas //////////////////////////////////////////////
+  // funcion de idiomas //////////////////////////////////////////////
 
-    // Estado que abre o cierra el menú flotante de acciones rápidas.
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Estado que abre o cierra el menú flotante de acciones rápidas.
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // Idioma actual seleccionado en la pantalla.
-    const [language,setlanguage] = useState<Languages>("es");
+  // Idioma actual seleccionado en la pantalla.
+  const [language, setlanguage] = useState<Languages>("es");
 
-    // Alterna entre español e inglés y sincroniza el cambio con i18n.
-    const handlechangeLanguage = ()=> {
-      const lang: Languages = language === "en" ? "es" :"en";
-      changeLanguage(lang);
-      setlanguage(lang);
-    }  
+  // Alterna entre español e inglés y sincroniza el cambio con i18n.
+  const handlechangeLanguage = () => {
+    const lang: Languages = language === "en" ? "es" : "en";
+    changeLanguage(lang);
+    setlanguage(lang);
+  }
 
-///////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////
 
   // Consulta la lista de usuarios registrados y la guarda en el estado local.
   const obtenerUsuarios = async () => {
@@ -69,29 +69,29 @@ const usuario = ({navigation, route}) => {
   };
 
   // Envía la solicitud para anular un usuario según su identificador.
-  const anularUsuario = async (IdUsuario) => {
-    const esActivo = IdUsuario.Estado === "A";
+  const anularUsuario = async (usuario) => {
+    // Evaluamos si el estado actual es 'A'. Si no lo es, asumimos que es 'X' (u otro estado inactivo)
+    const esActivo = usuario.Estado === "A";
     const accionTexto = esActivo ? "anular" : "restaurar";
     const exitoTexto = esActivo ? "anulado" : "restaurado";
 
     try {
-      const response = await fetch(`${API_URL}/Usuario/usuario_Anular/${IdUsuario}`, {
+      // Mandamos el ID correcto a la URL de tu API
+      const response = await fetch(`${API_URL}/Usuario/usuario_Anular/${usuario.IdUsuario}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
       });
-      
+
       if (response.ok) {
         Alert.alert("Éxito", `Usuario ${exitoTexto} correctamente`);
-        obtenerUsuarios();
+        obtenerUsuarios(); // Esto refresca la lista de la API y cambiará el estado de "A" a "X" (o viceversa)
       } else {
-        const errorMsg = await response.text();
-        console.log("Error del server:", errorMsg);
         Alert.alert("Error", `No se pudo ${accionTexto} el Usuario`);
       }
     } catch (error) {
-      console.error("Error al anular Usuario:", error);
+      console.error("Error al cambiar estado del Usuario:", error);
       Alert.alert("Error", "Error de conexión con el servidor");
     }
   };
@@ -120,34 +120,34 @@ const usuario = ({navigation, route}) => {
       <ActivityIndicator size="large" color="#069488" style={{ flex: 1 }} />
     );
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const cerrarSesion = () => {
+  const cerrarSesion = () => {
     // Simplemente redirigimos y reseteamos el historial
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }], // Cambia 'Login' por el nombre exacto de tu pantalla inicial
     });
   };
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   return (
     <View style={styles.container}>
       {/* Título principal de la sección de gestión de usuarios. */}
       <Text style={styles.title}>Gestion de Usuarios:</Text>
-        {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
-  {/* funcion de boton desplegable patra idioma y exit */}
+      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+      {/* funcion de boton desplegable patra idioma y exit */}
 
       {/* Menú flotante para cambio de idioma y cierre de sesión. */}
       <View style={styles.containerFlotante}>
-        <TouchableOpacity 
-          style={styles.btnPrincipal} 
+        <TouchableOpacity
+          style={styles.btnPrincipal}
           onPress={() => setIsMenuOpen(!isMenuOpen)}
         >
-          <MaterialIcons 
-          name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
-          size={28} 
-          color="white" 
+          <MaterialIcons
+            name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
+            size={28}
+            color="white"
           />
         </TouchableOpacity>
         {isMenuOpen && (
@@ -155,24 +155,24 @@ const cerrarSesion = () => {
 
             <View>
               <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
-                <Fontisto name="world-o" size={25}/>
+                <Fontisto name="world-o" size={25} />
               </TouchableOpacity>
             </View>
             <View>
               <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
                 <MaterialIcons
-                name="exit-to-app"
-                size={28}
-                color="white"
+                  name="exit-to-app"
+                  size={28}
+                  color="white"
                 />
               </TouchableOpacity>
             </View>
 
           </View>
         )}
-        
+
       </View>
-  {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
 
       {/* Lista desplazable con todos los usuarios registrados. */}
       <ScrollView
@@ -192,12 +192,13 @@ const cerrarSesion = () => {
 
         {usuarios.map((usuario, index) => {
           // Construye el nombre mostrado usando los campos disponibles del usuario.
-          const nombreCompleto = [
-            usuario.Nombre
-          ]
-          
+          const nombreCompleto = usuario.Nombre || "Usuario sin nombre";
+
+          // EVALUACIÓN DE ESTADOS DINÁMICOS
           const estaActivo = usuario.Estado === "A";
-          const textoBotonestado = estaActivo ? "Anular" : "Restaurar";
+          const textoBotonEstado = estaActivo ? "Anular" : "Restaurar";
+          const textoVisualEstado = estaActivo ? "Activo" : "Inactivo";
+
           // ATAMAINE: Comparamos por IdUsuario para marcar el registro real de la pantalla de usuarios.
           const estaSeleccionado = String(usuario.IdUsuario || "") === String(usuarioSeleccionadoId || "");
           return (
@@ -216,14 +217,15 @@ const cerrarSesion = () => {
                   `¿Qué deseas hacer con ${nombreCompleto}?`,
                   [
                     {
-                      text: "Anular",
-                      onPress: () => anularUsuario(usuario.IdUsuario),
+                      // Este botón cambia dinámicamente según el estado actual
+                      text: textoBotonEstado,
+                      onPress: () => anularUsuario(usuario), // Se envía el usuario completo para evaluar .Estado
                     },
                     {
-                      text: textoBotonestado,
+                      text: "Modificar",
                       onPress: () =>
                         navigation.navigate("ModificarUsuario", {
-                          asesor: usuario,
+                          usuario: usuario,
                           onRefresh: obtenerUsuarios,
                         }),
                     },
@@ -243,9 +245,25 @@ const cerrarSesion = () => {
               <Text style={styles.cardTitle}>{nombreCompleto || "Asesor sin nombre"}</Text>
               <Text style={styles.cardText}>Celular: {usuario.Celular || "N/A"}</Text>
               <Text style={styles.cardText}>Correo: {usuario.Correo || "N/A"}</Text>
-              <Text style={styles.cardText}>Contraseña: {usuario.Contraseña || "N/A"}</Text>
+
               <Text style={styles.cardText}>TipoUsuario: {usuario.TipoUsuario || "N/A"}</Text>
-              <Text style={styles.cardText}>Estado: {usuario.Estado || "N/A"}</Text>
+
+              {/* Texto de estado transformado ("Activo" o "Inactivo") */}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.cardText}>Estado: </Text>
+                <View style={[
+                  styles.badgeEstado,
+                  { backgroundColor: estaActivo ? '#E6F4F1' : '#FCE8E6' } // Fondos pasteles
+                ]}>
+                  <Text style={[
+                    styles.badgeTexto,
+                    { color: estaActivo ? '#069488' : '#D9534F' } // Textos fuertes
+                  ]}>
+                    {textoVisualEstado}
+                  </Text>
+                </View>
+              </View>
+
             </TouchableOpacity>
           );
         })}
@@ -267,115 +285,134 @@ const cerrarSesion = () => {
 };
 
 const styles = StyleSheet.create({
-  // Estilos del menú flotante superior.
+  // Contenedor del menú flotante superior derecho
   containerFlotante: {
     position: 'absolute',
-    top: 40,           // Ajusta según la pantalla
+    top: 40,           
     right: 20,
-    zIndex: 999,       // Siempre al frente
+    zIndex: 999,       
     alignItems: 'center',
-    
-    
   },
   menuDesplegado: {
-    // Los botones aparecen antes (arriba) del principal, 
-    // o puedes ponerlos después para que bajen.
-    alignItems:"center",
-    marginBottom: 8, 
-    gap: 10,          
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 10,
   },
   btnPrincipal: {
-    backgroundColor: '#333', // Un color neutro o el de tu app
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    backgroundColor: '#069488', // Verde insignia de tu app
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
+    elevation: 4,
+    shadowColor: '#0f766e',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
-    // estilos de exit y idioma :
-  idioma:{
-    top:5,   // Separación del borde inferior
-    
-    marginTop:5,
-    backgroundColor: '#22c5aa', // Color de fondo del botón
-    width: 45,
-    height: 45,
-    borderRadius: 28,     // Hace que sea circular
+  idioma: {
+    top:5,
+    backgroundColor: '#ffffff', // Fondo blanco limpio consistente
+    width: 42,
+    height: 42,
+    borderRadius: 21,     
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,         // Sombra en Android
-    shadowColor: '#000',  // Sombra en iOS
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    elevation: 3,         
+    shadowColor: '#0f172a',  
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 999,  
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   btnsalir: {
-    backgroundColor: "#f30a0a9c",
-    marginTop:5,
-    height: 40,
-    width: 40,
+    backgroundColor: "#ef4444", // Rojo plano estilizado moderno
+    height: 42,
+    width: 42,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: 21, // Redondeado idéntico al de idioma para simetría
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
-// Estilos generales de la pantalla y las tarjetas de usuarios.
+
+  // Estilos generales de la pantalla y las tarjetas de usuarios
   container: {
     flex: 1,
-    backgroundColor: "#e4f5f3",
-    padding: 20,
+    backgroundColor: "#f4fcfb", // Fondo premium sutil unificado
+    paddingHorizontal: 16,
     paddingTop: 50,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#069488",
-    marginBottom: 15,
+    fontSize: 22,
+    fontWeight: "900", // Tipografía robusta consistente
+    color: "#111827",  // Texto oscuro legible para encabezados de sección
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 15,
-    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748b",  // Gris elegante para subtextos y guías
+    marginBottom: 20,
   },
+  
+  // Tarjetas de usuarios estándar
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 148, 136, 0.08)',
+    borderLeftWidth: 5,
+    borderLeftColor: "#069488", // Borde distintivo de la marca
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  // ATAMAINE: Resaltado premium para ubicar usuarios abiertos desde el reporte.
+  
+  // ATAMAINE: Resaltado premium pulido para ubicar usuarios desde reportes
   cardSeleccionada: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 2,
-    borderColor: "#0891b2",
-    backgroundColor: "#ecfeff",
+    borderColor: "#0891b2", // Resalte cian controlado
+    borderLeftWidth: 6,
     shadowColor: "#0891b2",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 6,
   },
   selectedNotice: {
-    backgroundColor: "#cffafe",
+    backgroundColor: "#ecfeff", // Alerta sutil basada en cian limpio
     borderLeftWidth: 5,
     borderLeftColor: "#0891b2",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(8, 145, 178, 0.08)"
   },
   selectedNoticeText: {
     color: "#0e7490",
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "800",
   },
   selectedBadge: {
     alignSelf: "flex-start",
     backgroundColor: "#0891b2",
-    borderRadius: 999,
+    borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginBottom: 8,
@@ -384,17 +421,20 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 11,
     fontWeight: "900",
+    textTransform: "uppercase"
   },
+  
   cardTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#069488",
+    fontWeight: "900",
+    marginBottom: 6,
+    color: "#111827", // Título del usuario en tono oscuro premium
   },
   cardText: {
-    fontSize: 14,
-    color: "#444",
-    marginBottom: 3,
+    fontSize: 13.5,
+    fontWeight: "600",
+    color: "#475569", // Texto interno gris oscuro de alta legibilidad
+    marginBottom: 4,
   },
   grid: {
     flexDirection: "row",
@@ -402,24 +442,42 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-  // Estilos del botón principal para registrar un nuevo usuario/asesor.
+  // Estilos del botón principal para registrar un nuevo usuario/asesor
   btnRegistrar: {
-    backgroundColor: "#069488",
-    width: 378,
-    height: 50,
-    marginBottom: 5,
-    marginTop: 5,
+    backgroundColor: "#069488", // Botón principal unificado con el Login
+    width: "100%", // Se cambia de ancho estático (378) a relativo para evitar desbordes en pantallas pequeñas
+    maxWidth: 420,  // Límite óptimo para pantallas grandes
+    height: 52,
+    alignSelf: "center",
+    marginBottom: 16,
+    marginTop: 8,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#fff",
+    borderRadius: 12,
+    shadowColor: "#069488",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  btnRegisText: {
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: 16,
   },
 
-  // Estilo del texto interno del botón de registro.
-  btnRegisText: {
-    color: "#fff",
-    fontWeight: "bold",
+  // Badges dinámicos integrados
+  badgeEstado: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    
+  },
+  badgeTexto: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 });
 

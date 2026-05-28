@@ -166,64 +166,107 @@ const ModificarProyecto = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+ // Fondo principal de la pantalla suave y consistente
   container: {
     flex: 1,
-    backgroundColor: "#e4f5f3",
-    padding: 20,
+    backgroundColor: "#f4fcfb", // Fondo premium unificado sutil
+    paddingHorizontal: 16,
     paddingTop: 50,
   },
+  
+  // Título principal del formulario en tipografía robusta
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#069488",
-    marginBottom: 20,
+    fontWeight: "900", // Peso visual fuerte idéntico al resto de tu app
+    color: "#111827",  // Tono oscuro principal para alta legibilidad
     textAlign: "center",
+    marginBottom: 24,
   },
+  
   form: {
     flex: 1,
     justifyContent: "center",
   },
+  
+  // Etiquetas de los campos adaptadas al diseño móvil unificado
   label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 5,
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 8,
   },
+  
+  // Campos de texto estilizados exactamente como el login nativo
   input: {
+    height: 48,
+    backgroundColor: "#fbfffe", // Blanco menta muy limpio
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
+    borderColor: "#d5e7e3",    // Contorno esmeralda suave
+    borderRadius: 15,          // Curvatura idéntica a tus otras pantallas
+    paddingHorizontal: 14,
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#111827",
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 1,
     marginBottom: 15,
-    backgroundColor: "#fff",
   },
+  
+  // Botón para adjuntar archivo/comprobante refinado (Look premium de carga)
   btnArchivo: {
-    backgroundColor: "#ff9800",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#ffffff",      // Fondo blanco limpio
+    borderWidth: 1.5,
+    borderColor: "#f97316",         // Borde naranja premium controlado
+    borderStyle: "dashed",          // Efecto punteado moderno para indicar carga de archivos
+    height: 48,
+    borderRadius: 12,
+    justifyContent: "center",
     alignItems: "center",
     marginBottom: 15,
+    shadowColor: "#f97316",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
+  
+  // Texto del botón de archivo haciendo juego con el contorno
   btnTextArchivo: {
-    color: "#fff",
+    color: "#f97316",
     fontSize: 14,
-    fontWeight: "bold",
+    fontWeight: "800",
   },
+  
+  // Botón Guardar / Confirmar (Diseño responsivo premium insignia)
   btnGuardar: {
-    backgroundColor: "#069488",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#069488", // Verde principal premium
+    width: "100%",
+    maxWidth: 420,
+    height: 52,
+    alignSelf: "center",
+    justifyContent: "center",
     alignItems: "center",
+    borderRadius: 12,
+    shadowColor: "#069488",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
     marginTop: 20,
   },
+  
   btnTextGuardar: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "900",
   },
+  
   btnregresar: {
     alignItems: "center",
-    paddingBottom: 20,
+    paddingVertical: 16,
   },
 });
 

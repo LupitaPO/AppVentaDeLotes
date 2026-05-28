@@ -13,7 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 // imports para idiomas 
 import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import i18n, {changeLanguage} from "../i18n";
+import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
 
 // URL base del backend para consultar el módulo de proyectos.
@@ -21,15 +21,15 @@ const API_URL = "http://www.tulote.somee.com";
 
 
 const ListarProyectos = ({ navigation, route }) => {
-// Estado que controla si el menú flotante está abierto o cerrado.
-const [isMenuOpen, setIsMenuOpen] = useState(false);
- // funcion de idiomas 
+  // Estado que controla si el menú flotante está abierto o cerrado.
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // funcion de idiomas 
   // Idioma actual usado por la pantalla para alternar entre español e inglés.
-  const [language,setlanguage] = useState<Languages>("es");
+  const [language, setlanguage] = useState<Languages>("es");
 
   // Cambia el idioma actual y actualiza la configuración global de traducción.
-  const handlechangeLanguage = ()=> {
-    const lang: Languages = language === "en" ? "es" :"en";
+  const handlechangeLanguage = () => {
+    const lang: Languages = language === "en" ? "es" : "en";
     changeLanguage(lang);
     setlanguage(lang);
   }
@@ -61,10 +61,14 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
   };
 
   // Envía la solicitud para anular un proyecto y luego refresca la lista si la operación fue exitosa.
-  const anularProyecto = async (idProyecto) => {
+  const anularProyecto = async (proyecto) => {
+    const esActivo = proyecto.Estado === "A";
+    const accionTexto = esActivo ? "anular" : "restaurar";
+    const exitoTexto = esActivo ? "anulado" : "restaurado";
+
     try {
       const response = await fetch(
-        `${API_URL}/Proyecto/proyecto_Anular/${idProyecto}`,
+        `${API_URL}/Proyecto/proyecto_Anular/${proyecto.IdProyecto}`,
         {
           method: "POST",
           headers: {
@@ -74,15 +78,13 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
       );
 
       if (response.ok) {
-        Alert.alert("Éxito", "Proyecto anulado correctamente");
-        obtenerProyectos();
+        Alert.alert("Éxito", `Proyecto ${exitoTexto} correctamente`);
+        obtenerProyectos(); // Refresca la lista desde el servidor
       } else {
-        const errorMsg = await response.text();
-        console.log("Error del server:", errorMsg);
-        Alert.alert("Error", "No se pudo anular el proyecto");
+        Alert.alert("Error", `No se pudo ${accionTexto} el proyecto`);
       }
     } catch (error) {
-      console.error("Error al anular proyecto:", error);
+      console.error("Error al cambiar estado del proyecto:", error);
       Alert.alert("Error", "Error de conexión con el servidor");
     }
   };
@@ -128,8 +130,27 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
     });
   };
 
+  const formatearFecha = (fechaRaw) => {
+    if (!fechaRaw) return "N/A";
+    try {
+      const fecha = new Date(fechaRaw);
+      // Controla errores si la cadena no es una fecha válida
+      if (isNaN(fecha.getTime())) return fechaRaw;
 
- 
+      return new Intl.DateTimeFormat('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }).format(fecha);
+    } catch (error) {
+      return fechaRaw;
+    }
+  };
+
+
 
 
   return (
@@ -143,19 +164,19 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
 
         
       </View> */}
-  {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
-  {/* funcion de boton desplegable patra idioma y exit */}
+      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+      {/* funcion de boton desplegable patra idioma y exit */}
 
       {/* Menú flotante para cambiar idioma y cerrar sesión. */}
       <View style={styles.containerFlotante}>
-        <TouchableOpacity 
-          style={styles.btnPrincipal} 
+        <TouchableOpacity
+          style={styles.btnPrincipal}
           onPress={() => setIsMenuOpen(!isMenuOpen)}
         >
-          <MaterialIcons 
-          name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
-          size={28} 
-          color="white" 
+          <MaterialIcons
+            name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
+            size={28}
+            color="white"
           />
         </TouchableOpacity>
         {isMenuOpen && (
@@ -163,24 +184,24 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
 
             <View>
               <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
-                <Fontisto name="world-o" size={25}/>
+                <Fontisto name="world-o" size={25} />
               </TouchableOpacity>
             </View>
             <View>
               <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
                 <MaterialIcons
-                name="exit-to-app"
-                size={28}
-                color="white"
+                  name="exit-to-app"
+                  size={28}
+                  color="white"
                 />
               </TouchableOpacity>
             </View>
 
           </View>
         )}
-        
+
       </View>
-  {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
+      {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
 
 
       <View></View>
@@ -210,90 +231,109 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
             const coincideNombre = proyectoSeleccionadoNombre && String(proyecto.Nombre || "").trim().toLowerCase() === String(proyectoSeleccionadoNombre).trim().toLowerCase();
             const estaSeleccionado = Boolean(coincideId || coincideNombre);
 
+            // EVALUACIÓN DE ESTADOS DINÁMICOS
+            const estaActivo = proyecto.Estado === "A";
+            const textoBotonEstado = estaActivo ? "Anular" : "Restaurar";
+            const textoVisualEstado = estaActivo ? "Activo" : "Inactivo";
+
             return (
-            /* Cada tarjeta representa un proyecto y permite abrir su detalle. */
-            <TouchableOpacity
-              key={
-                proyecto.IdProyecto
-                  ? proyecto.IdProyecto.toString()
-                  : index.toString()
-              }
-              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
-              onLayout={(event) => {
-                if (proyecto.IdProyecto) {
-                  posicionesProyectosRef.current[String(proyecto.IdProyecto)] = event.nativeEvent.layout.y;
+              /* Cada tarjeta representa un proyecto y permite abrir su detalle. */
+              <TouchableOpacity
+                key={
+                  proyecto.IdProyecto
+                    ? proyecto.IdProyecto.toString()
+                    : index.toString()
                 }
-                if (proyecto.Nombre) {
-                  posicionesProyectosRef.current[String(proyecto.Nombre)] = event.nativeEvent.layout.y;
+                style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+                onLayout={(event) => {
+                  if (proyecto.IdProyecto) {
+                    posicionesProyectosRef.current[String(proyecto.IdProyecto)] = event.nativeEvent.layout.y;
+                  }
+                  if (proyecto.Nombre) {
+                    posicionesProyectosRef.current[String(proyecto.Nombre)] = event.nativeEvent.layout.y;
+                  }
+                }}
+                onPress={() =>
+                  navigation.navigate("DetalleProyecto", {
+                    idProyecto: proyecto.IdProyecto,
+                    urlCSV: proyecto.ImagenUrl,
+                    info: proyecto,
+                    idUsuario,
+                  })
                 }
-              }}
-              onPress={() =>
-                navigation.navigate("DetalleProyecto", {
-                  idProyecto: proyecto.IdProyecto,
-                  urlCSV: proyecto.ImagenUrl,
-                  info: proyecto,
-                  idUsuario,
-                })
-              }
-            >
-              {estaSeleccionado ? (
-                <View style={styles.selectedBadge}>
-                  <Text style={styles.selectedBadgeText}>Seleccionado</Text>
+              >
+                {estaSeleccionado ? (
+                  <View style={styles.selectedBadge}>
+                    <Text style={styles.selectedBadgeText}>Seleccionado</Text>
+                  </View>
+                ) : null}
+                <View style={styles.grid}>
+                  <Text style={styles.cardTitle}>
+                    {proyecto.Nombre || "Proyecto sin nombre"}
+                  </Text>
+
+                  {/* Acciones de administración visibles solo para roles distintos de Cliente. */}
+                  {rol !== "Cliente" && (
+                    <TouchableOpacity
+                      style={styles.opciones}
+                      onPress={() =>
+                        Alert.alert(
+                          "Opciones para Proyecto",
+                          `¿Qué deseas hacer con ${proyecto.Nombre}?`,
+                          [
+                            {
+                              text: textoBotonEstado,
+                              onPress: () => anularProyecto(proyecto),
+                            },
+                            {
+                              text: "Modificar",
+                              onPress: () =>
+                                navigation.navigate("ModificarProyecto", {
+                                  proyecto,
+                                  onRefresh: obtenerProyectos,
+                                }),
+                            },
+                            {
+                              text: "Cancelar",
+                              style: "cancel",
+                            },
+                          ],
+                        )
+                      }
+                    >
+                      <Text style={styles.textOpciones}>⋮</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-              ) : null}
-              <View style={styles.grid}>
-                <Text style={styles.cardTitle}>
-                  {proyecto.Nombre || "Proyecto sin nombre"}
+
+                <Text style={styles.cardText}>
+                  Ubicación: {proyecto.Ubicacion || "N/A"}
+                </Text>
+                <Text style={styles.cardText}>
+                  Hectareas: {proyecto.NumeroHectareas || "N/A"}
                 </Text>
 
-                {/* Acciones de administración visibles solo para roles distintos de Cliente. */}
-                {rol !== "Cliente" && (
-                  <TouchableOpacity
-                    style={styles.opciones}
-                    onPress={() =>
-                      Alert.alert(
-                        "Opciones para Proyecto",
-                        `¿Qué deseas hacer con ${proyecto.Nombre}?`,
-                        [
-                          {
-                            text: "Anular",
-                            onPress: () => anularProyecto(proyecto.IdProyecto),
-                          },
-                          {
-                            text: "Modificar",
-                            onPress: () =>
-                              navigation.navigate("ModificarProyecto", {
-                                proyecto,
-                                onRefresh: obtenerProyectos,
-                              }),
-                          },
-                          {
-                            text: "Cancelar",
-                            style: "cancel",
-                          },
-                        ],
-                      )
-                    }
-                  >
-                    <Text style={styles.textOpciones}>⋮</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center'}}>
+                  <Text style={styles.cardText}>Estado: </Text>
+                  <View style={[
+                    styles.badgeEstado,
+                    { backgroundColor: estaActivo ? '#E6F4F1' : '#FCE8E6' }
+                  ]}>
+                    <Text style={[
+                      styles.badgeTexto,
+                      { color: estaActivo ? '#069488' : '#D9534F' }
+                    ]}>
+                      {textoVisualEstado}
+                    </Text>
+                  </View>
+                </View>
 
-              <Text style={styles.cardText}>
-                Ubicación: {proyecto.Ubicacion || "N/A"}
-              </Text>
-              <Text style={styles.cardText}>
-                Ubicación: {proyecto.NumeroHectareas || "N/A"}
-              </Text>
-              <Text style={styles.cardText}>
-                Estado: {proyecto.Estado || "N/A"}
-              </Text>
-              <Text style={styles.cardText}>
-                Fecha Registro: {proyecto.FechaRegistro || "N/A"}
-              </Text>
-            </TouchableOpacity>
-          )})}
+                <Text style={styles.cardText}>
+                  Fecha Registro: {formatearFecha(proyecto.FechaRegistro)}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
         </ScrollView>
       </View>
 
@@ -316,130 +356,147 @@ const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 const styles = StyleSheet.create({
 
-// Estilos del menú flotante superior.
+  // Contenedor del menú flotante superior derecho (Idéntico a las pantallas previas)
   containerFlotante: {
     position: 'absolute',
-    top: 40,           // Ajusta según la pantalla
+    top: 40,
     right: 20,
-    zIndex: 999,       // Siempre al frente
+    zIndex: 999,
     alignItems: 'center',
-    
-    
   },
   menuDesplegado: {
-    // Los botones aparecen antes (arriba) del principal, 
-    // o puedes ponerlos después para que bajen.
-    alignItems:"center",
-    marginBottom: 8, 
-    gap: 10,          
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 10,
   },
   btnPrincipal: {
-    backgroundColor: '#333', // Un color neutro o el de tu app
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    backgroundColor: '#069488', // Verde insignia de tu app
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
+    elevation: 4,
+    shadowColor: '#0f766e',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
-  // estilos de exit y idioma :
-  idioma:{
-    top:5,   // Separación del borde inferior
-     
-    marginTop:5,
-    backgroundColor: '#22c5aa', // Color de fondo del botón
-    width: 45,
-    height: 45,
-    borderRadius: 28,     // Hace que sea circular
+  idioma: {
+    backgroundColor: '#ffffff', // Fondo blanco limpio consistente
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,         // Sombra en Android
-    shadowColor: '#000',  // Sombra en iOS
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    elevation: 3,
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 999,  
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   btnsalir: {
-    backgroundColor: "#f30a0a9c",
-    marginTop:5,
-    height: 40,
-    width: 40,
+    backgroundColor: "#ef4444", // Rojo plano moderno
+    height: 42,
+    width: 42,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: 21, // Redondeado circular para simetría
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
-// Estilos generales de la pantalla y del listado de proyectos.
+
+  // Estilos generales de la pantalla y del listado de proyectos
   container: {
     flex: 1,
-    backgroundColor: "#e4f5f3",
-    padding: 20,
+    backgroundColor: "#f4fcfb", // Fondo premium sutil unificado
+    paddingHorizontal: 16,
     paddingTop: 50,
   },
   textheader: {
-    fontWeight: "500",
-    padding: 10,
-    color: "#069488",
-    fontSize: 17,
+    fontWeight: "600",
+    color: "#64748b", // Gris elegante para subtextos de bienvenida
+    fontSize: 14,
   },
   textheader2: {
-    fontWeight: "bold",
+    fontWeight: "900",
     fontSize: 22,
     color: "#069488",
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#069488",
-    marginBottom: 15,
+    fontSize: 22,
+    fontWeight: "900", // Tipografía robusta consistente
+    color: "#111827",  // Tono oscuro principal
+    marginBottom: 6,
   },
   form: {
     flex: 1,
     justifyContent: "center",
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 15,
-    color: "#069488",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748b", // Gris sutil consistente
+    marginBottom: 16,
   },
+
+  // Tarjetas estándar de proyectos
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 148, 136, 0.08)',
+    borderLeftWidth: 5,
+    borderLeftColor: "#069488", // Borde esmeralda de marca
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  // ATAMAINE: Resaltado premium para ubicar proyectos abiertos desde reportes o lotes.
+
+  // ATAMAINE: Resaltado premium pulido para ubicar proyectos abiertos desde reportes o lotes
   cardSeleccionada: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 2,
-    borderColor: "#2563eb",
-    backgroundColor: "#eff6ff",
+    borderColor: "#2563eb", // Azul royal controlado
+    borderLeftWidth: 6,
     shadowColor: "#2563eb",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 6,
   },
   selectedNotice: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: "#eff6ff", // Alerta azul sutil muy limpia
     borderLeftWidth: 5,
     borderLeftColor: "#2563eb",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(37, 99, 235, 0.08)"
   },
   selectedNoticeText: {
     color: "#1d4ed8",
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "800",
   },
   selectedBadge: {
     alignSelf: "flex-start",
     backgroundColor: "#2563eb",
-    borderRadius: 999,
+    borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginBottom: 8,
@@ -448,55 +505,78 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 11,
     fontWeight: "900",
+    textTransform: "uppercase"
   },
+
   cardTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#069488",
+    fontWeight: "900",
+    marginBottom: 6,
+    color: "#111827", // Título oscuro de alta legibilidad
   },
   cardText: {
-    fontSize: 14,
-    color: "#444",
-    marginBottom: 3,
+    fontSize: 13.5,
+    fontWeight: "600",
+    color: "#475569", // Gris oscuro para los datos del proyecto
+    marginBottom: 4,
   },
   grid: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center"
   },
   opciones: {
-    width: 20,
-    paddingLeft: 15,
+    width: 40,
+    height: 35,
+    paddingLeft: 12,
+    justifyContent: "center",
+    alignItems: "center"
   },
-
-  // Estilo del ícono textual que abre el menú de opciones por proyecto.
   textOpciones: {
-    color: "#069488",
-    fontSize: 20,
-    fontWeight: "bold",
+    color: "#64748b", // Gris neutro para el botón de tres puntos / opciones
+    fontSize: 22,
+    fontWeight: "900",
   },
 
-  // Estilos del botón para registrar nuevos proyectos.
+  // Estilos del botón para registrar nuevos proyectos (Consistencia con Login y Usuarios)
   btnRegistrar: {
-    backgroundColor: "#29c268",
-    width: 378,
-    height: 50,
-    marginBottom: 5,
-    marginTop: 5,
+    backgroundColor: "#069488",
+    width: "100%",
+    maxWidth: 420,
+    height: 52,
+    alignSelf: "center",
+    marginBottom: 16,
+    marginTop: 8,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#fff",
+    borderRadius: 12,
+    shadowColor: "#069488",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
   },
   btnRegisText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: 16,
   },
   btnregresar: {
     alignItems: "center",
-    paddingBottom: 20,
+    paddingVertical: 14,
   },
+  badgeEstado: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  badgeTexto: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+
 });
 
 export default ListarProyectos;

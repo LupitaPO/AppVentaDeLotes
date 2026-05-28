@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 20,
     borderLeftWidth: 6,
-    borderLeftColor: "#09caba", // Resalte sutil
+    borderLeftColor: "#063834", // Resalte sutil
     elevation: 6,
     shadowColor: "#069488",
     shadowOffset: { width: 0, height: 10 },

@@ -67,11 +67,15 @@ const clientes = ({ navigation, route }) => {
   };
 //Revisión
   // Envía la solicitud para anular un cliente usando su DNI como identificador.
-  const anularCliente = async (dni) => {
+  const anularCliente = async (clienteItem) => {
+    const estadoRaw = clienteItem.Estado || "X";
+    const esActivo = String(estadoRaw).trim().toUpperCase() === "A";
+
+    const accionTexto = esActivo ? "anular" : "restaurar";
+    const exitoTexto = esActivo ? "anulado" : "restaurado";
+
     try {
-      // 1. Cambiamos la URL para incluir el DNI al final
-      // 2. Quitamos el body y el JSON.stringify
-      const response = await fetch(`${API_URL}/Cliente/cliente_Anular/${dni}`, {
+      const response = await fetch(`${API_URL}/Cliente/cliente_Anular/${clienteItem.DNI}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,24 +83,26 @@ const clientes = ({ navigation, route }) => {
       });
 
       if (response.ok) {
-        Alert.alert("Éxito", "Cliente anulado correctamente");
+        Alert.alert("Éxito", `Cliente ${exitoTexto} correctamente`);
         obtenerClientes(); // Recargar la lista
       } else {
-        // Si quieres ver por qué falla, puedes imprimir el error aquí:
         const errorMsg = await response.text();
         console.log("Error del server:", errorMsg);
-        Alert.alert("Error", "No se pudo anular el cliente");
+        Alert.alert("Error", `No se pudo ${accionTexto} el cliente`);
       }
     } catch (error) {
-      console.error("Error al anular cliente:", error);
+      console.error("Error al cambiar estado del cliente:", error);
       Alert.alert("Error", "Error de conexión con el servidor");
     }
   };
 
   // Recarga la lista de clientes cada vez que esta pantalla entra en foco.
-  useFocusEffect(() => {
-    obtenerClientes();
-  });
+  useFocusEffect(
+    React.useCallback(() => {
+      obtenerClientes();
+    }, [])
+  );
+
 
   // ATAMAINE: Si llegamos desde ReporteClientes, bajamos hasta la tarjeta marcada para ubicarla rapido.
   useEffect(() => {
@@ -200,7 +206,13 @@ const cerrarSesion = () => {
 
           // ATAMAINE: Comparamos por DNI para pintar exactamente el cliente tocado desde el reporte.
           const estaSeleccionado = String(cliente.DNI || "") === String(clienteSeleccionadoDNI || "");
+          
+           // CORRECCIÓN: Validación segura basada en la palabra "Activo" que viene de tu API
+          const estadoRaw = cliente.Estado || "X";
+          const estaActivo = String(estadoRaw).trim().toUpperCase() === "A";
 
+          const textoBotonEstado = estaActivo ? "Anular" : "Restaurar";
+          const textoVisualEstado = estaActivo ? "Activo" : "Inactivo";
           return (
             /* Cada tarjeta representa un cliente y abre opciones de gestión. */
             <TouchableOpacity
@@ -217,8 +229,8 @@ const cerrarSesion = () => {
                   `¿Qué deseas hacer con ${nombreCompleto}?`,
                   [
                     {
-                      text: "Anular",
-                      onPress: () => anularCliente(cliente.DNI),
+                      text: textoBotonEstado,
+                      onPress: () => anularCliente(cliente),
                     },
                     {
                       text: "Modificar",
@@ -241,7 +253,21 @@ const cerrarSesion = () => {
               <Text style={styles.cardText}>DNI: {cliente.DNI || "N/A"}</Text>
               <Text style={styles.cardText}>Celular: {cliente.Celular || "N/A"}</Text>
               <Text style={styles.cardText}>Correo: {cliente.Correo || "N/A"}</Text>
-              <Text style={styles.cardText}>Estado: {cliente.Estado || "N/A"}</Text>
+              {/* Badge Visual de Estado Estilizado */}
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.cardText}>Estado: </Text>
+                <View style={[
+                  styles.badgeEstado,
+                  { backgroundColor: estaActivo ? '#E6F4F1' : '#FCE8E6' }
+                ]}>
+                  <Text style={[
+                    styles.badgeTexto,
+                    { color: estaActivo ? '#069488' : '#D9534F' }
+                  ]}>
+                    {textoVisualEstado}
+                  </Text>
+                </View>
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -263,115 +289,134 @@ const cerrarSesion = () => {
 };
 
 const styles = StyleSheet.create({
-  // Estilos del menú flotante superior.
+// Contenedor del menú flotante superior derecho (Idéntico a todas tus pantallas)
   containerFlotante: {
     position: 'absolute',
-    top: 40,           // Ajusta según la pantalla
+    top: 40,           
     right: 20,
-    zIndex: 999,       // Siempre al frente
+    zIndex: 999,       
     alignItems: 'center',
-    
-    
   },
   menuDesplegado: {
-    // Los botones aparecen antes (arriba) del principal, 
-    // o puedes ponerlos después para que bajen.
-    alignItems:"center",
-    marginBottom: 8, 
-    gap: 10,          
+    alignItems: "center",
+    marginBottom: 8,
+    gap: 10,
   },
   btnPrincipal: {
-    backgroundColor: '#333', // Un color neutro o el de tu app
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    backgroundColor: '#069488', // Verde insignia de tu app
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
+    elevation: 4,
+    shadowColor: '#0f766e',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
-    // estilos de exit y idioma :
-  idioma:{
-    top:5,   // Separación del borde inferior
-    
-    marginTop:5,
-    backgroundColor: '#22c5aa', // Color de fondo del botón
-    width: 45,
-    height: 45,
-    borderRadius: 28,     // Hace que sea circular
+  idioma: {
+    top:5,
+    backgroundColor: '#ffffff', // Fondo blanco limpio consistente
+    width: 42,
+    height: 42,
+    borderRadius: 21,     
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,         // Sombra en Android
-    shadowColor: '#000',  // Sombra en iOS
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    elevation: 3,         
+    shadowColor: '#0f172a',  
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 999,  
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   btnsalir: {
-    backgroundColor: "#f30a0a9c",
-    marginTop:5,
-    height: 40,
-    width: 40,
+    backgroundColor: "#ef4444", // Rojo plano moderno
+    height: 42,
+    width: 42,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: 21, // Redondeado circular para simetría absoluta
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
   },
-// Estilos generales de la pantalla y del listado de clientes.
+
+  // Estilos generales de la pantalla y del listado de clientes
   container: {
     flex: 1,
-    backgroundColor: "#e4f5f3",
-    padding: 20,
+    backgroundColor: "#f4fcfb", // Fondo premium sutil unificado
+    paddingHorizontal: 16,
     paddingTop: 50,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#069488",
-    marginBottom: 15,
+    fontSize: 22,
+    fontWeight: "900", // Tipografía robusta consistente
+    color: "#111827",  // Tono oscuro principal para jerarquía
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 15,
-    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748b",  // Gris elegante para subtextos
+    marginBottom: 20,
   },
+  
+  // Tarjetas estándar de clientes
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 148, 136, 0.08)',
+    borderLeftWidth: 5,
+    borderLeftColor: "#069488", // Borde esmeralda identificador de marca
+    shadowColor: "#087c72",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  // ATAMAINE: Resaltado premium para identificar el cliente abierto desde el reporte.
+  
+  // ATAMAINE: Resaltado premium pulido para ubicar el cliente seleccionado desde el reporte
   cardSeleccionada: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 2,
-    borderColor: "#14b8a6",
-    backgroundColor: "#ecfffb",
+    borderColor: "#14b8a6", // Enfoque esmeralda claro controlado
+    borderLeftWidth: 6,
     shadowColor: "#0f766e",
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 6,
   },
   selectedNotice: {
-    backgroundColor: "#ccfbf1",
+    backgroundColor: "#e6fbf7", // Alerta esmeralda sutil muy limpia
     borderLeftWidth: 5,
     borderLeftColor: "#0f766e",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(15, 118, 110, 0.08)"
   },
   selectedNoticeText: {
     color: "#0f766e",
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "800",
   },
   selectedBadge: {
     alignSelf: "flex-start",
     backgroundColor: "#0f766e",
-    borderRadius: 999,
+    borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginBottom: 8,
@@ -380,68 +425,94 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 11,
     fontWeight: "900",
+    textTransform: "uppercase"
   },
+  
   cardTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#069488",
+    fontWeight: "900",
+    marginBottom: 6,
+    color: "#111827", // Nombre del cliente en tono oscuro premium
   },
   cardText: {
-    fontSize: 14,
-    color: "#444",
-    marginBottom: 3,
+    fontSize: 13.5,
+    fontWeight: "600",
+    color: "#475569", // Gris oscuro para los datos informativos del cliente
+    marginBottom: 4,
   },
   grid: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 10,
+    justifyContent: "space-between", // Espaciado inteligente para botones internos
+    alignItems: "center",
+    marginTop: 12,
+    gap: 10,
   },
 
-  // Estilos del botón principal para registrar clientes.
+  // Botón para registrar clientes (Diseño responsivo y limpio)
   btnRegistrar: {
-    backgroundColor: "#29c268",
-    width: 378,
-    height: 50,
-    marginBottom: 5,
-    
+    backgroundColor: "#069488", // Verde éxito premium unificado
+    width: "100%", 
+    maxWidth: 420, 
+    height: 52,
+    alignSelf: "center",
+    marginBottom: 16,
+    marginTop: 8,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#fff",
+    borderRadius: 12,
+    shadowColor: "#069488",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 4,
   },
 
-  // Estilos heredados para botones de modificar y anular dentro de esta pantalla.
+  // Botones de acción interna (Modificar y Anular dentro de la tarjeta)
   btnModificar: {
-    backgroundColor: "#ff761a",
-    width: 120,
-    height: 50,
-    marginBottom: 5,
-    marginTop: 5,
+    backgroundColor: "#f97316", // Naranja premium plano (sin bordes rústicos blancos)
+    flex: 1, // Se adapta dinámicamente al contenedor de la tarjeta
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#fff",
+    borderRadius: 10,
+    shadowColor: "#f97316",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   btnAnular: {
-    backgroundColor: "#d3002e",
-    width: 120,
-    height: 50,
-    marginBottom: 5,
-    marginTop: 5,
+    backgroundColor: "#ef4444", // Rojo plano moderno pulido
+    flex: 1,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "#fff",
+    borderRadius: 10,
+    shadowColor: "#ef4444",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
 
-  // Texto del botón de registro.
+  // Texto de los botones
   btnRegisText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: 15,
+  },
+      // Badges dinámicos integrados
+  badgeEstado: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    
+  },
+  badgeTexto: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 });
 
