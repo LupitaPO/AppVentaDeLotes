@@ -380,7 +380,7 @@ const Ventas = ({ navigation, route }) => {
                     <MaterialCommunityIcons name="map-marker-radius" size={20} color="#069488" />
                     <View style={{ marginLeft: 8 }}>
                       <Text style={styles.cardLabel}>LOTE</Text>
-                      <Text style={styles.cardValue}>{venta.IdLote ?? "N/A"}</Text>
+                      <Text style={styles.cardValue}>{venta.Manzana}{venta.NumeroLote}</Text>
                     </View>
                   </View>
                   <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
