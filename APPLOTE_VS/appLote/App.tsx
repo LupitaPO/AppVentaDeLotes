@@ -29,7 +29,7 @@ import ReporteAsesores from "./screen/ReporteAsesores";
 import ReporteProyectos from "./screen/ReporteProyectos";
 import ReporteLotes from "./screen/ReporteLotes";
 import ReporteUsuarios from "./screen/ReporteUsuarios";
-
+import permisos from "./screen/permisos";
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -68,6 +68,7 @@ export default function App() {
         <Stack.Screen name="ReporteProyectos" component={ReporteProyectos} />
         <Stack.Screen name="ReporteLotes" component={ReporteLotes} />
         <Stack.Screen name="ReporteUsuarios" component={ReporteUsuarios} />
+        <Stack.Screen name="permisos" component={permisos} />
       </Stack.Navigator>
     </NavigationContainer>
   );
