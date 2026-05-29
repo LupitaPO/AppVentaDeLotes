@@ -1,24 +1,20 @@
 import {
-  ActivityIndicator,
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  useWindowDimensions,
-  Platform,
   Alert
 } from "react-native";
-
+import React from "react";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 // imports para idiomas 
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import i18n, { changeLanguage } from "../../i18n";
-import { Languages } from "../../localizacion";
-
+import { Languages } from "../../localizacion";s
 
 // llamo de url de somee desde el archivo .env
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -30,9 +26,6 @@ const loginRegistrate = ({ navigation }) => {
   const [celular, setCelular] = useState("");
   const [loading, setCargando] = useState(false);
   const [icon, seticon] = useState(false);
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === "web" && width >= 900;
-
 
   const esCorreoValido = (email) => {
     return email.toLowerCase().endsWith("@gmail.com");
@@ -169,7 +162,7 @@ const loginRegistrate = ({ navigation }) => {
           autoCorrect={false}
           onBlur={validarformatoGmail}
         />
-        {/* //////////////////OCULTAR CONTRASEÑA//////////////////////////////// */}
+{/* //////////////////OCULTAR CONTRASEÑA//////////////////////////////// */}
         <Text style={styles.label}>{i18n.t("iptCon")}:</Text>
         <View style={styles.input}>
           <TextInput
@@ -188,7 +181,7 @@ const loginRegistrate = ({ navigation }) => {
             style={styles.imgkey}
           />
         </View>
-        {/* ////////////////////////////////////////////////////////////////////// */}
+{/* ////////////////////////////////////////////////////////////////////// */}
 
         <Text style={styles.label}>{i18n.t("iptCel")}:</Text>
         <TextInput
@@ -199,35 +192,17 @@ const loginRegistrate = ({ navigation }) => {
           maxLength={9}
           style={styles.input}
         />
-
-
-        <TouchableOpacity
-          style={[styles.btn, loading && styles.btnDisabled]}
-          onPress={Registro}
-          activeOpacity={0.9}
-          disabled={loading}
-        >
-          <LinearGradient
-            colors={["#14b8a6", "#0f8f83", "#086b63"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.btnGradient, !isDesktop && styles.btnGradientMobile]}
-          >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={[styles.btnLabel, !isDesktop && styles.btnLabelMobile]}>
-                {i18n.t("btnRegister")}
-              </Text>
-            )}
-          </LinearGradient>
+        <TouchableOpacity onPress={Registro} style={styles.btregistro}>
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+            {i18n.t("btnRegister")}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.regresar}
           onPress={() => navigation.replace("Login")}
         >
-          <Text style={{ color: "#000000", fontWeight: "bold" }}>{i18n.t("Comeback")}</Text>
+          <Text style={{ color: "#fff", fontWeight: "bold" }}>{i18n.t("Comeback")}</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>
@@ -238,132 +213,92 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8fafc", // Fondo gris claro muy sutil como el anterior
   },
   idioma: {
     position: 'absolute',
-    top: 20,
+
+    top: 10,           // Separación del borde inferior
     right: 20,
-    backgroundColor: '#ffffff', // Fondo blanco para que combine limpio
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    // Separación del borde derecho
+    backgroundColor: '#22c5aa', // Color de fondo del botón
+    width: 56,
+    height: 56,
+    borderRadius: 28,     // Hace que sea circular
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb', // Borde sutil del primer diseño
-    elevation: 4,
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    elevation: 5,         // Sombra en Android
+    shadowColor: '#000',  // Sombra en iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
     zIndex: 999,
   },
   card: {
-    paddingTop: 36,
+    paddingTop: 32,
+    elevation: 50,
     width: "90%",
-    maxWidth: 520, // Evita que se deforme en pantallas grandes
-    minHeight: "75%",
-    borderRadius: 26, // Bordes redondeados modernos (loginPanelMobile)
-    padding: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.96)", // Blanco limpio
-    borderWidth: 1,
-    borderColor: "rgba(6, 148, 136, 0.12)",
-    // Sombras nativas idénticas al anterior
-    shadowColor: "#087c72",
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.18,
-    shadowRadius: 28,
-    elevation: 12,
+    height: "85%",
+    borderRadius: 10,
+    padding: 20,
+    boxShadow:
+      "-4px 4px 4px -4px rgba(0, 0, 0, 0.1), -4px 4px 4px 4px rgba(0, 0, 0, 0.06)",
+    backgroundColor: "#a1f3ec",
   },
   title: {
-    color: "#111827",
-    fontSize: 30,
-    lineHeight: 35,
-    fontWeight: "900", // Tipografía robusta del primer diseño
-    marginBottom: 16,
-    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 8,
   },
   label: {
-    color: "#111827",
-    fontSize: 13,
-    fontWeight: "700",
-    paddingTop: 12,
-    paddingBottom: 6,
+    fontWeight: "bold",
+    paddingTop: 10,
+    paddingBottom:8
   },
   input: {
-    minHeight: 48,
+    // borderWidth:1.5,
+    height:50,
     flexDirection: "row",
-    backgroundColor: "#fbfffe", // Consistencia textInputMobile
-    paddingHorizontal: 12,
+    backgroundColor: "#fff",
+    paddingLeft:10,
     borderRadius: 15,
     alignItems: "center",
     marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#d5e7e3",
-    shadowColor: "#0f766e",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 1,
+  
   },
   inputcontrol: {
     flex: 1,
     height: 44,
+
+    backgroundColor: "#ffffff",
+    
+    borderRadius: 12,
     fontSize: 15,
     fontWeight: "500",
-    color: "#111827",
+    color: "#222",
   },
   imgkey: {
     marginRight: 12,
-    fontSize: 20,
+    fontSize: 25,
     alignSelf: "center",
   },
-  btn: {
-    borderRadius: 10,
-    overflow: "hidden",
-    shadowColor: "#069488",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  btnDisabled: {
-    opacity: 0.68,
-  },
-   btnGradient: {
-    height: 56,
-    alignItems: "center",
+  btregistro: {
+    marginTop: 10,
     justifyContent: "center",
+    borderRadius: 10,
+    height: 40,
+    alignItems: "center",
+    backgroundColor: "#09caba",
   },
-  btnGradientMobile: {
-    height: 50,
-    borderLeftWidth: 6,
-    borderLeftColor: "rgba(255,255,255,0.32)",
-  },
-  btnLabel: {
-    color: "#ffffff",
-    fontWeight: "900",
-    fontSize: 17,
-  },
-  btnLabelMobile: {
-    fontSize: 16,
-  },
-
   regresar: {
-    backgroundColor: "transparent", // Sin fondo para que no compita con el botón principal
-    borderWidth: 1.5,
-    borderColor: "#079487", // Borde estilizado
+    backgroundColor: "#09caba",
     padding: 10,
     justifyContent: "center",
     alignItems: "center",
-    height: 44,
-    width: 110,
-    borderRadius: 12,
+    height: 40,
+    width: 90,
+    borderRadius: 10,
     marginTop: "auto",
-    alignSelf: "center",
   },
 });
-
 
 export default loginRegistrate;
