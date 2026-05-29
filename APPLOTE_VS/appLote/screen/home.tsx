@@ -447,11 +447,7 @@ const styles = StyleSheet.create({
   // Header estable
 
   // ATAMAINE: Fondo blanco premium con un tinte suave de lotes para que no se vea plano.
-  root: {
-    flex: 1,
-    backgroundColor: "#f7fbfa",
-  },
-
+ 
   // ATAMAINE: Header limpio igual al diseno de referencia, sin tocar usuario ni acciones.
   topHeader: {
     width: "100%",
@@ -525,7 +521,7 @@ const styles = StyleSheet.create({
   // Botón salir refinado para que no rompa el esquema con un rojo puro brillante
   btnsalir: {
     backgroundColor: "#ef4444", // Rojo plano moderno y estilizado
-
+  },
   // ATAMAINE: Scroll real para movil y web, dejando respirar la barra inferior existente.
   scrollContent: {
     flexGrow: 1,
@@ -653,8 +649,6 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
 
-
-  },
 
   // ATAMAINE: Agrupa saludo y nombre sin romper traducciones existentes.
   headerGreeting: {
