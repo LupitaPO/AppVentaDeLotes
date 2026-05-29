@@ -89,19 +89,17 @@ const Rproyecto = ({ navigation, route }) => {
     formData.append("ImagenUrl", "Pendiente");
 
     // Agregamos el archivo
-    formData.append("ArchivoPlano", {
+    formData.append("ArchivoPlano", JSON.parse(JSON.stringify({
       uri: archivoCSV.uri,
       name: archivoCSV.name,
       type: "text/csv", // O 'application/octet-stream'
-    });
+    })));
 
     try {
       const response = await fetch(`${API_URL}/Proyecto/proyecto_Registrar`, {
         method: "POST",
         body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: {},
       });
 
       const result = await response.text();

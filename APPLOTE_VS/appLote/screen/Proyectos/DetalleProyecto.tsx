@@ -22,7 +22,7 @@ const DetalleProyecto = ({ route, navigation }) => {
   const [proyectoInfo, setProyectoInfo] = useState(info || {});
   const idProyecto = proyectoInfo?.IdProyecto;
   const [lotesGeometria, setLotesGeometria] = useState([]);
-  const [lotesBD, setLotesBD] = useState([]); // <--- NUEVO: Para los datos de SQL
+  const [lotesBD, setLotesBD] = useState([]);
   const [miViewBox, setMiViewBox] = useState("0 0 1000 1000");
   const [cargando, setCargando] = useState(true);
 
@@ -45,101 +45,114 @@ const DetalleProyecto = ({ route, navigation }) => {
     setCargando(false);
   };
 
-  // 1. Jalar estados desde SQL Server
+  // 1. Obtener estados desde SQL Server (Limpiando inyecciones de Somee)
   const obtenerLotesDesdeBD = async () => {
     try {
-      // --- PRUEBA ESTO ---
-      console.log("¿Qué hay en route.params?", route.params);
-
       const response = await fetch(`${API_URL}/Lote/lote_Listar`);
-      const todosLosLotes = await response.json();
-      console.log("CARA REAL DE UN LOTE:", todosLosLotes[0]);
+      let textoLotes = await response.text();
 
-      // Usamos el nombre exacto que venga en el console.log de arriba
+      // CORRECCIÓN SOMEE: Limpiar código publicitario al final del JSON si existiera
+      if (textoLotes.includes("<!--")) textoLotes = textoLotes.split("<!--")[0];
+      if (textoLotes.includes("<script")) textoLotes = textoLotes.split("<script")[0];
+
+      const todosLosLotes = JSON.parse(textoLotes.trim());
+
       const filtrados = todosLosLotes.filter(
         (lote) => lote.IdProyecto?.toString() === idProyecto?.toString(),
       );
 
       setLotesBD(filtrados);
     } catch (error) {
-      console.error(error);
+      console.error("Error cargando lotes BD:", error);
     }
   };
 
-  // 2. Jalar geometría desde el CSV (AutoCAD)
+  // 2. Descargar geometría desde el CSV (Borrando el banner publicitario de Somee)
   const descargarYProcesarMapa = async () => {
-    try {
-      const response = await fetch(`${API_URL}${urlCSV}`);
-      const csvTexto = await response.text();
+  try {
+    const rutaLimpia = urlCSV.startsWith("http") 
+      ? urlCSV 
+      : `${API_URL}${urlCSV.startsWith("/") ? "" : "/"}${urlCSV}`;
 
-      Papa.parse(csvTexto, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (result) => {
-          // Filtramos y limpiamos: solo filas que tengan coordenadas válidas
-          const datos = result.data.filter((l) => {
-            const x = l["Posición X"] || l["Posicion X"];
-            const y = l["Posición Y"] || l["Posicion Y"];
-            return x !== undefined && y !== undefined && x !== "" && y !== "";
-          });
+    const response = await fetch(rutaLimpia);
+    let csvTexto = await response.text();
+    // ============================================================
+    // AGREGA ESTOS DOS LOGS DEBAJO DE "await response.text()"
+    // ============================================================
+    console.log("1. ¿Qué tamaño tiene el texto devuelto?:", csvTexto.length);
+    console.log("2. CONTENIDO CRUDO QUE LLEGA DE SOMEE:", csvTexto.substring(0, 300));
+    // ============================================================
 
-          if (datos.length > 0) {
-            const xs = datos.map((l) => parseFloat(l["Posición X"] || l["Posicion X"]));
-            const ys = datos.map((l) => parseFloat(l["Posición Y"] || l["Posicion Y"]));
-
-            const minX = Math.min(...xs);
-            const minY = Math.min(...ys);
-            const maxX = Math.max(...xs);
-            const maxY = Math.max(...ys);
-
-            const anchoTotal = maxX - minX;
-            const altoTotal = maxY - minY;
-            const padding = 20; // Esto evita que el mapa pegue a los bordes
-
-            // IMPORTANTE: El ViewBox dice "Empieza en MinX, termina en AnchoTotal"
-            // Esto hace que aunque las coordenadas sean 500,000, el mapa salte al centro
-            setMiViewBox(
-              `${minX - padding} ${minY - padding} ${anchoTotal + padding * 2} ${altoTotal + padding * 2}`
-            );
-
-            setLotesGeometria(datos);
-          }
-        },
-      });
-    } catch (error) {
-      Alert.alert("Error", "No se pudo cargar el plano.");
+    // ============================================================
+    // CORRECCIÓN CLAVE: Extraer la posición [0] tras cortar la publicidad
+    // ============================================================
+    if (csvTexto.includes("<!--")) {
+      csvTexto = csvTexto.split("<!--")[0]; // <--- Agregado [0] al final
     }
-  };
+    if (csvTexto.includes("<script")) {
+      csvTexto = csvTexto.split("<script")[0]; // <--- Agregado [0] al final
+    }
 
-  // 3. Función para determinar color según estado
+    const csvLimpio = csvTexto.trim();
+
+    Papa.parse(csvLimpio, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (result) => {
+        console.log("Columnas ahora detectadas:", result.meta?.fields);
+        console.log("Total filas leídas:", result.data?.length);
+
+        const datos = result.data.filter((l) => {
+          const x = l["Posición X"] || l["Posicion X"];
+          const y = l["Posición Y"] || l["Posicion Y"];
+          return x !== undefined && y !== undefined && x !== "" && y !== "";
+        });
+
+        if (datos.length > 0) {
+          const xs = datos.map((l) => parseFloat(l["Posición X"] || l["Posicion X"]));
+          const ys = datos.map((l) => parseFloat(l["Posición Y"] || l["Posicion Y"]));
+
+          const minX = Math.min(...xs);
+          const minY = Math.min(...ys);
+          const maxX = Math.max(...xs);
+          const maxY = Math.max(...ys);
+
+          const anchoTotal = maxX - minX;
+          const altoTotal = maxY - minY;
+          const padding = 20; 
+
+          setMiViewBox(
+            `${minX - padding} ${minY - padding} ${anchoTotal + padding * 2} ${altoTotal + padding * 2}`
+          );
+
+          setLotesGeometria(datos);
+        }
+      },
+    });
+  } catch (error) {
+    console.error("Error procesando CSV:", error);
+    Alert.alert("Error", "No se pudo cargar el archivo del plano.");
+  }
+};
+
   const obtenerColor = (nombreMapa) => {
-    // Buscamos el código del mapa en nuestra lista de la BD
     const loteEncontrado = lotesBD.find(
-      (l) =>
-        l.CodigoLote?.trim().toUpperCase() === nombreMapa?.trim().toUpperCase(),
+      (l) => l.CodigoLote?.trim().toUpperCase() === nombreMapa?.trim().toUpperCase(),
     );
 
-    if (!loteEncontrado) return "#ffffff"; // Blanco (Si no hay datos en la BD)
+    if (!loteEncontrado) return "#ffffff";
 
-    // Usamos el campo EstadoLote que vimos en tu LOG
     switch (loteEncontrado.EstadoLote?.trim()) {
-      case "Al Dia":
-        return "#28a745"; // Verde
-      case "Retrasado":
-        return "#ffeb3b"; // Amarillo
-      case "En Deuda":
-        return "#dc3545"; // Rojo
-      case "Vendido":
-        return "#fd7e14"; // Naranja
-      default:
-        return "#ffffff"; // Blanco
+      case "Al Dia": return "#28a745";
+      case "Retrasado": return "#ffeb3b";
+      case "En Deuda": return "#dc3545";
+      case "Vendido": return "#fd7e14";
+      default: return "#ffffff";
     }
   };
 
   const obtenerIdLote = (lote) => {
-    return (
-      lote?.IdLote ?? lote?.idLote ?? lote?.Id ?? lote?.id ?? lote?.Id_Lote
-    );
+    return lote?.IdLote ?? lote?.idLote ?? lote?.Id ?? lote?.id ?? lote?.Id_Lote;
   };
 
   return (
@@ -153,6 +166,7 @@ const DetalleProyecto = ({ route, navigation }) => {
           📏 Hectáreas: <Text style={styles.value}>{proyectoInfo.NumeroHectareas}</Text>
         </Text>
       </View>
+
       <ScrollView>
         <View style={styles.mapContainer}>
           {cargando ? (
@@ -162,20 +176,14 @@ const DetalleProyecto = ({ route, navigation }) => {
               height="350"
               width={width - 80}
               viewBox={miViewBox}
-              preserveAspectRatio="xMidYMid meet" // <--- Esto es clave para centrar
+              preserveAspectRatio="xMidYMid meet"
             >
               <G scaleY={1} originY={0}>
                 {lotesGeometria.map((lote, index) => {
-                  const kX = Object.keys(lote).find((k) =>
-                    k.toLowerCase().includes("x"),
-                  );
-                  const kY = Object.keys(lote).find((k) =>
-                    k.toLowerCase().includes("y"),
-                  );
+                  const kX = Object.keys(lote).find((k) => k.toLowerCase().includes("x"));
+                  const kY = Object.keys(lote).find((k) => k.toLowerCase().includes("y"));
                   const kVal = Object.keys(lote).find(
-                    (k) =>
-                      k.toLowerCase().includes("valor") ||
-                      k.toLowerCase().includes("contenido"),
+                    (k) => k.toLowerCase().includes("valor") || k.toLowerCase().includes("contenido")
                   );
 
                   const x = parseFloat(lote[kX]);
@@ -199,9 +207,7 @@ const DetalleProyecto = ({ route, navigation }) => {
                         strokeWidth="1"
                         onPress={() => {
                           const dbInfo = lotesBD.find(
-                            (l) =>
-                              l.CodigoLote?.trim().toUpperCase() ===
-                              nombre?.trim().toUpperCase(),
+                            (l) => l.CodigoLote?.trim().toUpperCase() === nombre?.trim().toUpperCase()
                           );
                           Alert.alert(
                             `Lote: ${nombre}`,
@@ -212,21 +218,14 @@ const DetalleProyecto = ({ route, navigation }) => {
                               { text: "Cancelar" },
                               {
                                 text: "Modificar",
-                                onPress: () =>
-                                  Alert.alert(
-                                    "Modificar",
-                                    "Funcionalidad aún no implementada."
-                                  ),
+                                onPress: () => Alert.alert("Modificar", "Funcionalidad aún no implementada."),
                               },
                               {
                                 text: "Venta",
                                 onPress: () => {
                                   const loteId = obtenerIdLote(dbInfo);
                                   if (!loteId) {
-                                    Alert.alert(
-                                      "Aviso",
-                                      "No se encontró el Id del lote en la base de datos."
-                                    );
+                                    Alert.alert("Aviso", "No se encontró el Id del lote en la base de datos.");
                                     return;
                                   }
                                   navigation.navigate("RegistrarVenta", {
@@ -245,11 +244,7 @@ const DetalleProyecto = ({ route, navigation }) => {
                       <SvgText
                         x={x + anchoLote / 2}
                         y={y + altoLote / 2}
-                        fill={
-                          colorFondo === "#ffffff" || colorFondo === "#ffeb3b"
-                            ? "#000"
-                            : "#fff"
-                        }
+                        fill={colorFondo === "#ffffff" || colorFondo === "#ffeb3b" ? "#000" : "#fff"}
                         fontSize="3"
                         fontWeight="bold"
                         textAnchor="middle"
@@ -291,7 +286,7 @@ const DetalleProyecto = ({ route, navigation }) => {
             Información de Lotes ({lotesBD.length}):
           </Text>
 
-                    {lotesBD.map((loteItem, index) => (
+          {lotesBD.map((loteItem, index) => (
             <View key={loteItem.IdLote || index} style={styles.cardLote}>
               <View>
                 <Text style={styles.txtCodigoLote}>{loteItem.CodigoLote}</Text>
@@ -314,7 +309,6 @@ const DetalleProyecto = ({ route, navigation }) => {
               <TouchableOpacity
                 style={styles.botonOpciones}
                 onPress={() => {
-                  // Ya estamos dentro del map de lotesBD, así que usamos directamente loteItem
                   Alert.alert(
                     `Opciones Lote: ${loteItem.CodigoLote}`,
                     `¿Qué deseas realizar?`,
@@ -323,14 +317,11 @@ const DetalleProyecto = ({ route, navigation }) => {
                       {
                         text: "Registrar Venta",
                         onPress: () => {
-                          // Obtenemos el ID usando tu función de seguridad
                           const idReal = obtenerIdLote(loteItem);
-
                           if (!idReal) {
                             Alert.alert("Error", "No se encontró el ID de este lote.");
                             return;
                           }
-
                           navigation.navigate("RegistrarVenta", {
                             idLote: idReal,
                             idUsuario: route.params?.idUsuario,
@@ -342,8 +333,7 @@ const DetalleProyecto = ({ route, navigation }) => {
                       },
                       {
                         text: "Modificar",
-                        onPress: () =>
-                          Alert.alert("Modificar", "Módulo en desarrollo."),
+                        onPress: () => Alert.alert("Modificar", "Módulo en desarrollo."),
                       },
                     ]
                   );
@@ -353,7 +343,6 @@ const DetalleProyecto = ({ route, navigation }) => {
               </TouchableOpacity>
             </View>
           ))}
-
         </View>
       </ScrollView>
     </View>
@@ -462,7 +451,7 @@ const styles = StyleSheet.create({
   },
   textoBoton: {
     color: "#fff",
-fontSize: 16,
+    fontSize: 16,
     fontWeight: "bold",
   },
   botonOpciones: {

@@ -5,21 +5,21 @@
     <TimeStampOfAssociatedLegacyPublishXmlFile />
     <EncryptedPassword>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAN87rVzxtg0KBPTFBjCOcAgAAAAACAAAAAAAQZgAAAAEAACAAAADafF+qYKz1PZCXu0dArDR2quRgO26JDUGeHfr/5EcXwgAAAAAOgAAAAAIAACAAAADo2dfQ11CO9MMLyJPx5Nqcaee5JhHw0i5Ra7hs6HM+/yAAAAAsJVOz64eCN5RLvs5ihERTQet9e8GaXWv2Z49ySDErx0AAAAD+xqZN7aKTVGpcIXPelz4UtwKZp2NHH1dLxiwVBXIxzQ+FClDXkesJyO8lMmu1X+6lSTyMArMamKRJL5D+aEu2</EncryptedPassword>
     <_PublishTargetUrl>ftp://tulote.somee.com/www.tulote.somee.com</_PublishTargetUrl>
-    <History>True|2026-05-20T15:38:22.0770216Z||;</History>
+    <History>True|2026-05-29T06:11:58.7299983Z||;True|2026-05-29T00:03:58.0327384-05:00||;False|2026-05-28T23:58:36.9605575-05:00||;True|2026-05-20T10:38:22.0770216-05:00||;</History>
     <LastFailureDetails />
   </PropertyGroup>
   <ItemGroup>
     <File Include="APILote.deps.json">
-      <publishTime>05/20/2026 10:32:38</publishTime>
+      <publishTime>05/29/2026 01:05:32</publishTime>
     </File>
     <File Include="APILote.dll">
-      <publishTime>05/20/2026 10:32:38</publishTime>
+      <publishTime>05/29/2026 01:05:32</publishTime>
     </File>
     <File Include="APILote.exe">
-      <publishTime>05/20/2026 10:32:38</publishTime>
+      <publishTime>05/29/2026 01:05:32</publishTime>
     </File>
     <File Include="APILote.pdb">
-      <publishTime>05/20/2026 10:32:38</publishTime>
+      <publishTime>05/29/2026 01:05:32</publishTime>
     </File>
     <File Include="APILote.runtimeconfig.json">
       <publishTime>05/15/2026 08:53:25</publishTime>
@@ -82,22 +82,22 @@
       <publishTime>01/17/2024 22:05:26</publishTime>
     </File>
     <File Include="Microsoft.IdentityModel.Abstractions.dll">
-      <publishTime>02/11/2026 22:32:22</publishTime>
+      <publishTime>11/02/2026 22:32:22</publishTime>
     </File>
     <File Include="Microsoft.IdentityModel.JsonWebTokens.dll">
-      <publishTime>02/11/2026 22:32:32</publishTime>
+      <publishTime>11/02/2026 22:32:32</publishTime>
     </File>
     <File Include="Microsoft.IdentityModel.Logging.dll">
-      <publishTime>02/11/2026 22:32:02</publishTime>
+      <publishTime>11/02/2026 22:32:02</publishTime>
     </File>
     <File Include="Microsoft.IdentityModel.Protocols.dll">
-      <publishTime>02/11/2026 22:32:22</publishTime>
+      <publishTime>11/02/2026 22:32:22</publishTime>
     </File>
     <File Include="Microsoft.IdentityModel.Protocols.OpenIdConnect.dll">
-      <publishTime>02/11/2026 22:33:02</publishTime>
+      <publishTime>11/02/2026 22:33:02</publishTime>
     </File>
     <File Include="Microsoft.IdentityModel.Tokens.dll">
-      <publishTime>02/11/2026 22:32:22</publishTime>
+      <publishTime>11/02/2026 22:32:22</publishTime>
     </File>
     <File Include="Microsoft.OpenApi.dll">
       <publishTime>12/18/2025 06:45:40</publishTime>
@@ -121,31 +121,31 @@
       <publishTime>03/17/2026 11:10:14</publishTime>
     </File>
     <File Include="runtimes/unix/lib/net8.0/System.Data.SqlClient.dll">
-      <publishTime>02/11/2026 19:42:38</publishTime>
+      <publishTime>11/02/2026 19:42:38</publishTime>
     </File>
     <File Include="runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll">
       <publishTime>01/15/2025 19:23:14</publishTime>
     </File>
     <File Include="runtimes/win-arm64/native/sni.dll">
-      <publishTime>07/12/2017 06:24:24</publishTime>
+      <publishTime>12/07/2017 06:24:24</publishTime>
     </File>
     <File Include="runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll">
       <publishTime>01/15/2025 19:23:36</publishTime>
     </File>
     <File Include="runtimes/win-x64/native/sni.dll">
-      <publishTime>07/12/2017 06:24:22</publishTime>
+      <publishTime>12/07/2017 06:24:22</publishTime>
     </File>
     <File Include="runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll">
       <publishTime>01/15/2025 19:23:04</publishTime>
     </File>
     <File Include="runtimes/win-x86/native/sni.dll">
-      <publishTime>07/12/2017 06:24:22</publishTime>
+      <publishTime>12/07/2017 06:24:22</publishTime>
     </File>
     <File Include="runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll">
       <publishTime>03/17/2026 11:10:38</publishTime>
     </File>
     <File Include="runtimes/win/lib/net8.0/System.Data.SqlClient.dll">
-      <publishTime>02/11/2026 19:42:42</publishTime>
+      <publishTime>11/02/2026 19:42:42</publishTime>
     </File>
     <File Include="runtimes/win/lib/net8.0/System.Diagnostics.EventLog.dll">
       <publishTime>09/16/2024 18:10:40</publishTime>
@@ -166,13 +166,13 @@
       <publishTime>09/16/2024 18:09:48</publishTime>
     </File>
     <File Include="System.Data.SqlClient.dll">
-      <publishTime>02/11/2026 19:42:26</publishTime>
+      <publishTime>11/02/2026 19:42:26</publishTime>
     </File>
     <File Include="System.Diagnostics.EventLog.dll">
       <publishTime>09/16/2024 18:09:32</publishTime>
     </File>
     <File Include="System.IdentityModel.Tokens.Jwt.dll">
-      <publishTime>02/11/2026 22:32:22</publishTime>
+      <publishTime>11/02/2026 22:32:22</publishTime>
     </File>
     <File Include="System.Security.Cryptography.Pkcs.dll">
       <publishTime>09/16/2024 18:09:56</publishTime>
@@ -184,7 +184,7 @@
       <publishTime>03/17/2026 11:16:44</publishTime>
     </File>
     <File Include="web.config">
-      <publishTime>05/20/2026 10:32:45</publishTime>
+      <publishTime>05/29/2026 01:05:32</publishTime>
     </File>
     <File Include="zh-Hans/Microsoft.Data.SqlClient.resources.dll">
       <publishTime>03/17/2026 11:16:10</publishTime>
