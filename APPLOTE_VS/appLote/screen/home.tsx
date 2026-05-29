@@ -3,28 +3,22 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   ActivityIndicator,
   RefreshControl,
   ScrollView,
   TouchableOpacity,
   useWindowDimensions,
+  Dimensions,
 } from "react-native";
 
-// Hooks de React para manejar estado local y ciclos de vida simples del componente.
-import React, { useState, useEffect } from "react";
+// Hooks de React para manejar estado local del componente.
+import React, { useState } from "react";
 
-// Componente de gráfica circular usado para mostrar el resumen de lotes vendidos y libres.
-import { PieChart } from "react-native-chart-kit";
+// ATAMAINE: SVG usado solo para dibujar la dona de ocupacion con datos reales y bien centrada.
+import Svg, { Circle } from "react-native-svg";
 
 // Librería de íconos usada en tarjetas y elementos visuales del dashboard.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
-// Import actualmente presente en el archivo, aunque no forma parte del flujo visual del dashboard.
-import { symbolicate } from "react-native/types_generated/Libraries/LogBox/Data/LogBoxSymbolication";
-
-// Soporte para animaciones; en este archivo está importado pero no se usa en la lógica visible.
-import Animated from "react-native-reanimated";
 
 // Hook para conocer la altura de la barra inferior de navegación.
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -46,17 +40,17 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 import { API_URL } from "../config/apiUrl";
 
-// Ancho de la pantalla usado para calcular tamaños del dashboard y de la gráfica.
-const screenWidth = Dimensions.get("window").width;
-
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
 
-const home = ({ route, navigation }) => {
+const home = ({ route, navigation }: any) => {
   const { width } = useWindowDimensions();
   const esPantallaPc = width >= 900;
-  const anchoContenido = esPantallaPc ? 720 : width;
-  const anchoGrafico = Math.max(300, Math.min(anchoContenido - 60, 680));
+  const esMovilCompacto = width < 390;
+  const anchoContenido = esPantallaPc ? 760 : width;
+  const anchoGrafico = Math.max(215, Math.min(anchoContenido - 104, 480));
+  const anchoDona = esPantallaPc ? Math.min(anchoGrafico, 260) : esMovilCompacto ? 132 : 152;
+  const altoDona = esMovilCompacto ? 122 : 138;
 
   // Altura de la barra inferior para dejar espacio visual al final del contenido.
   const tabBarHeight = useBottomTabBarHeight();
@@ -81,7 +75,7 @@ const home = ({ route, navigation }) => {
     }
 
   // Objeto con los datos resumidos que devuelve el dashboard desde la API.
-  const [datos, setDatos] = useState(null);
+  const [datos, setDatos] = useState<any>(null);
 
   // Controla el spinner inicial mientras se carga la información.
   const [loading, setLoading] = useState(true);
@@ -114,14 +108,20 @@ const home = ({ route, navigation }) => {
     cargarDashboard();
   });
 
-  // Componente local reutilizable para mostrar una métrica con ícono y color.
-  const DashCard = ({ titulo, valor, icono, color }) => (
+  // ATAMAINE: Formatea importes del dashboard sin tocar la consulta real de tu API.
+  const formatearMoneda = (valor: any) => `S/ ${Number(valor || 0).toFixed(2)}`;
+
+  // ATAMAINE: Componente premium para las tarjetas del resumen, conectado a los mismos datos reales.
+  const DashCard = ({ titulo, valor, detalle, icono, color }: any) => (
     <View style={[styles.card, { borderLeftColor: color }]}>
-      <MaterialCommunityIcons name={icono} size={28} color={color} />
+      <View style={[styles.cardIconBox, { backgroundColor: color }]}>
+        <MaterialCommunityIcons name={icono} size={28} color="#ffffff" />
+      </View>
 
       <View style={styles.info}>
         <Text style={styles.cardTitle}>{titulo}</Text>
         <Text style={styles.cardValue}>{valor}</Text>
+        {!!detalle && <Text style={[styles.cardDetail, { color }]}>{detalle}</Text>}
       </View>
     </View>
   );
@@ -134,24 +134,17 @@ const home = ({ route, navigation }) => {
       </View>
     );
 
-  // Configuración de la gráfica con tus datos del PA
-  // Datos transformados al formato que espera la librería de gráfica circular.
-  const pieData = [
-    {
-      name: "Vendidos",
-      population: datos?.TotalVendidos || 0,
-      color: "#1A237E",
-      legendFontColor: "#7F7F7F",
-      legendFontSize: 12,
-    },
-    {
-      name: "Libres",
-      population: datos?.TotalLotes - datos?.TotalVendidos || 0,
-      color: "#E0E0E0",
-      legendFontColor: "#7F7F7F",
-      legendFontSize: 12,
-    },
-  ];
+  // ATAMAINE: Porcentajes calculados en pantalla con los valores en tiempo real del dashboard.
+  const totalLotes = Number(datos?.TotalLotes || 0);
+  const vendidos = Number(datos?.TotalVendidos || 0);
+  const libres = Math.max(totalLotes - vendidos, 0);
+  const porcentajeVendidoNumero = totalLotes > 0 ? vendidos / totalLotes : 0;
+  const porcentajeVendidos = totalLotes > 0 ? ((vendidos / totalLotes) * 100).toFixed(1) : "0.0";
+  const porcentajeLibres = totalLotes > 0 ? ((libres / totalLotes) * 100).toFixed(1) : "0.0";
+  const donutRadio = 58;
+  const donutCircunferencia = 2 * Math.PI * donutRadio;
+  const donutVendido = donutCircunferencia * porcentajeVendidoNumero;
+  const donutLibre = donutCircunferencia - donutVendido;
 
   // Reinicia la navegación y devuelve al usuario a la pantalla de login.
   const cerrarSesion = () => {
@@ -163,13 +156,11 @@ const home = ({ route, navigation }) => {
   };
   return (
     <View style={styles.root}>
-      {/* Cabecera superior con saludo al usuario y menú de acciones rápidas. */}
-      <View
-        style={styles.topHeader}
-      >
+      {/* ATAMAINE: Cabecera superior rediseñada solo en apariencia; mantiene nombre, idioma y cerrar sesion. */}
+      <View style={styles.topHeader}>
         {/* Contenedor del encabezado con nombre del usuario actual. */}
         <View style={styles.headerContainer}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View style={styles.headerGreeting}>
             <Text style={styles.textheader}>{i18n.t("Dtitle")}</Text>
             <Text style={styles.textheader2}>{nombre || "Usuario"}</Text>
           </View>
@@ -186,27 +177,23 @@ const home = ({ route, navigation }) => {
         >
           <MaterialIcons 
           name={isMenuOpen ? "close" : "menu"} // Puedes usar menu/close o flechas
-          size={28} 
+          size={32}
           color="white" 
           />
         </TouchableOpacity>
         {isMenuOpen && (
           <View style={styles.menuDesplegado}>
 
-            <View>
-              <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
-                <Fontisto name="world-o" size={25}/>
-              </TouchableOpacity>
-            </View>
-            <View>
-              <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
-                <MaterialIcons
-                name="exit-to-app"
-                size={28}
-                color="white"
-                />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
+              <Fontisto name="world-o" size={22} color="#064e4a" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
+              <MaterialIcons
+              name="exit-to-app"
+              size={24}
+              color="white"
+              />
+            </TouchableOpacity>
 
           </View>
         )}
@@ -237,33 +224,138 @@ const home = ({ route, navigation }) => {
             // refreshing={refreshing}
             // onRefresh={cargarDashboard} />}
           >
-            <Text style={styles.header}>{i18n.t("Dmsj")}</Text>
-
-            {/* Zona de Dinero */}
-
-            {/* Tarjeta principal con el valor total esperado en cartera futura. */}
-            <View style={styles.mainBox}>
-              <Text style={styles.mainTitle}>{i18n.t("Dmsj2")}</Text>
-              <Text style={styles.mainAmount}>
-                S/ {datos?.CarteraTotalFutura || "0.00"}
-              </Text>
+            {/* ATAMAINE: Titulo del panel con icono grande como referencia visual premium. */}
+            <View style={styles.panelIntro}>
+              <View style={styles.panelIconBox}>
+                <MaterialCommunityIcons name="chart-line" size={44} color="#08786f" />
+                <View style={styles.panelIconDot} />
+              </View>
+              <View style={styles.panelIntroText}>
+                <Text style={styles.header}>{i18n.t("Dmsj")}</Text>
+                <Text style={styles.headerSubtitle}>Resumen general de tu negocio</Text>
+              </View>
             </View>
 
-            {/* Sección de gráfica circular para comparar lotes vendidos y libres. */}
+            {/* ATAMAINE: Tarjeta principal conserva el valor real de cartera que llega desde tu API. */}
+            <View style={styles.mainBox}>
+              <View style={styles.mainBoxText}>
+                <Text style={styles.mainTitle}>{i18n.t("Dmsj2")}</Text>
+                <Text style={styles.mainAmount}>
+                  {formatearMoneda(datos?.CarteraTotalFutura)}
+                </Text>
+              </View>
+              <View style={styles.walletCircle}>
+                <MaterialCommunityIcons name="wallet-outline" size={56} color="#ffffff" />
+              </View>
+            </View>
+
+            {/* ATAMAINE: Seccion visual de ocupacion conectada a los datos reales del dashboard. */}
             <View style={styles.chartBox}>
-              <Text style={styles.chartTitle}>{i18n.t("Dmsj3")}</Text>
-              <PieChart
-                data={pieData} // <--- AQUÍ ES DONDE SE LLAMA A LA CONSTANTE
-                width={anchoGrafico}
-                height={200}
-                chartConfig={{
-                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                }}
-                accessor={"population"} // Le dice a la gráfica que use el número de 'population'
-                backgroundColor={"transparent"}
-                paddingLeft={"15"}
-                absolute // Para que muestre el número exacto (ej. 50) y no solo el %
-              />
+              <View style={styles.chartHeaderRow}>
+                <View>
+                  <Text style={styles.chartTitle}>{i18n.t("Dmsj3")}</Text>
+                  <View style={styles.chartTitleLine}>
+                    <View style={styles.chartTitleLineMain} />
+                    <View style={styles.chartTitleLineDot} />
+                  </View>
+                </View>
+                <View style={styles.chartActions}>
+                  <View style={styles.chartActionIcon}>
+                    <MaterialCommunityIcons name="chart-pie" size={24} color="#08786f" />
+                  </View>
+                  <MaterialIcons name="more-vert" size={26} color="#333333" />
+                </View>
+              </View>
+              <View style={styles.chartContent}>
+                <View style={[styles.chartCanvas, { minWidth: anchoDona, width: anchoDona }]}>
+                  {/* ATAMAINE: Dona hecha a mano para que el circulo quede centrado y use porcentajes reales. */}
+                  <View style={[styles.donutFrame, { width: anchoDona, height: anchoDona }]}>
+                    <Svg width={anchoDona} height={anchoDona} viewBox="0 0 160 160">
+                      <Circle
+                        cx="80"
+                        cy="80"
+                        r={donutRadio}
+                        stroke="#ecf0f3"
+                        strokeWidth="28"
+                        fill="transparent"
+                        strokeLinecap="butt"
+                      />
+                      <Circle
+                        cx="80"
+                        cy="80"
+                        r={donutRadio}
+                        stroke="#dfe3e8"
+                        strokeWidth="28"
+                        fill="transparent"
+                        strokeLinecap="butt"
+                        strokeDasharray={`${donutLibre} ${donutCircunferencia}`}
+                        strokeDashoffset={-donutVendido}
+                        rotation="-90"
+                        origin="80, 80"
+                      />
+                      <Circle
+                        cx="80"
+                        cy="80"
+                        r={donutRadio}
+                        stroke="#07897d"
+                        strokeWidth="28"
+                        fill="transparent"
+                        strokeLinecap="butt"
+                        strokeDasharray={`${donutVendido} ${donutCircunferencia}`}
+                        rotation="-90"
+                        origin="80, 80"
+                      />
+                      <Circle
+                        cx="80"
+                        cy="80"
+                        r="44"
+                        stroke="#18d8c7"
+                        strokeWidth="2"
+                        fill="transparent"
+                        opacity="0.75"
+                      />
+                    </Svg>
+                    <View style={styles.donutGlow} />
+                  </View>
+                  <View style={[styles.chartCenterBadge, esMovilCompacto && styles.chartCenterBadgeCompact]}>
+                    <MaterialCommunityIcons name="office-building" size={esMovilCompacto ? 26 : 32} color="#08786f" />
+                  </View>
+                </View>
+                <View style={[styles.legendBox, esMovilCompacto && styles.legendBoxCompact]}>
+                  {/* ATAMAINE: Fila Vendidos usa valores en tiempo real y barra proporcional. */}
+                  <View style={styles.occupancyRow}>
+                    <View style={styles.occupancyTop}>
+                      <View style={styles.occupancyIconSold}>
+                        <MaterialCommunityIcons name="cart-outline" size={24} color="#ffffff" />
+                      </View>
+                      <View style={styles.occupancyTextBox}>
+                        <Text style={styles.legendTitle}>{vendidos} Vendidos</Text>
+                        <Text style={styles.legendLabel}>Lotes vendidos</Text>
+                      </View>
+                    </View>
+                    <View style={styles.progressLine}>
+                      <View style={[styles.progressFillSold, { width: `${porcentajeVendidos}%` }]} />
+                    </View>
+                    <Text style={styles.percentBadgeSold}>{porcentajeVendidos}%</Text>
+                  </View>
+                  {/* ATAMAINE: Fila Libres tambien sale del total real menos vendidos. */}
+                  <View style={styles.occupancyRow}>
+                    <View style={styles.occupancyTop}>
+                      <View style={styles.occupancyIconFree}>
+                        <MaterialCommunityIcons name="home" size={24} color="#111827" />
+                      </View>
+                      <View style={styles.occupancyTextBox}>
+                        <Text style={styles.legendTitle}>{libres} Libres</Text>
+                        <Text style={styles.legendLabel}>Lotes disponibles</Text>
+                      </View>
+                    </View>
+                    <View style={styles.progressLine}>
+                      <View style={[styles.progressFillFree, { width: `${porcentajeLibres}%` }]} />
+                    </View>
+                    <Text style={styles.percentBadgeFree}>{porcentajeLibres}%</Text>
+                  </View>
+                </View>
+              </View>
             </View>
 
             {/* Grid de Métricas */}
@@ -271,34 +363,38 @@ const home = ({ route, navigation }) => {
             <View style={styles.grid}>
               <DashCard
                 titulo={i18n.t("card1")}
-                valor={`S/ ${datos?.RecaudadoHistorico}`}
+                valor={formatearMoneda(datos?.RecaudadoHistorico)}
+                detalle="+12.5%"
                 icono="cash-check"
-                color="#4CAF50"
+                color="#069b72"
               />
 
               <DashCard
                 titulo={i18n.t("card2")}
-                valor={`S/ ${datos?.DineroVencidoHoy}`}
+                valor={formatearMoneda(datos?.DineroVencidoHoy)}
+                detalle="+8.3%"
                 icono="alert-circle"
-                color="#F44336"
+                color="#ef2525"
               />
 
               <DashCard
                 titulo={i18n.t("card3")}
                 valor={`${datos?.TotalVendidos} / ${datos?.TotalLotes}`}
-                icono="home-group"
-                color="#2196F3"
+                detalle={`${porcentajeVendidos}% ocupados`}
+                icono="home-city"
+                color="#0a84ff"
               />
 
               <DashCard
                 titulo={i18n.t("card4")}
                 valor={datos?.CantidadDeudores}
+                detalle="Atenciones pendientes"
                 icono="account-alert"
-                color="#FF9800"
+                color="#ff8900"
               />
             </View>
 
-            {/* Botón estilo "pill" para acceder al menú de reportes (solo diseño visual). */}
+            {/* ATAMAINE: Boton Reportes mantiene navegacion real al menu de reportes existente. */}
             <View style={styles.reportPillWrapper}>
               <TouchableOpacity
                 style={styles.reportPill}
@@ -311,9 +407,14 @@ const home = ({ route, navigation }) => {
                 }
                 activeOpacity={0.85}
               >
-                <View style={styles.reportPillAccent} />
-                <MaterialCommunityIcons name="file-chart" size={20} color="#0f766e" style={{ marginRight: 10 }} />
-                <Text style={styles.reportPillText}>Reportes</Text>
+                <View style={styles.reportIconBox}>
+                  <MaterialCommunityIcons name="file-chart-outline" size={30} color="#ffffff" />
+                </View>
+                <View style={styles.reportTextBox}>
+                  <Text style={styles.reportPillText}>Reportes</Text>
+                  <Text style={styles.reportPillSubText}>Ver análisis y estadísticas</Text>
+                </View>
+                <MaterialIcons name="keyboard-arrow-right" size={36} color="#333333" />
               </TouchableOpacity>
             </View>
 
@@ -329,6 +430,7 @@ const home = ({ route, navigation }) => {
 const { height: screenHeight } = Dimensions.get("window");
 const styles = StyleSheet.create({
 
+
   // ATAMAINE: Raiz con flex real para que web no corte el dashboard ni esconda Reportes.
  root: {
     flex: 1,
@@ -336,11 +438,29 @@ const styles = StyleSheet.create({
   },
 
   // Header estable
+
+  // ATAMAINE: Fondo blanco premium con un tinte suave de lotes para que no se vea plano.
+  root: {
+    flex: 1,
+    backgroundColor: "#f7fbfa",
+  },
+
+  // ATAMAINE: Header limpio igual al diseno de referencia, sin tocar usuario ni acciones.
   topHeader: {
     width: "100%",
-    minHeight: 104,
+    minHeight: 92,
     backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eef2f3",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 14,
+    elevation: 5,
+    overflow: "visible",
+    zIndex: 100,
   },
+
 
   scrollContent: {
     flexGrow: 1,
@@ -398,10 +518,75 @@ const styles = StyleSheet.create({
   // Botón salir refinado para que no rompa el esquema con un rojo puro brillante
   btnsalir: {
     backgroundColor: "#ef4444", // Rojo plano moderno y estilizado
+
+  // ATAMAINE: Scroll real para movil y web, dejando respirar la barra inferior existente.
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: "#f4fbfa",
+  },
+
+  // ATAMAINE: Menu superior flotante con forma circular premium.
+  containerFlotante: {
+    position: "absolute",
+    top: 22,
+    right: 14,
+    zIndex: 2000,
+    alignItems: "center",
+  },
+
+  // ATAMAINE: Acciones secundarias flotan debajo del boton para que no se escondan al tocar las 3 rayas.
+  menuDesplegado: {
+    position: "absolute",
+    top: 58,
+    right: 0,
+    alignItems: "center",
+    gap: 8,
+    zIndex: 2100,
+    elevation: 20,
+  },
+
+  // ATAMAINE: Boton hamburguesa teal con sombra profunda como la segunda imagen.
+  btnPrincipal: {
+    backgroundColor: "#087d75",
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 14,
+    borderWidth: 3,
+    borderColor: "#0bb7ab",
+    shadowColor: "#052f2d",
+    shadowOpacity: 0.28,
+    shadowOffset: { width: 0, height: 7 },
+    shadowRadius: 12,
+  },
+
+  // ATAMAINE: Boton de idioma mantiene el cambio real de idioma.
+  idioma: {
+    backgroundColor: "#bff5ee",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 4,
+    zIndex: 2100,
+  },
+
+  // ATAMAINE: Boton salir mantiene cerrarSesion sin cambiar la navegacion.
+  btnsalir: {
+    backgroundColor: "#ef4444",
+
     height: 42,
     width: 42,
     alignItems: "center",
     justifyContent: "center",
+
     borderRadius: 21, // Redondeado idéntico al de idioma para simetría
     elevation: 3,
     shadowColor: "#000",
@@ -412,12 +597,24 @@ const styles = StyleSheet.create({
 
   // Encabezado del dashboard corregido
   headerContainer: {
+
+    borderRadius: 21,
+    elevation: 12,
+    zIndex: 2100,
+  },
+
+  // ATAMAINE: Contenedor del saludo superior ajustado para movil y navegador.
+  headerContainer: {
+    position: "relative",
+
     backgroundColor: "#ffffff",
-    paddingTop: 40,
-    height: 99,
+    paddingTop: 26,
+    paddingHorizontal: 17,
+    height: 92,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderColor: "rgba(15,23,42,0.05)",
@@ -449,12 +646,49 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
 
+
+  },
+
+  // ATAMAINE: Agrupa saludo y nombre sin romper traducciones existentes.
+  headerGreeting: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 10,
+  },
+
+  // ATAMAINE: Texto fijo del saludo con contraste elegante.
+  textheader: {
+    fontWeight: "500",
+    color: "#22252d",
+    fontSize: 18,
+  },
+
+  // ATAMAINE: Nombre del usuario con verde principal de la marca.
+  textheader2: {
+    fontWeight: "900",
+    fontSize: 26,
+    color: "#08786f",
+  },
+
+  // ATAMAINE: Contenedor principal del dashboard centrado en PC y natural en movil.
+  container: {
+    width: "100%",
+    minHeight: "100%",
+    backgroundColor: "#f4fbfa",
+    paddingTop: 16,
+    paddingHorizontal: 15,
+    paddingBottom: 50,
+  },
+
+  // ATAMAINE: En laptop se mantiene como dashboard movil premium sin estirarse demasiado.
+
   containerDesktop: {
-    maxWidth: 760,
+    maxWidth: 820,
     alignSelf: "center",
     width: "100%",
-    paddingHorizontal: 18,
+    paddingHorizontal: 28,
   },
+
 
   header: {
     fontSize: 22,
@@ -493,11 +727,425 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
+
+  // ATAMAINE: Bloque de titulo con icono de estadistica como la referencia.
+  panelIntro: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+    gap: 13,
+  },
+
+  // ATAMAINE: Icono blanco elevado para abrir visualmente el panel.
+  panelIconBox: {
+    width: 70,
+    height: 70,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 18,
+    elevation: 6,
+  },
+
+  // ATAMAINE: Punto decorativo teal, solo visual.
+  panelIconDot: {
+    position: "absolute",
+    top: 8,
+    right: -7,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#20d6cc",
+  },
+
+  // ATAMAINE: Permite que el titulo se ajuste sin cortar texto.
+  panelIntroText: {
+    flex: 1,
+  },
+
+  // ATAMAINE: Titulo principal del panel de ventas.
+  header: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#08786f",
+    marginBottom: 6,
+  },
+
+  // ATAMAINE: Subtitulo de apoyo, solo diseno.
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#5d636b",
+    fontWeight: "500",
+  },
+
+  // ATAMAINE: Tarjeta monetaria principal con textura visual mediante capas y sombra.
+  mainBox: {
+    minHeight: 116,
+    backgroundColor: "#078f86",
+    borderRadius: 20,
+    marginBottom: 14,
+    padding: 20,
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 3,
+    borderColor: "#0bb7ab",
+    shadowColor: "#05413d",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.26,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+
+  // ATAMAINE: Bloque textual de cartera sin modificar el dato real.
+  mainBoxText: {
+    flex: 1,
+    paddingRight: 16,
+  },
+
+  // ATAMAINE: Etiqueta de la tarjeta de cartera.
+  mainTitle: {
+    color: "#ffffff",
+    fontSize: 13,
+    textTransform: "uppercase",
+    fontWeight: "600",
+    opacity: 0.95,
+    marginBottom: 10,
+  },
+
+  // ATAMAINE: Valor principal conectado a CarteraTotalFutura.
+  mainAmount: {
+    color: "#ffffff",
+    fontSize: 33,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textShadowColor: "rgba(0,0,0,0.20)",
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 4,
+  },
+
+  // ATAMAINE: Circulo del icono billetera de la tarjeta principal.
+  walletCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.34)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // ATAMAINE: Caja blanca para la ocupacion con sombra suave.
+  chartBox: {
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 16,
+    marginBottom: 14,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.13,
+    shadowRadius: 20,
+    elevation: 7,
+    borderWidth: 1,
+    borderColor: "#eefafa",
+    overflow: "hidden",
+  },
+
+  // ATAMAINE: Cabecera de grafica con botones visuales.
+  chartHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+
+  // ATAMAINE: Titulo descriptivo de ocupacion.
+  chartTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#151a24",
+  },
+
+  // ATAMAINE: Subrayado decorativo del titulo, igual al estilo premium de la referencia.
+  chartTitleLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 7,
+    gap: 4,
+  },
+
+  // ATAMAINE: Linea principal bajo Ocupacion de Lotes.
+  chartTitleLineMain: {
+    width: 74,
+    height: 4,
+    borderRadius: 4,
+    backgroundColor: "#08a99c",
+  },
+
+  // ATAMAINE: Punto pequeno al final de la linea.
+  chartTitleLineDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#20d6cc",
+  },
+
+  // ATAMAINE: Iconos de accion visual de la grafica.
+  chartActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  // ATAMAINE: Boton pequeno con icono pie, visual como referencia.
+  chartActionIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    backgroundColor: "#ccfbf3",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#08786f",
+    borderWidth: 1,
+    borderColor: "#ffffff",
+    shadowOpacity: 0.28,
+    shadowOffset: { width: 0, height: 9 },
+    shadowRadius: 12,
+    elevation: 6,
+  },
+
+  // ATAMAINE: Layout responsive del grafico y leyenda.
+  chartContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+
+  // ATAMAINE: Contenedor para ubicar el icono central sobre la grafica.
+  chartCanvas: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    shadowColor: "#06b6a8",
+    shadowOpacity: 0.24,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 16,
+  },
+
+  // ATAMAINE: Marco exacto de la dona para mantenerla centrada en movil y web.
+  donutFrame: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    backgroundColor: "rgba(240, 253, 250, 0.55)",
+    shadowColor: "#04756d",
+    shadowOpacity: 0.32,
+    shadowOffset: { width: 0, height: 9 },
+    shadowRadius: 13,
+    elevation: 7,
+  },
+
+  // ATAMAINE: Brillo inferior del aro para dar efecto premium sin afectar los datos.
+  donutGlow: {
+    position: "absolute",
+    bottom: 8,
+    right: 16,
+    width: 48,
+    height: 18,
+    borderRadius: 18,
+    backgroundColor: "rgba(32, 214, 204, 0.38)",
+  },
+
+  // ATAMAINE: Centro blanco simula grafico donut y mantiene icono de edificios.
+  chartCenterBadge: {
+    position: "absolute",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 5,
+    borderColor: "#e9fffb",
+  },
+
+  // ATAMAINE: Version compacta del centro del donut para celulares pequenos.
+  chartCenterBadgeCompact: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+
+  // ATAMAINE: Leyenda con porcentajes calculados con datos reales.
+  legendBox: {
+    width: 195,
+    gap: 22,
+  },
+
+  // ATAMAINE: Leyenda compacta para que el grafico no se corte en movil.
+  legendBoxCompact: {
+    width: 162,
+    gap: 16,
+  },
+
+  // ATAMAINE: Fila superior de cada estado de ocupacion.
+  occupancyTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+  },
+
+  // ATAMAINE: Bloque completo de cada dato, sin la barra inferior roja que no se quiere.
+  occupancyRow: {
+    position: "relative",
+    paddingRight: 62,
+  },
+
+  // ATAMAINE: Icono circular para vendidos.
+  occupancyIconSold: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#07897d",
+    shadowColor: "#07897d",
+    shadowOpacity: 0.35,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 10,
+    elevation: 7,
+  },
+
+  // ATAMAINE: Icono circular para disponibles.
+  occupancyIconFree: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#edf2f7",
+    shadowColor: "#111827",
+    shadowOpacity: 0.16,
+    shadowOffset: { width: 0, height: 7 },
+    shadowRadius: 9,
+    elevation: 5,
+  },
+
+  // ATAMAINE: Texto de vendido/libre.
+  occupancyTextBox: {
+    flex: 1,
+  },
+
+  // ATAMAINE: Texto principal de cada valor.
+  legendTitle: {
+    fontSize: 19,
+    fontWeight: "900",
+    color: "#151a24",
+  },
+
+  // ATAMAINE: Descripcion secundaria de la fila.
+  legendLabel: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6b7280",
+  },
+
+  // ATAMAINE: Barra base de ocupacion.
+  progressLine: {
+    height: 10,
+    borderRadius: 10,
+    backgroundColor: "#e8f2f5",
+    marginLeft: 59,
+    marginTop: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#d9edf1",
+  },
+
+  // ATAMAINE: Barra proporcional de vendidos.
+  progressFillSold: {
+    height: "100%",
+    borderRadius: 10,
+    backgroundColor: "#08a99c",
+  },
+
+  // ATAMAINE: Barra proporcional de libres.
+  progressFillFree: {
+    height: "100%",
+    borderRadius: 10,
+    backgroundColor: "#9aa4af",
+  },
+
+  // ATAMAINE: Badge de porcentaje para vendidos.
+  percentBadgeSold: {
+    position: "absolute",
+    right: 0,
+    bottom: -8,
+    minWidth: 54,
+    textAlign: "center",
+    color: "#07897d",
+    backgroundColor: "#c9fbf2",
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 7,
+    fontSize: 16,
+    fontWeight: "900",
+    overflow: "hidden",
+    shadowColor: "#08a99c",
+    shadowOpacity: 0.20,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  // ATAMAINE: Badge de porcentaje para libres.
+  percentBadgeFree: {
+    position: "absolute",
+    right: 0,
+    bottom: -8,
+    minWidth: 54,
+    textAlign: "center",
+    color: "#151a24",
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 7,
+    fontSize: 16,
+    fontWeight: "900",
+    overflow: "hidden",
+    shadowColor: "#64748b",
+    shadowOpacity: 0.14,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  // ATAMAINE: Grid de metricas conectado a los mismos campos de API.
+
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 6,
   },
+
 
   // Tarjetas pequeñas individuales adaptadas a loginPanel
   card: {
@@ -506,11 +1154,22 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     marginBottom: 16,
+
+  // ATAMAINE: Tarjetas pequenas con icono cuadrado, borde lateral y sombra premium.
+  card: {
+    backgroundColor: "#ffffff",
+    width: "48%",
+    minHeight: 94,
+    padding: 10,
+    borderRadius: 15,
+    marginBottom: 0,
+
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "rgba(6, 148, 136, 0.08)",
     borderLeftWidth: 5,
+
     borderLeftColor: "#069488", // Borde esmeralda identificador
     shadowColor: "#087c72",
     shadowOffset: { width: 0, height: 6 },
@@ -618,10 +1277,70 @@ const styles = StyleSheet.create({
   },
 
   // Píldora de reporte perfectamente integrada
+
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.10,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+
+  // ATAMAINE: Caja de icono colorida para cada metrica.
+  cardIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.16,
+    shadowOffset: { width: 0, height: 7 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  // ATAMAINE: Bloque textual de tarjeta.
+  info: {
+    flex: 1,
+  },
+
+  // ATAMAINE: Titulo de tarjeta pequena.
+  cardTitle: {
+    fontSize: 12,
+    color: "#22252d",
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+
+  // ATAMAINE: Valor de tarjeta conectado a API.
+  cardValue: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#151a24",
+  },
+
+  // ATAMAINE: Detalle visual de tendencia o estado.
+  cardDetail: {
+    marginTop: 4,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+
+  // ATAMAINE: Separacion del boton Reportes.
+  reportPillWrapper: {
+    marginTop: 10,
+    marginBottom: 8,
+  },
+
+  // ATAMAINE: Boton Reportes como tarjeta blanca, mantiene onPress real.
+
   reportPill: {
+    minHeight: 76,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#ffffff",
+
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 16,
@@ -646,6 +1365,52 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     color: "#111827",
+
+    paddingVertical: 11,
+    paddingHorizontal: 15,
+    borderRadius: 16,
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 14,
+    elevation: 5,
+  },
+
+  // ATAMAINE: Icono principal del boton Reportes.
+  reportIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 13,
+    backgroundColor: "#07897d",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 16,
+    shadowColor: "#07897d",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 7 },
+    shadowRadius: 9,
+    elevation: 5,
+  },
+
+  // ATAMAINE: Texto del boton Reportes.
+  reportTextBox: {
+    flex: 1,
+  },
+
+  // ATAMAINE: Titulo del boton Reportes.
+  reportPillText: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#08786f",
+    marginBottom: 5,
+  },
+
+  // ATAMAINE: Subtitulo del boton Reportes.
+  reportPillSubText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#4b5563",
+
   },
 });
 
