@@ -30,7 +30,6 @@ import ReporteProyectos from "./screen/ReporteProyectos";
 import ReporteLotes from "./screen/ReporteLotes";
 import ReporteUsuarios from "./screen/ReporteUsuarios";
 
-
 const Stack = createStackNavigator();
 export default function App() {
   return (
