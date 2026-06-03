@@ -187,6 +187,10 @@ const home = ({ route, navigation }: any) => {
             <TouchableOpacity style={styles.idioma} onPress={handlechangeLanguage}>
               <Fontisto name="world-o" size={22} color="#064e4a" />
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.idioma} onPress={()=> navigation.navigate("permisos")}>
+              <Fontisto name="world-o" size={22} color="#064e4a" />
+            </TouchableOpacity>
            
             <TouchableOpacity style={styles.btnsalir} onPress={cerrarSesion}>
               <MaterialIcons
