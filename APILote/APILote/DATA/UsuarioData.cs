@@ -109,6 +109,22 @@ namespace APILote.DATA
             }
         }
 
-     
+
+        //nuevo 03 de junio 2026
+        public DataTable formularios_Listar_pa()
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "formularios_Listar_pa").Tables[0];
+                return Datos;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
+
     }
 }
