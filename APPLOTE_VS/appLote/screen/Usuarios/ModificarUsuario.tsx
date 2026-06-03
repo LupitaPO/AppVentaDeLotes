@@ -432,6 +432,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 3,
+    
   },
   
   // Texto interno del botón de cierre
