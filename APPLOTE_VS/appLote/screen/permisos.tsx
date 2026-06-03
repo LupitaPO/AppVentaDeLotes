@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  Switch, 
-  ScrollView, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Switch,
+  ScrollView,
   Alert,
   ActivityIndicator
 } from 'react-native';
@@ -42,7 +42,7 @@ export default function PermisosScreen() {
     const obtenerPerfilesApi = async () => {
       try {
         // Reemplazar URL por el endpoint real de tu API
-        const response = await fetch(`${API_URL}/Usuario/formularios_Listar`); 
+        const response = await fetch(`${API_URL}/Usuario/formularios_Listar`);
         const datos = await response.json();
         setPerfiles(datos);
       } catch (error) {
@@ -128,7 +128,7 @@ export default function PermisosScreen() {
       <View style={styles.perfilContainer}>
         <Text style={styles.label}>Perfil:</Text>
         <View style={{ flex: 1, zIndex: 10 }}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.dropdown}
             onPress={() => setMostrarComboOptions(!mostrarComboOptions)}
           >
