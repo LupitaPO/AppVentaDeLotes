@@ -163,6 +163,46 @@ namespace APILote.DATA
         }
 
 
+        // =====================================================
+        // ATAMAINE - DATA REPORTE DE COBRANZAS
+        // Procedimiento conectado:
+        // dbo.reporteCobranzas_pa
+        // =====================================================
+        public DataTable reporte_Cobranzas(
+            string estadoVenta,
+            string tipoVenta,
+            string tipoPago,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta,
+            int? idCliente
+        )
+        {
+            try
+            {
+                // Tabla donde se guardará el resultado que viene desde SQL Server
+                DataTable Datos = new DataTable();
+                // Ejecutamos el procedimiento almacenado con sus filtros opcionales
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "reporteCobranzas_pa",
+                    estadoVenta,
+                    tipoVenta,
+                    tipoPago,
+                    fechaDesde,
+                    fechaHasta,
+                    idCliente
+                ).Tables[0];
+                // Retornamos la tabla llena al Controller
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                // Si ocurre un error, retornamos null para evitar caída directa de la API
+                return null;
+            }
+        }
+
+
 
     }
 }
