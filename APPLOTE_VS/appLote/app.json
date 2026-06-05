@@ -41,8 +41,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "d90d98d8-5cbb-465f-b849-6fce21907de0"
+        "projectId": "abe44658-8e79-47c0-bd08-74059a6138bd"
       }
-    }
+    },
+    "owner": "briezlu"
   }
 }

@@ -2,4 +2,6 @@ node_modules/
 bin/
 obj/
 .expo/
+.vs/
+**/.vs/
 
