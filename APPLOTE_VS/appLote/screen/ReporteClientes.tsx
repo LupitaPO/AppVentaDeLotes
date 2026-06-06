@@ -25,6 +25,8 @@ import i18n from "../i18n";
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
 const EMPRESA_CONTACTO = "www.tulote.somee.com";
 const EMPRESA_SIGLAS = "RSF";
+const REFRESCO_TIEMPO_REAL_MS = 10000;
+const MESES_CORTOS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 // ATAMAINE: Tipo genérico para leer la respuesta cruda del backend antes de normalizarla.
 type ReporteItem = Record<string, unknown>;
@@ -263,9 +265,17 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		return () => clearInterval(timer);
 	}, []);
 
-	// Refs para cancelar peticiones y debounce
-	const fetchControllerRef = useRef<AbortController | null>(null);
+	// Refs para cancelar peticiones sin cruzar busqueda manual con refresco automatico.
+	const consultaControllerRef = useRef<AbortController | null>(null);
+	const pollingControllerRef = useRef<AbortController | null>(null);
 	const debounceTimerRef = useRef<any>(null);
+
+	useEffect(() => {
+		return () => {
+			consultaControllerRef.current?.abort();
+			pollingControllerRef.current?.abort();
+		};
+	}, []);
 
 	// Cargar clientes iniciales (extraído para poder llamarlo desde UI - refresh)
 	const cargarClientesIniciales = async () => {
@@ -313,8 +323,9 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		let mounted = true;
 		const refresh = async () => {
 			try {
+				pollingControllerRef.current?.abort();
 				const controller = new AbortController();
-				fetchControllerRef.current = controller;
+				pollingControllerRef.current = controller;
 				const signal = controller.signal;
 				// Si hay un filtro activo, refrescamos SOLO los resultados filtrados para mantenerlos en tiempo real
 				if (buscado && ultimoFiltro) {
@@ -337,14 +348,14 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 			}
 		};
 
-		// refresh cada 15 segundos
+		// refresh periodico para mantener la pantalla sincronizada con el API real.
 		refresh();
-		const iv = setInterval(refresh, 15000);
+		const iv = setInterval(refresh, REFRESCO_TIEMPO_REAL_MS);
 
 		return () => {
 			mounted = false;
 			clearInterval(iv);
-			if (fetchControllerRef.current) fetchControllerRef.current.abort();
+			pollingControllerRef.current?.abort();
 		};
 	}, [buscado, ultimoFiltro]);
 
@@ -379,9 +390,54 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		month: "2-digit",
 		day: "2-digit",
 	});
+	const fechaPanel = `${String(horaActual.getDate()).padStart(2, "0")} ${MESES_CORTOS[horaActual.getMonth()]} ${horaActual.getFullYear()}`;
 	const logoPdfUri = obtenerLogoPdfUri();
 
 	const clienteParaPdf = buscado && ultimoFiltro ? reporte : todosClientes;
+	const clientesActivos = todosClientes.filter((cliente) => esEstadoActivo(cliente.Estado)).length;
+	const clientesInactivos = Math.max(todosClientes.length - clientesActivos, 0);
+	const totalClientesVista = Math.max(todosClientes.length, reporte.length);
+	const metricasClientes: Array<{
+		titulo: string;
+		valor: string | number;
+		detalle: string;
+		icono: keyof typeof MaterialCommunityIcons.glyphMap;
+		acento: string;
+		fondo: string;
+	}> = [
+		{
+			titulo: "Clientes Registrados",
+			valor: totalClientesVista,
+			detalle: "Total de clientes",
+			icono: "account-group-outline",
+			acento: "#2563eb",
+			fondo: "#eaf1ff",
+		},
+		{
+			titulo: "Clientes Activos",
+			valor: clientesActivos,
+			detalle: "Clientes activos",
+			icono: "account-check-outline",
+			acento: "#059669",
+			fondo: "#e8fff5",
+		},
+		{
+			titulo: "Clientes Inactivos",
+			valor: clientesInactivos,
+			detalle: "Clientes inactivos",
+			icono: "account-cancel-outline",
+			acento: "#ef4444",
+			fondo: "#fff0f1",
+		},
+		{
+			titulo: "Ultima Busqueda",
+			valor: ultimoFiltro || "Sin filtro",
+			detalle: "Dato consultado",
+			icono: "magnify",
+			acento: "#7c3aed",
+			fondo: "#f3e8ff",
+		},
+	];
 
 	// ATAMAINE: Al entrar a la pantalla cargamos una sola vez todos los clientes desde el API en TIEMPO REAL.
 	useEffect(() => {
@@ -395,8 +451,8 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 			.replace(/[-:TZ.]/g, "")
 			.slice(0, 14)}`;
 		const logoHtml = logoPdfUri
-			? `<img src="${escapeHtml(logoPdfUri)}" style="width: 68px; height: 68px; border-radius: 16px; object-fit: contain; background: white; padding: 8px; border: 1px solid rgba(255,255,255,0.18);" />`
-			: `<div style="width: 68px; height: 68px; border-radius: 16px; background: white; color: #0f766e; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; border: 1px solid rgba(255,255,255,0.18);">${escapeHtml(EMPRESA_SIGLAS)}</div>`;
+			? `<img src="${escapeHtml(logoPdfUri)}" style="width: 68px; height: 68px; border-radius: 18px; object-fit: contain; background: white; padding: 8px; border: 1px solid rgba(2,6,23,0.22); box-shadow: 0 10px 24px rgba(2,6,23,0.20);" />`
+			: `<div style="width: 68px; height: 68px; border-radius: 18px; background: white; color: #0f766e; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; border: 1px solid rgba(2,6,23,0.22); box-shadow: 0 10px 24px rgba(2,6,23,0.20);">${escapeHtml(EMPRESA_SIGLAS)}</div>`;
 
 		const columnasPdf = [
 			{ label: "N°", width: "8%" },
@@ -411,23 +467,23 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		const colgroupHtml = columnasPdf.map((columna) => `<col style="width: ${columna.width};" />`).join("");
 
 		const encabezadosHtml = columnasPdf
-			.map((columna) => `<th style="padding: 12px 10px; background: #1d4ed8; color: white; font-size: 12px; font-weight: 700; border: 1px solid #d9e6f2; text-align: center;">${escapeHtml(columna.label)}</th>`)
+			.map((columna) => `<th style="padding: 12px 10px; background: linear-gradient(135deg, #0f766e 0%, #1d4ed8 100%); color: white; font-size: 12px; font-weight: 900; border: 1px solid rgba(2,6,23,0.24); text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.52);">${escapeHtml(columna.label)}</th>`)
 			.join("");
 
 		const filasHtml = clienteParaPdf
 			.map((item, index) => {
-				const fondoFila = index % 2 === 0 ? "#ffffff" : "#f6fbff";
-				const numeracionHtml = `<td style="border: 1px solid #dbe4ea; padding: 10px; text-align: center; background: ${fondoFila}; font-size: 12px; color: #0f172a; font-weight: 700;">${index + 1}</td>`;
+				const fondoFila = index % 2 === 0 ? "#ffffff" : "#eefbfc";
+				const numeracionHtml = `<td style="border: 1px solid rgba(15,23,42,0.18); padding: 10px; text-align: center; background: ${fondoFila}; font-size: 12px; color: #07111f; font-weight: 900;">${index + 1}</td>`;
 
 				const columnasFila = COLUMNAS_REPORTE.map((columna) => {
 					const valor = String(item[columna.key] ?? "-");
 
 					if (columna.key === "Estado") {
 						const esActivo = esEstadoActivo(valor);
-						return `<td style="border: 1px solid #dbe4ea; padding: 10px; text-align: center; background: ${fondoFila};"><span style="display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; color: ${esActivo ? "#15803d" : "#be123c"}; background: ${esActivo ? "#ecfdf3" : "#fff1f2"}; border: 1px solid ${esActivo ? "#86efac" : "#fda4af"};">${escapeHtml(valor)}</span></td>`;
+						return `<td style="border: 1px solid rgba(15,23,42,0.18); padding: 10px; text-align: center; background: ${fondoFila};"><span style="display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 900; color: ${esActivo ? "#047857" : "#be123c"}; background: ${esActivo ? "#eafff3" : "#fff1f2"}; border: 1px solid ${esActivo ? "#6ee7b7" : "#fb7185"};">${escapeHtml(valor)}</span></td>`;
 					}
 
-					return `<td style="border: 1px solid #dbe4ea; padding: 10px; text-align: center; background: ${fondoFila}; font-size: 12px; color: #0f172a;">${escapeHtml(valor)}</td>`;
+					return `<td style="border: 1px solid rgba(15,23,42,0.18); padding: 10px; text-align: center; background: ${fondoFila}; font-size: 12px; color: #07111f; font-weight: 800;">${escapeHtml(valor)}</td>`;
 				}).join("");
 
 				return `<tr>${numeracionHtml}${columnasFila}</tr>`;
@@ -439,7 +495,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 				<head>
 					<style>
 						@page { size: A4 landscape; margin: 18px 18px 56px 18px; }
-						body { font-family: Arial, sans-serif; color: #0f172a; padding-bottom: 48px; }
+						body { font-family: Arial, sans-serif; color: #0f172a; padding-bottom: 48px; background: #edf8fa; }
 						table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 						td, th { word-break: break-word; overflow-wrap: anywhere; vertical-align: middle; }
 						tr { page-break-inside: avoid; }
@@ -448,16 +504,16 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 					</style>
 				</head>
 				<body style="font-family: Arial, sans-serif; padding: 24px; color: #0f172a;">
-					<div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 18px; background: linear-gradient(135deg, #0f766e 0%, #164e63 55%, #1e3a8a 100%); border-radius: 22px; overflow: hidden; border: 1px solid #d9e6f2;">
+					<div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 18px; background: linear-gradient(135deg, #061b21 0%, #0f766e 48%, #173f91 100%); border-radius: 24px; overflow: hidden; border: 1px solid rgba(2,6,23,0.26); box-shadow: 0 18px 34px rgba(15,23,42,0.18);">
 						<div style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; flex: 1;">
 							${logoHtml}
 							<div>
-								<p style="margin: 0 0 5px; color: #d1fae5; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;">${escapeHtml(EMPRESA_NOMBRE)}</p>
-								<h1 style="margin: 0; color: white; font-size: 26px; line-height: 1.15;">Reporte de Clientes</h1>
+								<p style="margin: 0 0 5px; color: #d1fae5; font-size: 11px; font-weight: 900; letter-spacing: 0; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,0.42);">${escapeHtml(EMPRESA_NOMBRE)}</p>
+								<h1 style="margin: 0; color: white; font-size: 27px; line-height: 1.15; text-shadow: 0 2px 3px rgba(0,0,0,0.64);">Reporte de Clientes</h1>
 								<p style="margin: 8px 0 0; color: #dbeafe; font-size: 12px;">Documento generado en tiempo real desde la lista de clientes registrados.</p>
 							</div>
 						</div>
-						<div style="min-width: 220px; background: rgba(255,255,255,0.12); border-left: 1px solid rgba(255,255,255,0.16); padding: 18px 20px;">
+						<div style="min-width: 220px; background: rgba(255,255,255,0.14); border-left: 1px solid rgba(255,255,255,0.22); padding: 18px 20px;">
 							<p style="margin: 0 0 8px; color: white; font-size: 12px;"><strong>Empresa:</strong> ${escapeHtml(EMPRESA_NOMBRE)}</p>
 							<p style="margin: 0 0 8px; color: white; font-size: 12px;"><strong>Documento:</strong> ${escapeHtml(numeroDocumento)}</p>
 							<p style="margin: 0 0 8px; color: white; font-size: 12px;"><strong>Fecha:</strong> ${escapeHtml(fechaFormateada)}</p>
@@ -466,7 +522,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 							<p style="margin: 0; color: white; font-size: 12px;"><strong>Total:</strong> ${clienteParaPdf.length} registros</p>
 						</div>
 					</div>
-					<div style="border: 1px solid #dbe4ea; border-radius: 18px; overflow: hidden;">
+					<div style="border: 1px solid rgba(15,23,42,0.20); border-radius: 18px; overflow: hidden; box-shadow: 0 10px 24px rgba(15,23,42,0.10); background: white;">
 						<table>
 							<colgroup>${colgroupHtml}</colgroup>
 							<thead><tr>${encabezadosHtml}</tr></thead>
@@ -524,7 +580,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 
 	// ATAMAINE: La búsqueda se hace DIRECTAMENTE contra el API EN TIEMPO REAL para obtener datos frescos de la base de datos.
 	const consultarReporte = async (filtroParam?: string) => {
-		const filtro = (filtroParam !== undefined ? filtroParam : datoBuscar) .toString().trim();
+		const filtro = (filtroParam !== undefined ? filtroParam : datoBuscar).toString().trim();
 
 		// Si el filtro está vacío consultamos al API con '*' para obtener la lista completa en tiempo real
 		if (!filtro) {
@@ -553,11 +609,11 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 			setUltimoFiltro(filtro);
 
 			// Cancelar petición previa si existe
-			if (fetchControllerRef.current) {
-				try { fetchControllerRef.current.abort(); } catch (e) {}
+			if (consultaControllerRef.current) {
+				try { consultaControllerRef.current.abort(); } catch (e) {}
 			}
-			fetchControllerRef.current = new AbortController();
-			const signal = fetchControllerRef.current.signal;
+			consultaControllerRef.current = new AbortController();
+			const signal = consultaControllerRef.current.signal;
 			const response = await fetch(`${API_URL}/Reporte/reporte_Clientes/${encodeURIComponent(filtro)}`, { signal });
 
 			if (!response.ok) {
@@ -586,6 +642,22 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 		}
 	};
 
+	useEffect(() => {
+		if (typeof navigation?.addListener !== "function") {
+			return;
+		}
+
+		const unsubscribe = navigation.addListener("focus", () => {
+			consultarReporte(datoBuscar);
+		});
+
+		return () => {
+			if (typeof unsubscribe === "function") {
+				unsubscribe();
+			}
+		};
+	}, [navigation, datoBuscar]);
+
 	const listadoMostrar = buscado ? reporte : todosClientes;
 
 	return (
@@ -598,150 +670,174 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 				showsVerticalScrollIndicator={false}
 			>
 				<LinearGradient
-					colors={["#0f766e", "#155e63", "#172554"]}
+					colors={["#061826", "#073147", "#075f61"]}
 					start={{ x: 0, y: 0 }}
 					end={{ x: 1, y: 1 }}
 					style={styles.heroCard}
 				>
-					<View style={styles.headerRow}>
+					<View style={styles.heroToolbar}>
 						<TouchableOpacity
-							style={styles.backButtonTouch}
+							style={styles.menuButton}
 							onPress={() => navigation.goBack()}
 						>
-							{/* ATAMAINE: Boton de retorno con brillo suave para mantener la misma linea visual de reportes. */}
-							<LinearGradient
-								colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.12)"]}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={styles.backButton}
-							>
-								<MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
-							</LinearGradient>
+							<MaterialCommunityIcons name="menu" size={18} color="#dff8ff" />
 						</TouchableOpacity>
-						<View style={styles.heroContent}>
-							<View style={styles.liveBadge}>
-								<View style={styles.liveDot} />
-								<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
+
+						<View style={styles.liveBadge}>
+							<View style={styles.liveDot} />
+							<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
+						</View>
+
+						<View style={styles.dateCard}>
+							<View style={styles.dateLine}>
+								<MaterialCommunityIcons name="calendar-month-outline" size={13} color="#bfe8ff" />
+								<Text style={styles.dateText}>{fechaPanel}</Text>
 							</View>
+							<View style={styles.dateLine}>
+								<MaterialCommunityIcons name="clock-time-four-outline" size={13} color="#bfe8ff" />
+								<Text style={styles.dateText}>{horaFormateada}</Text>
+							</View>
+						</View>
+					</View>
+
+					<View style={styles.heroMainRow}>
+						<View style={styles.heroContent}>
 							<Text style={styles.title}>Gestion Integral</Text>
 							<Text style={styles.title}>de Clientes</Text>
 							<Text style={styles.subtitle}>
 								Consulta clientes por DNI o nombre con datos reales en tiempo real.
 							</Text>
 						</View>
+
+						<View style={styles.peopleScene}>
+							<View style={[styles.personBubble, styles.personBubbleBlue]}>
+								<MaterialCommunityIcons name="account" size={18} color="#f8fbff" />
+							</View>
+							<View style={[styles.personBubble, styles.personBubbleGreen]}>
+								<MaterialCommunityIcons name="account" size={19} color="#f8fbff" />
+							</View>
+							<View style={[styles.personBubble, styles.personBubblePurple]}>
+								<MaterialCommunityIcons name="account" size={16} color="#f8fbff" />
+							</View>
+							<View style={styles.peopleBase} />
+						</View>
 					</View>
 
-					<View style={styles.statsRow}>
-						<View style={styles.statCard}>
-							<Text style={styles.statLabel}>Clientes Registrados</Text>
-							{cargando ? (
-								<ActivityIndicator size="small" color="#ffffff" style={{ marginVertical: 6 }} />
-							) : (
-								<Text style={styles.statValue}>{Math.max(todosClientes.length, reporte.length)}</Text>
-							)}
-							<Text style={styles.statCaption}>Clientes totales</Text>
-							<TouchableOpacity onPress={cargarClientesIniciales} style={{ position: "absolute", right: 12, top: 12 }}>
-								<MaterialCommunityIcons name="refresh" size={18} color="#d1fae5" />
-							</TouchableOpacity>
-						</View>
-						<View style={styles.statCard}>
-							<Text style={styles.statLabel}>Ultima Busqueda</Text>
-							<Text style={styles.statValueSmall}>{ultimoFiltro || "Sin filtro"}</Text>
-							<Text style={styles.statCaption}>Dato consultado</Text>
-						</View>
+					<View style={styles.statsGrid}>
+						{metricasClientes.map((metrica) => (
+							<View key={metrica.titulo} style={styles.statCard}>
+								<View style={[styles.statIconWrap, { backgroundColor: metrica.fondo }]}>
+									<MaterialCommunityIcons name={metrica.icono} size={17} color={metrica.acento} />
+								</View>
+								<Text style={styles.statLabel} numberOfLines={2}>
+									{metrica.titulo}
+								</Text>
+								{cargando && metrica.titulo === "Clientes Registrados" ? (
+									<ActivityIndicator size="small" color={metrica.acento} style={styles.statLoader} />
+								) : (
+									<Text
+										style={[
+											styles.statValue,
+											typeof metrica.valor === "string" ? styles.statValueText : null,
+										]}
+										numberOfLines={2}
+										adjustsFontSizeToFit
+										minimumFontScale={0.72}
+									>
+										{metrica.valor}
+									</Text>
+								)}
+								<Text style={styles.statCaption} numberOfLines={2}>
+									{metrica.detalle}
+								</Text>
+								<View style={[styles.statAccentLine, { backgroundColor: metrica.acento }]} />
+							</View>
+						))}
 					</View>
 				</LinearGradient>
 
 				<View style={styles.searchCard}>
 					<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
-					<Text style={styles.fieldLabel}>DNI/nombre:</Text>
-					<TextInput
-						value={datoBuscar}
-						onChangeText={setDatoBuscar}
-						placeholder="Ingresar por DNI o nombre"
-						placeholderTextColor="#8ba8ae"
-						style={styles.input}
-						returnKeyType="search"
-						onSubmitEditing={() => consultarReporte()}
-					/>
+					<View style={styles.inputShell}>
+						<MaterialCommunityIcons name="magnify" size={17} color="#8aa0b5" />
+						<TextInput
+							value={datoBuscar}
+							onChangeText={setDatoBuscar}
+							placeholder="Ingresar por DNI o nombre"
+							placeholderTextColor="#9aa9ba"
+							style={styles.input}
+							returnKeyType="search"
+							onSubmitEditing={() => consultarReporte()}
+						/>
+					</View>
 
 					<View style={styles.actionRow}>
-						<TouchableOpacity style={styles.primaryAction} onPress={() => consultarReporte()}>
-							{/* ATAMAINE: Gradiente interno para destacar la accion principal sin cambiar la funcion de busqueda. */}
+						<TouchableOpacity style={styles.actionButton} onPress={() => consultarReporte()}>
 							<LinearGradient
-								colors={["#ffffff", "#edf5ff"]}
+								colors={["#1f75ff", "#0657d9"]}
 								start={{ x: 0, y: 0 }}
 								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.primaryActionSurface]}
+								style={styles.actionFill}
 							>
-								<View style={[styles.actionIconBadge, styles.primaryActionBadge]}>
-									<MaterialCommunityIcons name="magnify" size={18} color="#2563eb" />
-								</View>
-								<Text style={styles.primaryActionText}>Buscar</Text>
+								<MaterialCommunityIcons name="magnify" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>Buscar</Text>
 							</LinearGradient>
 						</TouchableOpacity>
 
 						<TouchableOpacity
-							style={styles.newAction}
+							style={styles.actionButton}
 							activeOpacity={0.85}
 							onPress={() => navigation.navigate("RegistrarCliente", { onRefresh: cargarClientesIniciales })}
 						>
-							{/* ATAMAINE: Nuevo cliente abre el formulario real y al volver refresca el reporte desde la API. */}
 							<LinearGradient
-								colors={["#ffffff", "#e8fff8"]}
+								colors={["#0f9f73", "#047857"]}
 								start={{ x: 0, y: 0 }}
 								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.newActionSurface]}
+								style={styles.actionFill}
 							>
-								<View style={[styles.actionIconBadge, styles.newActionBadge]}>
-									<MaterialCommunityIcons name="plus-circle-outline" size={18} color="#0f766e" />
-								</View>
-								<Text style={styles.newActionText}>Nuevo</Text>
+								<MaterialCommunityIcons name="plus-circle-outline" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>Nuevo</Text>
 							</LinearGradient>
 						</TouchableOpacity>
 
-						<TouchableOpacity style={styles.clearAction} onPress={limpiarFiltro}>
-							{/* ATAMAINE: Gradiente neutro para limpiar el filtro de forma visualmente consistente. */}
+						<TouchableOpacity style={styles.actionButton} onPress={limpiarFiltro}>
 							<LinearGradient
-								colors={["#ffffff", "#f4f7fb"]}
+								colors={["#6b7280", "#475569"]}
 								start={{ x: 0, y: 0 }}
 								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.clearActionSurface]}
+								style={styles.actionFill}
 							>
-								<View style={[styles.actionIconBadge, styles.clearActionBadge]}>
-									<MaterialCommunityIcons name="close-circle-outline" size={18} color="#64748b" />
-								</View>
-								<Text style={styles.clearActionText}>Limpiar</Text>
+								<MaterialCommunityIcons name="trash-can-outline" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>Limpiar</Text>
 							</LinearGradient>
 						</TouchableOpacity>
-					</View>
 
-					<View style={styles.actionRowSecondary}>
 						<TouchableOpacity
-							style={[styles.secondaryAction, (!reporte.length || cargando) && styles.buttonDisabled]}
+							style={[styles.actionButton, (!clienteParaPdf.length || cargando) && styles.buttonDisabled]}
 							onPress={generarPDF}
-							disabled={!reporte.length || cargando}
+							disabled={!clienteParaPdf.length || cargando}
 						>
-							{/* ATAMAINE: PDF conserva su acento dorado con una superficie mas radiante. */}
 							<LinearGradient
-								colors={["#ffffff", "#fff7e6"]}
+								colors={["#f59e0b", "#f97316"]}
 								start={{ x: 0, y: 0 }}
 								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.secondaryActionSurface]}
+								style={styles.actionFill}
 							>
-								<View style={[styles.actionIconBadge, styles.secondaryActionBadge]}>
-									<MaterialCommunityIcons name="file-pdf-box" size={18} color="#f59e0b" />
-								</View>
-								<Text style={styles.secondaryActionText}>PDF</Text>
+								<MaterialCommunityIcons name="file-pdf-box" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>PDF</Text>
 							</LinearGradient>
 						</TouchableOpacity>
 					</View>
+
 				</View>
 
 				<View style={styles.contentCard}>
-					<Text style={styles.contentTitle}>Listado del Reporte</Text>
+					<View style={styles.contentTitleRow}>
+						<MaterialCommunityIcons name="view-list-outline" size={18} color="#2563eb" />
+						<Text style={styles.contentTitle}>Listado del Reporte</Text>
+					</View>
 					{cargando && (
-						<ActivityIndicator size="large" color="#069488" style={styles.loader} />
+						<ActivityIndicator size="large" color="#2563eb" style={styles.loader} />
 					)}
 
 					{!cargando && mensaje ? (
@@ -770,8 +866,12 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 
 					{!cargando && listadoMostrar.length > 0 ? (
 						<View style={styles.tableWrapper}>
-							<View style={styles.tableTopAccent} />
-							<View style={styles.tableHeaderRow}>
+							<LinearGradient
+								colors={["#0f2f89", "#184ec8"]}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={styles.tableHeaderRow}
+							>
 								{COLUMNAS_REPORTE.map((columna) => (
 									<View key={columna.key} style={[styles.tableHeaderCell, { flex: columna.flex }]}>
 										<Text style={styles.tableHeaderText}>{columna.label}</Text>
@@ -780,7 +880,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 								<View style={styles.tableActionHeaderCell}>
 									<Text style={styles.tableHeaderText}>Ver</Text>
 								</View>
-							</View>
+							</LinearGradient>
 
 							{listadoMostrar.map((item, index) => (
 								<View
@@ -812,14 +912,26 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 												{String(item[columna.key] ?? "-")}
 												</Text>
 												</View>
+											) : columna.key === "Celular" || columna.key === "Correo" ? (
+												<View style={styles.tableIconText}>
+													<MaterialCommunityIcons
+														name={columna.key === "Celular" ? "phone-outline" : "email-outline"}
+														size={11}
+														color={columna.key === "Celular" ? "#10b981" : "#2563eb"}
+													/>
+													<Text
+														style={styles.tableDataText}
+														numberOfLines={2}
+														adjustsFontSizeToFit={columna.key === "Celular"}
+														minimumFontScale={0.78}
+													>
+														{String(item[columna.key] ?? "-")}
+													</Text>
+												</View>
 											) : (
 												<Text
-													style={[
-														styles.tableDataText,
-														columna.key === "Celular" ? styles.tableDataTextTight : null,
-													]}
-													numberOfLines={columna.key === "Celular" ? 1 : 2}
-													adjustsFontSizeToFit={columna.key === "Celular"}
+													style={styles.tableDataText}
+													numberOfLines={2}
 													minimumFontScale={0.78}
 												>
 												{String(item[columna.key] ?? "-")}
@@ -833,7 +945,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 											activeOpacity={0.8}
 											onPress={() => abrirClienteRegistrado(navigation, item)}
 										>
-											<Text style={styles.verButtonText}>Ver</Text>
+											<MaterialCommunityIcons name="eye-outline" size={14} color="#0f766e" />
 										</TouchableOpacity>
 									</View>
 								</View>

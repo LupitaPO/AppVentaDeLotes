@@ -195,6 +195,35 @@ namespace APILote.Controllers
         }
 
 
+        // =====================================================
+        // ATAMAINE - API REPORTE DE PAGOS
+        // Ruta final en Swagger:
+        // GET: Reporte/reporte_Pagos
+        // =====================================================
+
+        [HttpGet]
+        [Route("reporte_Pagos")]
+        public string reporte_Pagos(
+            string estadoPago = null,
+            int? idVenta = null,
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null
+        )
+        {
+            string jsoString = string.Empty;
+            DataTable Datos = new DataTable();
+            ReporteData objPagos = new ReporteData();
+            Datos = objPagos.reporte_Pagos(
+                estadoPago,
+                idVenta,
+                fechaDesde,
+                fechaHasta
+            );
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsoString;
+        }
+
+
 
 
 

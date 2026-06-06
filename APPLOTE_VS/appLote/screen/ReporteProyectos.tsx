@@ -1,7 +1,6 @@
 import {
 	View,
 	Text,
-	TextInput,
 	TouchableOpacity,
 	ActivityIndicator,
 	ScrollView,
@@ -44,6 +43,13 @@ type ProyectoReporteItem = {
 type ReporteProyectosProps = {
 	navigation: any;
 };
+
+type ProyectoSelectItem = {
+	id: string;
+	nombre: string;
+};
+
+const API_BASE_URL = API_URL.replace(/\/+$/, "");
 
 // ATAMAINE: Escapamos caracteres especiales para que el HTML del PDF no se rompa con datos reales.
 const escapeHtml = (value: unknown) =>
@@ -118,6 +124,34 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
 	}
 };
 
+const normalizarTexto = (value: unknown) => String(value ?? "").trim();
+
+const consultarPrimerEndpointDisponible = async (urls: string[], signal?: AbortSignal) => {
+	let ultimoError: Error | null = null;
+
+	for (const url of urls) {
+		try {
+			const response = await fetch(url, { signal });
+			if (!response.ok) throw new Error(`HTTP ${response.status}`);
+			return await response.text();
+		} catch (error) {
+			if ((error as Error).name === "AbortError") throw error;
+			ultimoError = error as Error;
+		}
+	}
+
+	throw ultimoError ?? new Error("Endpoint no disponible");
+};
+
+const construirUrlsProyectosSelect = () => [
+	`${API_BASE_URL}/api/Proyecto/proyecto_Listar_Select`,
+	`${API_BASE_URL}/Proyecto/proyecto_Listar_Select`,
+	`${API_BASE_URL}/api/Proyecto/proyecto_ListarSelect`,
+	`${API_BASE_URL}/Proyecto/proyecto_ListarSelect`,
+	`${API_BASE_URL}/api/Proyecto/proyecto_Listar`,
+	`${API_BASE_URL}/Proyecto/proyecto_Listar`,
+];
+
 // ATAMAINE: Ajustamos columnas propias de proyectos para que entren en móvil sin campos de clientes.
 const COLUMNAS_REPORTE: Array<{
 	key: keyof ProyectoReporteItem;
@@ -168,6 +202,95 @@ const normalizarProyectos = (items: ReporteItem[]): ProyectoReporteItem[] =>
                 Estado: normalizarEstado(item.Estado),
         }));
 
+const obtenerTextoProyectoSelect = (item: ReporteItem) => {
+	if (typeof item === "string" || typeof item === "number") return normalizarTexto(item);
+	if (!item || typeof item !== "object") return "";
+
+	const registro = item as Record<string, unknown>;
+	const claves = [
+		"NombreProyecto",
+		"nombreProyecto",
+		"Nombre",
+		"nombre",
+		"Proyecto",
+		"proyecto",
+		"Descripcion",
+		"descripcion",
+		"Texto",
+		"texto",
+		"Text",
+		"text",
+		"Label",
+		"label",
+		"Valor",
+		"valor",
+		"Value",
+		"value",
+	];
+
+	for (const clave of claves) {
+		const texto = normalizarTexto(registro[clave]);
+		if (texto && !/^\d+$/.test(texto)) return texto;
+	}
+
+	const entrada = Object.entries(registro).find(([clave, valor]) => {
+		const claveNormalizada = clave.toLowerCase();
+		const texto = normalizarTexto(valor);
+		return !claveNormalizada.includes("id") && texto && !/^\d+$/.test(texto);
+	});
+
+	return entrada ? normalizarTexto(entrada[1]) : "";
+};
+
+const obtenerIdProyectoSelect = (item: ReporteItem) => {
+	if (!item || typeof item !== "object") return "";
+
+	const registro = item as Record<string, unknown>;
+	const claves = ["IdProyecto", "idProyecto", "IDProyecto", "ProyectoId", "proyectoId", "Id", "ID", "id"];
+
+	for (const clave of claves) {
+		const id = normalizarTexto(registro[clave]);
+		if (id) return id;
+	}
+
+	return "";
+};
+
+const normalizarProyectosSelect = (items: ReporteItem[]): ProyectoSelectItem[] => {
+	const proyectos = new Map<string, ProyectoSelectItem>();
+
+	items.forEach((item) => {
+		const nombre = obtenerTextoProyectoSelect(item);
+		if (!nombre) return;
+
+		const id = obtenerIdProyectoSelect(item);
+		const clave = id ? `id:${id}` : `nombre:${nombre.toLowerCase()}`;
+		proyectos.set(clave, { id, nombre });
+	});
+
+	return Array.from(proyectos.values());
+};
+
+const consultarProyectosSelect = async (signal?: AbortSignal) => {
+	const rawData = await consultarPrimerEndpointDisponible(construirUrlsProyectosSelect(), signal);
+	return normalizarProyectosSelect(parseReporteResponse(rawData));
+};
+
+const obtenerSelectDesdeProyectos = (items: ProyectoReporteItem[]) => {
+	const proyectos = new Map<string, ProyectoSelectItem>();
+
+	items.forEach((item) => {
+		const nombre = normalizarTexto(item.Nombre);
+		if (!nombre || nombre === "-") return;
+
+		const id = normalizarTexto(item.IdProyecto);
+		const clave = id ? `id:${id}` : `nombre:${nombre.toLowerCase()}`;
+		proyectos.set(clave, { id, nombre });
+	});
+
+	return Array.from(proyectos.values());
+};
+
 // ATAMAINE: Detectamos estados para pintarlos distinto dentro de la tabla sin cambiar la data real.
 const esEstadoActivo = (estado: string) => estado.trim().toLowerCase() === "activo";
 
@@ -206,6 +329,9 @@ const consultarProyectosRegistrados = async (signal?: AbortSignal) => {
 
 const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 	const [datoBuscar, setDatoBuscar] = useState("");
+	const [proyectosSelect, setProyectosSelect] = useState<ProyectoSelectItem[]>([]);
+	const [mostrarProyectosSelect, setMostrarProyectosSelect] = useState(false);
+	const [cargandoProyectosSelect, setCargandoProyectosSelect] = useState(false);
 	const [todosProyectos, setTodosProyectos] = useState<ProyectoReporteItem[]>([]);
 	const [reporte, setReporte] = useState<ProyectoReporteItem[]>([]);
 	const [cargando, setCargando] = useState(false);
@@ -225,7 +351,53 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 	// Refs para cancelar peticiones y debounce
 	const fetchControllerRef = useRef<AbortController | null>(null);
+	const proyectoSelectControllerRef = useRef<AbortController | null>(null);
 	const debounceTimerRef = useRef<any>(null);
+
+	const cargarProyectosSelect = async (signal?: AbortSignal) => {
+		try {
+			setCargandoProyectosSelect(true);
+			const proyectosApi = await consultarProyectosSelect(signal);
+			const proyectosFinal = proyectosApi.length ? proyectosApi : obtenerSelectDesdeProyectos(todosProyectos);
+			setProyectosSelect(proyectosFinal);
+		} catch (error) {
+			if ((error as Error).name === "AbortError") return;
+			// ATAMAINE: Si el select nuevo aun no esta publicado, usamos los nombres cargados por proyecto_Listar.
+			setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(todosProyectos)));
+		} finally {
+			if (!signal?.aborted) setCargandoProyectosSelect(false);
+		}
+	};
+
+	const refrescarProyectosSelect = () => {
+		if (proyectoSelectControllerRef.current) proyectoSelectControllerRef.current.abort();
+		const controller = new AbortController();
+		proyectoSelectControllerRef.current = controller;
+		void cargarProyectosSelect(controller.signal);
+	};
+
+	const alternarProyectosSelect = () => {
+		if (mostrarProyectosSelect) {
+			setMostrarProyectosSelect(false);
+			return;
+		}
+
+		setMostrarProyectosSelect(true);
+		refrescarProyectosSelect();
+	};
+
+	const seleccionarProyectoSelect = (proyecto: ProyectoSelectItem) => {
+		setDatoBuscar(proyecto.nombre);
+		setMostrarProyectosSelect(false);
+		void consultarReporte(proyecto.nombre);
+	};
+
+	useEffect(() => {
+		refrescarProyectosSelect();
+		return () => {
+			if (proyectoSelectControllerRef.current) proyectoSelectControllerRef.current.abort();
+		};
+	}, []);
 
 	// Cargar proyectos iniciales (extraído para poder llamarlo desde UI - refresh)
 	const cargarProyectosIniciales = async () => {
@@ -236,6 +408,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 			setTodosProyectos(proyectosBase);
 			setReporte(proyectosBase);
+			setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectosBase)));
 			setBuscado(false);
 			setUltimoFiltro("");
 
@@ -290,6 +463,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				const proyectos = await consultarProyectosRegistrados(signal);
 				if (!mounted) return;
 				setTodosProyectos(proyectos);
+				setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectos)));
 				// Si no estamos mostrando resultados filtrados, mantenemos el listado inferior al dia
 				if (!buscado) setReporte(proyectos);
 			} catch (err) {
@@ -310,6 +484,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 	const limpiarFiltro = async () => {
 		setDatoBuscar("");
+		setMostrarProyectosSelect(false);
 		setUltimoFiltro("");
 		setMensaje("");
 		setBuscado(false);
@@ -320,6 +495,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 			const proyectosBase = await consultarProyectosRegistrados();
 			setTodosProyectos(proyectosBase);
 			setReporte(proyectosBase);
+			setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectosBase)));
 		} catch (error) {
 			console.error("Error al recargar proyectos al limpiar filtro:", error);
 			setTodosProyectos([]);
@@ -486,6 +662,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 	// ATAMAINE: La búsqueda se hace DIRECTAMENTE contra el API EN TIEMPO REAL para obtener datos frescos de la base de datos.
 	const consultarReporte = async (filtroParam?: string) => {
 		const filtro = (filtroParam !== undefined ? filtroParam : datoBuscar) .toString().trim();
+		setMostrarProyectosSelect(false);
 
 		// Si el filtro está vacío consultamos al API con '*' para obtener la lista completa en tiempo real
 		if (!filtro) {
@@ -496,6 +673,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				const proyectosBase = await consultarProyectosRegistrados();
 				setTodosProyectos(proyectosBase);
 				setReporte(proyectosBase);
+				setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectosBase)));
 				setBuscado(false);
 				return;
 			} catch (error) {
@@ -619,15 +797,37 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				<View style={styles.searchCard}>
 					<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
 					<Text style={styles.fieldLabel}>Proyecto/ubicacion:</Text>
-					<TextInput
-						value={datoBuscar}
-						onChangeText={setDatoBuscar}
-						placeholder="Ingresar proyecto o ubicacion"
-						placeholderTextColor="#8ba8ae"
-						style={styles.input}
-						returnKeyType="search"
-						onSubmitEditing={() => consultarReporte()}
-					/>
+					<View style={styles.estadoSelectWrap}>
+						<TouchableOpacity activeOpacity={0.84} style={[styles.input, styles.estadoSelectInput]} onPress={alternarProyectosSelect}>
+							<Text style={datoBuscar ? styles.estadoSelectText : styles.estadoSelectPlaceholder} numberOfLines={1}>
+								{datoBuscar || (cargandoProyectosSelect ? "Cargando proyectos..." : "Seleccionar proyecto activo")}
+							</Text>
+							{cargandoProyectosSelect ? (
+								<ActivityIndicator size="small" color="#0f766e" />
+							) : (
+								<MaterialCommunityIcons name={mostrarProyectosSelect ? "chevron-up" : "chevron-down"} size={22} color="#0f766e" />
+							)}
+						</TouchableOpacity>
+						{mostrarProyectosSelect ? (
+							<View style={styles.estadoOptionsBox}>
+								{proyectosSelect.length ? (
+									proyectosSelect.map((proyecto) => {
+										const activo = datoBuscar.trim().toLowerCase() === proyecto.nombre.trim().toLowerCase();
+										return (
+											<TouchableOpacity key={proyecto.id || proyecto.nombre} activeOpacity={0.84} style={[styles.estadoOptionItem, activo ? styles.estadoOptionItemActive : null]} onPress={() => seleccionarProyectoSelect(proyecto)}>
+												<Text style={[styles.estadoOptionText, activo ? styles.estadoOptionTextActive : null]} numberOfLines={2}>{proyecto.nombre}</Text>
+												{activo ? <MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" /> : null}
+											</TouchableOpacity>
+										);
+									})
+								) : (
+									<View style={styles.estadoOptionItem}>
+										<Text style={styles.estadoOptionText}>{cargandoProyectosSelect ? "Cargando proyectos..." : "Sin proyectos disponibles"}</Text>
+									</View>
+								)}
+							</View>
+						) : null}
+					</View>
 
 					<View style={styles.actionRow}>
 						<TouchableOpacity style={styles.primaryAction} onPress={() => consultarReporte()}>

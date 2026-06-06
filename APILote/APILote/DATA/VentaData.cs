@@ -58,5 +58,91 @@ namespace APILote.DATA
                 return null;
             }
         }
+
+
+
+        // =====================================================
+        // ATAMAINE - DATA PARA LISTAR ESTADOS DE VENTA
+        // Procedimiento conectado:
+        // dbo.venta_Estado_Listar_pa
+        // =====================================================
+
+        public DataTable venta_Estado_Listar()
+        {
+            try
+            {
+                // Tabla donde se guardará el resultado desde SQL Server
+                DataTable Datos = new DataTable();
+                // Ejecutamos el procedimiento almacenado sin parámetros
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "venta_Estado_Listar_pa"
+                ).Tables[0];
+                // Retornamos los estados de venta al Controller
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                // Si ocurre un error, retornamos null
+                return null;
+            }
+        }
+
+
+
+        // =====================================================
+        // ATAMAINE - DATA PARA LISTAR TIPOS DE VENTA
+        // Procedimiento conectado:
+        // dbo.venta_Tipo_Listar_pa
+        // =====================================================
+
+        public DataTable venta_Tipo_Listar()
+        {
+            try
+            {
+                // Tabla donde se guardarán los datos que vienen desde SQL Server
+                DataTable Datos = new DataTable();
+                // Ejecutamos el procedimiento almacenado sin parámetros
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "venta_Tipo_Listar_pa"
+                ).Tables[0];
+                // Retornamos los tipos de venta al Controller
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                // Si ocurre algún error, retornamos null
+                return null;
+            }
+        }
+
+
+        // =====================================================
+        // ATAMAINE - DATA PARA LISTAR TIPOS DE PAGO
+        // Procedimiento conectado:
+        // dbo.venta_TipoPago_Listar_pa
+        // =====================================================
+
+        public DataTable venta_TipoPago_Listar()
+        {
+            try
+            {
+                // Tabla donde se guardarán los tipos de pago desde SQL Server
+                DataTable Datos = new DataTable();
+                // Ejecutamos el procedimiento almacenado sin parámetros
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "venta_TipoPago_Listar_pa"
+                ).Tables[0];
+                // Retornamos los datos al Controller
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                // Si ocurre algún error, retornamos null
+                return null;
+            }
+        }
     }
 }

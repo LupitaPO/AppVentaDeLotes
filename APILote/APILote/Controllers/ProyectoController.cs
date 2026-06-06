@@ -122,5 +122,31 @@ namespace APILote.Controllers
             jsostring = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsostring;
         }
+
+
+        // =====================================================
+        // ATAMAINE - API PARA LISTAR PROYECTOS ACTIVOS
+        // Ruta final:
+        // GET: api/Proyecto/proyecto_Listar_Select
+        // Uso: frontend select/combo de proyectos
+        // =====================================================
+
+        [HttpGet]
+        [Route("proyecto_Listar_Select")]
+        public string proyecto_Listar_Select()
+        {
+            // Variable donde se guardará el JSON final
+            string jsoString = string.Empty;
+            // Tabla para recibir datos desde DATA
+            DataTable Datos = new DataTable();
+            // Instancia de la clase DATA
+            ProyectoData objProyecto = new ProyectoData();
+            // Llamamos al método que ejecuta el procedimiento almacenado
+            Datos = objProyecto.proyecto_Listar_Select();
+            // Convertimos el DataTable a JSON
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            // Retornamos el JSON para Swagger, navegador o frontend
+            return jsoString;
+        }
     }
 }

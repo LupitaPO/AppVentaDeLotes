@@ -18,12 +18,10 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import i18n, { changeLanguage } from "../../i18n";
 import { Languages } from "../../localizacion";
+import { API_URL } from "../../config/apiUrl";
 
 
-// llamo de url de somee desde el archivo .env
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-const loginRegistrate = ({ navigation }) => {
+const LoginRegistrate = ({ navigation }) => {
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [contraseña, setContraseña] = useState("");
@@ -366,4 +364,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default loginRegistrate;
+export default LoginRegistrate;

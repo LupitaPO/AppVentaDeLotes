@@ -4,12 +4,12 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { StyleSheet, Text, View } from "react-native";
 
-import login from "./screen/login";
-import bottomTabs from "./bottomTabs";
-import loginCambiarContraseña from "./screen/Login/loginCambiarContraseña";
-import loginRegistrate from "./screen/Login/loginRegistrate";
+import Login from "./screen/login";
+import BottomTabs from "./bottomTabs";
+import LoginCambiarContrasena from "./screen/Login/loginCambiarContraseña";
+import LoginRegistrate from "./screen/Login/loginRegistrate";
 import Rproyecto from "./screen/Proyectos/Rproyecto";
-import home from "./screen/home";
+import Home from "./screen/home";
 import DetalleProyecto from "./screen/Proyectos/DetalleProyecto";
 import ModificarProyecto from "./screen/Proyectos/ModificarProyecto";
 
@@ -29,7 +29,9 @@ import ReporteAsesores from "./screen/ReporteAsesores";
 import ReporteProyectos from "./screen/ReporteProyectos";
 import ReporteLotes from "./screen/ReporteLotes";
 import ReporteUsuarios from "./screen/ReporteUsuarios";
-import permisos from "./screen/permisos";
+import ReporteCobranzas from "./screen/ReporteCobranzas";
+import ReportePagos from "./screen/ReportePagos";
+import Permisos from "./screen/permisos";
 
 const Stack = createStackNavigator();
 export default function App() {
@@ -39,14 +41,14 @@ export default function App() {
         initialRouteName="Login"
         screenOptions={{ headerShown: false }}
       >
-        <Stack.Screen name="Login" component={login} />
+        <Stack.Screen name="Login" component={Login} />
         <Stack.Screen
           name="loginCambiarContraseña"
-          component={loginCambiarContraseña}
+          component={LoginCambiarContrasena}
         />
-        <Stack.Screen name="loginRegistrate" component={loginRegistrate} />
+        <Stack.Screen name="loginRegistrate" component={LoginRegistrate} />
 
-        <Stack.Screen name="homme" component={home} />
+        <Stack.Screen name="homme" component={Home} />
         <Stack.Screen name="DetalleProyecto" component={DetalleProyecto} />
         <Stack.Screen name="Rproyecto" component={Rproyecto} />
         <Stack.Screen name="ModificarProyecto" component={ModificarProyecto} />
@@ -60,7 +62,7 @@ export default function App() {
         <Stack.Screen name="ModificarUsuario" component={ModificarUsuario} />
         <Stack.Screen name="RegistrarUsuario" component={RegistrarUsuario} />
         <Stack.Screen name="DetallePago" component={DetallePago} />
-        <Stack.Screen name="MainTabs" component={bottomTabs} />
+        <Stack.Screen name="MainTabs" component={BottomTabs} />
         <Stack.Screen name="MenuReportes" component={MenuReportes} />
         <Stack.Screen name="Reportes" component={MenuReportes} />
         <Stack.Screen name="ReporteClientes" component={ReporteClientes} />
@@ -68,7 +70,9 @@ export default function App() {
         <Stack.Screen name="ReporteProyectos" component={ReporteProyectos} />
         <Stack.Screen name="ReporteLotes" component={ReporteLotes} />
         <Stack.Screen name="ReporteUsuarios" component={ReporteUsuarios} />
-        <Stack.Screen name="permisos" component={permisos} />
+        <Stack.Screen name="ReporteCobranzas" component={ReporteCobranzas} />
+        <Stack.Screen name="ReportePagos" component={ReportePagos} />
+        <Stack.Screen name="permisos" component={Permisos} />
       </Stack.Navigator>
     </NavigationContainer>
   );

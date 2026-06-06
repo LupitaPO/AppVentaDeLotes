@@ -56,5 +56,81 @@ namespace APILote.Controllers
             VentaData objventadata = new VentaData();
             return objventadata.ventaRegistrar(objventas);
         }
+
+
+
+        // =====================================================
+        // ATAMAINE - API PARA LISTAR ESTADOS DE VENTA
+        // Ruta final:
+        // GET: api/Venta/venta_Estado_Listar
+        // =====================================================
+
+        [HttpGet]
+        [Route("venta_Estado_Listar")]
+        public string venta_Estado_Listar()
+        {
+            // Variable donde se guardará el JSON final
+            string jsoString = string.Empty;
+            // Tabla para recibir los datos desde DATA
+            DataTable Datos = new DataTable();
+            // Instancia de la clase DATA
+            VentaData objVenta = new VentaData();
+            // Llamamos al método que ejecuta el procedimiento almacenado
+            Datos = objVenta.venta_Estado_Listar();
+            // Convertimos el DataTable a JSON
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            // Retornamos el JSON final
+            return jsoString;
+        }
+
+
+        // =====================================================
+        // ATAMAINE - API PARA LISTAR TIPOS DE VENTA
+        // Ruta final:
+        // GET: api/Venta/venta_Tipo_Listar
+        // =====================================================
+
+        [HttpGet]
+        [Route("venta_Tipo_Listar")]
+        public string venta_Tipo_Listar()
+        {
+            // Variable donde se guardará el JSON final
+            string jsoString = string.Empty;
+            // Tabla para recibir los datos desde DATA
+            DataTable Datos = new DataTable();
+            // Instancia de la clase DATA
+            VentaData objVenta = new VentaData();
+            // Llamamos al método que ejecuta el procedimiento almacenado
+            Datos = objVenta.venta_Tipo_Listar();
+            // Convertimos el DataTable a JSON
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            // Retornamos el JSON final para Swagger, navegador o frontend
+            return jsoString;
+        }
+
+
+        // =====================================================
+        // ATAMAINE - API PARA LISTAR TIPOS DE PAGO
+        // Ruta final:
+        // GET: api/Venta/venta_TipoPago_Listar
+        // =====================================================
+
+        [HttpGet]
+        [Route("venta_TipoPago_Listar")]
+        public string venta_TipoPago_Listar()
+        {
+            // Variable donde se guardará el JSON final
+            string jsoString = string.Empty;
+            // Tabla para recibir datos desde DATA
+            DataTable Datos = new DataTable();
+            // Instancia de la clase DATA
+            VentaData objVenta = new VentaData();
+            // Llamamos al método que ejecuta el procedimiento almacenado
+            Datos = objVenta.venta_TipoPago_Listar();
+            // Convertimos el DataTable a JSON
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            // Retornamos el JSON para Swagger, navegador o frontend
+            return jsoString;
+        }
     }
 }

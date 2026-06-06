@@ -6,21 +6,24 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 // imports para idiomas 
 import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
+import { API_URL } from "../config/apiUrl";
 
-// URL base del backend para consultar el módulo de proyectos.
-const API_URL = "http://www.tulote.somee.com";
 
 
 const ListarProyectos = ({ navigation, route }) => {
+  const esWeb = Platform.OS === "web";
+  const tabBarHeight = useBottomTabBarHeight();
   // Estado que controla si el menú flotante está abierto o cerrado.
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // funcion de idiomas 
@@ -154,7 +157,7 @@ const ListarProyectos = ({ navigation, route }) => {
 
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, esWeb && styles.containerWeb]}>
       {/* Encabezado con el nombre del usuario autenticado.
       <View style={{ flexDirection: "row", justifyContent: "space-between"}}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -213,7 +216,7 @@ const ListarProyectos = ({ navigation, route }) => {
         <ScrollView
           ref={scrollProyectosRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={[styles.scrollContent, esWeb && styles.scrollContentWeb]}
           showsVerticalScrollIndicator={true}
         >
           {proyectoSeleccionadoId || proyectoSeleccionadoNombre ? (
@@ -338,14 +341,16 @@ const ListarProyectos = ({ navigation, route }) => {
       </View>
 
       {/* Botón para registrar un nuevo proyecto, disponible solo para usuarios con permisos. */}
-      <View>
+      <View style={[styles.actionFooter, esWeb && { paddingBottom: tabBarHeight + 18 }]}>
         {rol !== "Cliente" && (
           <TouchableOpacity
             onPress={() =>
               navigation.navigate("Rproyecto", { onRefresh: obtenerProyectos })
             }
-            style={styles.btnRegistrar}
+            style={[styles.btnRegistrar, esWeb && styles.btnRegistrarWeb]}
+            activeOpacity={0.86}
           >
+            <MaterialIcons name="add-circle-outline" size={20} color="#ffffff" />
             <Text style={styles.btnRegisText}>Nuevo Proyecto</Text>
           </TouchableOpacity>
         )}
@@ -418,6 +423,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
   },
+  containerWeb: {
+    paddingHorizontal: 24,
+    paddingTop: 34,
+  },
   textheader: {
     fontWeight: "600",
     color: "#64748b", // Gris elegante para subtextos de bienvenida
@@ -437,6 +446,12 @@ const styles = StyleSheet.create({
   form: {
     flex: 1,
     justifyContent: "center",
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  scrollContentWeb: {
+    paddingBottom: 34,
   },
   subtitle: {
     fontSize: 14,
@@ -544,6 +559,8 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 420,
     height: 52,
+    flexDirection: "row",
+    gap: 8,
     alignSelf: "center",
     marginBottom: 16,
     marginTop: 8,
@@ -555,6 +572,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 14,
     elevation: 4,
+  },
+  btnRegistrarWeb: {
+    height: 54,
+    marginBottom: 0,
+    marginTop: 0,
+  },
+  actionFooter: {
+    width: "100%",
+    alignItems: "center",
   },
   btnRegisText: {
     color: "#ffffff",

@@ -117,5 +117,29 @@ namespace APILote.Controllers
             jsostring = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsostring;
         }
+
+
+        // =====================================================
+        // ATAMAINE - API PARA LISTAR ESTADOS DE LOTE
+        // Ruta final:
+        // GET: api/Lote/lote_Estado_Listar
+        // =====================================================
+        [HttpGet]
+        [Route("lote_Estado_Listar")]
+        public string lote_Estado_Listar()
+        {
+            // Variable donde se guardará el JSON final
+            string jsoString = string.Empty;
+            // Tabla para recibir datos desde DATA
+            DataTable Datos = new DataTable();
+            // Instancia de la clase DATA
+            LoteData objLote = new LoteData();
+            // Llamamos al método que ejecuta el procedimiento almacenado
+            Datos = objLote.lote_Estado_Listar();
+            // Convertimos el DataTable a JSON
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            // Retornamos el JSON para Swagger, navegador o frontend
+            return jsoString;
+        }
     }
 }

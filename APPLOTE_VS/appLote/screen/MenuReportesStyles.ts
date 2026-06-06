@@ -4,7 +4,7 @@ export default StyleSheet.create({
         container: {
                 flex: 1,
                 height: "100vh" as any,
-                backgroundColor: "#020b13",
+                backgroundColor: "#020811",
                 position: "relative",
                 overflow: "hidden",
         },
@@ -22,71 +22,68 @@ export default StyleSheet.create({
         scrollContent: {
                 flexGrow: 0,
                 width: "100%",
-                maxWidth: 840,
+                maxWidth: 820,
                 alignSelf: "center",
-                paddingTop: 18,
-                paddingHorizontal: 14,
+                paddingTop: 16,
+                paddingHorizontal: 12,
                 paddingBottom: 26,
+                gap: 14,
         },
 
         scrollContentDesktop: {
-                maxWidth: 920,
+                maxWidth: 900,
         },
 
         backgroundGlowTop: {
                 position: "absolute",
-                top: -160,
+                top: -170,
                 left: -130,
                 width: 360,
                 height: 360,
                 borderRadius: 180,
-                backgroundColor: "rgba(0, 245, 220, 0.10)",
+                backgroundColor: "rgba(22, 243, 222, 0.11)",
         },
 
         backgroundGlowMid: {
                 position: "absolute",
-                top: 330,
-                right: -160,
+                top: 310,
+                right: -180,
                 width: 420,
                 height: 420,
                 borderRadius: 210,
-                backgroundColor: "rgba(31, 143, 255, 0.09)",
+                backgroundColor: "rgba(31, 143, 255, 0.10)",
         },
 
         backgroundGlowBottom: {
                 position: "absolute",
                 bottom: -150,
-                left: -110,
-                width: 330,
-                height: 330,
-                borderRadius: 165,
+                left: -120,
+                width: 340,
+                height: 340,
+                borderRadius: 170,
                 backgroundColor: "rgba(44, 255, 134, 0.08)",
         },
 
         topShell: {
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 9,
-                height: 68,
-                maxHeight: 68,
-                marginBottom: 18,
-                paddingVertical: 0,
-                paddingHorizontal: 0,
+                gap: 10,
+                minHeight: 66,
         },
 
         menuButton: {
-                width: 46,
-                height: 46,
-                borderRadius: 23,
+                width: 50,
+                height: 50,
+                borderRadius: 25,
                 flexShrink: 0,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(13, 58, 68, 0.76)",
+                backgroundColor: "rgba(5, 35, 47, 0.92)",
                 borderWidth: 1,
-                borderColor: "rgba(24, 245, 223, 0.68)",
-                shadowColor: "#18f5df",
+                borderColor: "rgba(22, 243, 222, 0.75)",
+                shadowColor: "#16f3de",
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.52,
+                shadowOpacity: 0.48,
                 shadowRadius: 22,
                 elevation: 14,
         },
@@ -98,134 +95,180 @@ export default StyleSheet.create({
         },
 
         greetingText: {
-                color: "#f8fbff",
-                fontSize: 17,
-                fontWeight: "400",
+                color: "#f7fbff",
+                fontSize: 18,
+                fontWeight: "600",
                 letterSpacing: 0,
         },
 
         greetingName: {
-                color: "#ffffff",
+                color: "#16f3de",
                 fontWeight: "900",
         },
 
         waveText: {
-                fontSize: 16,
+                fontSize: 17,
         },
 
         greetingSubText: {
                 marginTop: 3,
-                color: "#98a9b9",
-                fontSize: 10.5,
-                fontWeight: "600",
-                lineHeight: 14,
+                color: "#9fb1c3",
+                fontSize: 11,
+                fontWeight: "700",
+                lineHeight: 15,
         },
 
-        translatorButton: {
-                width: 122,
-                minHeight: 50,
-                borderRadius: 24,
+        serverButton: {
+                width: 132,
+                minHeight: 58,
+                borderRadius: 29,
                 paddingHorizontal: 8,
                 flexShrink: 0,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 10,
-                backgroundColor: "rgba(4, 32, 45, 0.88)",
+                gap: 8,
+                backgroundColor: "rgba(4, 25, 36, 0.94)",
                 borderWidth: 1,
-                borderColor: "rgba(56, 248, 255, 0.72)",
-                shadowColor: "#18f5df",
+                borderColor: "rgba(22, 243, 222, 0.72)",
+                shadowColor: "#16f3de",
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.62,
-                shadowRadius: 20,
+                shadowOpacity: 0.56,
+                shadowRadius: 22,
                 elevation: 12,
                 overflow: "hidden",
-                position: "relative",
         },
 
-        // ATAMAINE: Resplandor interno del traductor para darle efecto de cristal neon.
-        translatorGlow: {
-                position: "absolute",
-                left: -18,
-                top: -22,
-                width: 88,
-                height: 88,
-                borderRadius: 44,
-                backgroundColor: "rgba(56, 248, 255, 0.20)",
-        },
-
-        translatorIconWrap: {
-                width: 38,
-                height: 38,
-                borderRadius: 19,
+        serverPulseWrap: {
+                width: 46,
+                height: 46,
+                borderRadius: 23,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(255,255,255,0.12)",
-                shadowColor: "#38f8ff",
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.72,
-                shadowRadius: 12,
-                elevation: 8,
+                backgroundColor: "rgba(22, 243, 222, 0.09)",
         },
 
-        // ATAMAINE: Grupo del mundo con una placa trasera que representa la palabra Traductor mientras gira.
-        translatorWorldGroup: {
+        serverPulseRing: {
+                position: "absolute",
                 width: 42,
-                height: 40,
-                justifyContent: "center",
-                alignItems: "flex-start",
-        },
-
-        translatorBackPlate: {
-                position: "absolute",
-                left: 9,
-                width: 30,
-                height: 22,
-                borderRadius: 11,
-                backgroundColor: "rgba(24, 245, 223, 0.18)",
+                height: 42,
+                borderRadius: 21,
                 borderWidth: 1,
-                borderColor: "rgba(56, 248, 255, 0.36)",
-                justifyContent: "center",
-                alignItems: "flex-end",
-                paddingRight: 6,
+                borderColor: "rgba(36, 255, 236, 0.82)",
+                borderStyle: "dashed",
         },
 
-        translatorBackPlateText: {
-                color: "#bffcff",
-                fontSize: 8,
-                fontWeight: "900",
-                letterSpacing: 0.8,
-        },
-
-        translatorIconGradient: {
-                width: 38,
-                height: 38,
-                borderRadius: 19,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.32)",
-        },
-
-        translatorCopy: {
+        serverCopy: {
                 flex: 1,
+                minWidth: 0,
         },
 
-        translatorText: {
-                color: "#ffffff",
+        serverLiveRow: {
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+        },
+
+        serverDot: {
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: "#24ffec",
+        },
+
+        serverLiveText: {
+                color: "#24ffec",
                 fontSize: 8.5,
                 fontWeight: "900",
         },
 
-        translatorCode: {
+        serverTitle: {
+                color: "#d7e6ef",
+                fontSize: 10,
+                fontWeight: "800",
+                marginTop: 2,
+        },
+
+        serverCode: {
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: "900",
+                lineHeight: 15,
+        },
+
+        summaryGrid: {
+                flexDirection: "row",
+                gap: 8,
+                borderRadius: 17,
+                padding: 8,
+                backgroundColor: "rgba(3, 21, 31, 0.92)",
+                borderWidth: 1,
+                borderColor: "rgba(22, 243, 222, 0.34)",
+                shadowColor: "#16f3de",
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.20,
+                shadowRadius: 18,
+                elevation: 8,
+        },
+
+        summaryCard: {
+                flex: 1,
+                minHeight: 73,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 7,
+                borderRadius: 13,
+                paddingHorizontal: 7,
+                backgroundColor: "rgba(2, 11, 20, 0.86)",
+                borderWidth: 1,
+                borderColor: "rgba(148, 163, 184, 0.14)",
+        },
+
+        summaryIconWrap: {
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
+                flexShrink: 0,
+        },
+
+        summaryCopy: {
+                flex: 1,
+                minWidth: 0,
+        },
+
+        summaryTitle: {
+                color: "#aab9c8",
+                fontSize: 7.4,
+                fontWeight: "900",
+                lineHeight: 9,
+        },
+
+        summaryValue: {
                 color: "#ffffff",
                 fontSize: 15,
                 fontWeight: "900",
-                lineHeight: 17,
+                lineHeight: 18,
+                marginTop: 2,
+                fontVariant: ["tabular-nums"],
+        },
+
+        summaryValueSmall: {
+                fontSize: 9.2,
+                lineHeight: 11,
+        },
+
+        summaryDetail: {
+                marginTop: 1,
+                fontSize: 8.2,
+                fontWeight: "900",
+                lineHeight: 10,
         },
 
         reportCardsContainer: {
-                gap: 16,
+                gap: 14,
         },
 
         reportCardPressable: {
@@ -233,185 +276,222 @@ export default StyleSheet.create({
         },
 
         reportCard: {
-                minHeight: 214,
-                borderRadius: 24,
-                padding: 20,
+                minHeight: 226,
+                borderRadius: 21,
+                padding: 17,
                 borderWidth: 1,
                 position: "relative",
                 overflow: "hidden",
-                flexDirection: "row",
-                justifyContent: "space-between",
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.45,
+                shadowOpacity: 0.52,
                 shadowRadius: 18,
                 elevation: 12,
         },
 
-        // ATAMAINE: En movil la tarjeta se ordena en columnas superpuestas para evitar texto cortado.
         reportCardMobile: {
-                minHeight: 220,
-                padding: 18,
+                minHeight: 232,
+                padding: 15,
         },
 
         cardHalo: {
                 position: "absolute",
-                right: -90,
-                top: -80,
-                width: 260,
-                height: 260,
-                borderRadius: 130,
+                left: -70,
+                top: -52,
+                width: 180,
+                height: 180,
+                borderRadius: 90,
+                opacity: 0.72,
+        },
+
+        cardGhostOrbOne: {
+                position: "absolute",
+                right: 82,
+                top: 74,
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                opacity: 0.46,
+        },
+
+        cardGhostOrbTwo: {
+                position: "absolute",
+                right: 22,
+                top: 76,
+                width: 78,
+                height: 78,
+                borderRadius: 39,
+                opacity: 0.32,
         },
 
         cardNoiseLine: {
                 position: "absolute",
-                left: 26,
-                right: 26,
+                left: 0,
+                right: 0,
                 top: 0,
                 height: 1,
-                opacity: 0.42,
+                opacity: 0.7,
         },
 
-        cardLeft: {
+        statusBadge: {
+                position: "absolute",
+                right: 16,
+                top: 15,
+                minHeight: 30,
+                paddingHorizontal: 13,
+                borderRadius: 15,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 7,
+                borderWidth: 1,
+                zIndex: 4,
+        },
+
+        statusDot: {
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+        },
+
+        statusText: {
+                fontSize: 10.5,
+                fontWeight: "900",
+        },
+
+        cardMainRow: {
                 flex: 1,
-                minWidth: 0,
-                justifyContent: "space-between",
-                paddingRight: 14,
-        },
-
-        cardLeftMobile: {
-                paddingRight: 0,
-                maxWidth: "64%" as any,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 15,
                 zIndex: 2,
         },
 
-        cardRight: {
-                width: 230,
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-        },
-
-        cardRightMobile: {
-                position: "absolute",
-                top: 18,
-                right: 14,
-                bottom: 18,
-                width: "44%" as any,
-                zIndex: 1,
-        },
-
-        cardIconBubble: {
-                width: 56,
-                height: 56,
-                borderRadius: 28,
+        cardIconStage: {
+                width: 96,
+                height: 126,
+                borderRadius: 48,
                 alignItems: "center",
                 justifyContent: "center",
                 borderWidth: 1,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.28,
-                shadowRadius: 16,
-                elevation: 8,
+                backgroundColor: "rgba(0, 0, 0, 0.18)",
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.70,
+                shadowRadius: 18,
+                elevation: 10,
+                flexShrink: 0,
+        },
+
+        cardIconOuterGlow: {
+                position: "absolute",
+                width: 78,
+                height: 78,
+                borderRadius: 39,
+                borderWidth: 1,
+                opacity: 0.58,
+        },
+
+        cardIconBubble: {
+                width: 66,
+                height: 66,
+                borderRadius: 33,
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: 1,
         },
 
         cardTextBlock: {
-                marginTop: 26,
+                flex: 1,
+                minWidth: 0,
+                paddingTop: 28,
+                paddingBottom: 34,
         },
 
         reportCardTitle: {
                 color: "#ffffff",
-                fontSize: 22,
+                fontSize: 21,
                 fontWeight: "900",
-                lineHeight: 27,
-                marginBottom: 10,
+                lineHeight: 26,
+                marginBottom: 7,
                 letterSpacing: 0,
+                textShadowColor: "rgba(0,0,0,0.44)",
+                textShadowOffset: { width: 0, height: 2 },
+                textShadowRadius: 3,
         },
 
         reportCardDescription: {
-                color: "#bac7d4",
-                fontSize: 14,
-                fontWeight: "500",
-                lineHeight: 20,
-                maxWidth: 260,
+                color: "#bdc9d8",
+                fontSize: 12.4,
+                fontWeight: "700",
+                lineHeight: 17,
+                maxWidth: 275,
         },
 
-        cardFooterMini: {
-                marginTop: 18,
+        cardPoints: {
+                marginTop: 12,
+                gap: 5,
+        },
+
+        cardPointRow: {
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 10,
+                gap: 6,
         },
 
-        cardAnalyticsText: {
-                fontSize: 13,
-                fontWeight: "900",
+        cardPointText: {
+                color: "#cbd7e5",
+                fontSize: 10.8,
+                fontWeight: "700",
+                lineHeight: 14,
         },
 
-        statusBadge: {
-                minHeight: 35,
-                paddingHorizontal: 12,
-                borderRadius: 18,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-        },
-
-        statusDot: {
-                width: 9,
-                height: 9,
-                borderRadius: 5,
-        },
-
-        statusText: {
-                fontSize: 12,
-                fontWeight: "900",
-        },
-
-        visualStage: {
-                width: 178,
-                height: 112,
+        cardGhostArea: {
+                width: 94,
+                alignSelf: "stretch",
                 alignItems: "center",
                 justifyContent: "center",
-                marginTop: 10,
-        },
-
-        visualStageMobile: {
-                width: 126,
-                height: 94,
-                marginTop: 22,
-                alignSelf: "center",
-        },
-
-        visualPlatform: {
-                position: "absolute",
-                bottom: 14,
-                width: 118,
-                height: 50,
-                borderRadius: 28,
-                borderWidth: 1,
-                transform: [{ skewX: "-16deg" }],
-                opacity: 0.78,
-        },
-
-        visualOrb: {
-                position: "absolute",
-                width: 112,
-                height: 112,
-                borderRadius: 56,
-                opacity: 0.6,
+                flexShrink: 0,
         },
 
         visualIcon: {
-                textShadowColor: "rgba(255,255,255,0.22)" as any,
+                opacity: 0.24,
+                textShadowColor: "rgba(255,255,255,0.18)" as any,
                 textShadowOffset: { width: 0, height: 0 } as any,
                 textShadowRadius: 18 as any,
         },
 
         arrowButton: {
-                width: 48,
-                height: 48,
-                borderRadius: 24,
+                position: "absolute",
+                right: 0,
+                bottom: 20,
+                width: 54,
+                height: 54,
+                borderRadius: 27,
                 alignItems: "center",
                 justifyContent: "center",
+                borderWidth: 2,
+                backgroundColor: "rgba(2, 6, 23, 0.30)",
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.82,
+                shadowRadius: 16,
+                elevation: 12,
+        },
+
+        cardFooterMini: {
+                position: "absolute",
+                left: 18,
+                bottom: 15,
+                minHeight: 31,
+                borderRadius: 16,
+                paddingHorizontal: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 7,
+                borderWidth: 1,
+                zIndex: 3,
+        },
+
+        cardAnalyticsText: {
+                fontSize: 10.2,
+                fontWeight: "900",
         },
 
         webReporteContainer: {

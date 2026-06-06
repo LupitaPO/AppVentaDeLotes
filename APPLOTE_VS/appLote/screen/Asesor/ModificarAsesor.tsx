@@ -10,8 +10,8 @@ import {
   Platform,
 } from "react-native";
 import React, { useState } from "react";
+import { API_URL } from "../../config/apiUrl";
 
-const API_URL = "http://www.tulote.somee.com";
 
 const ModificarAsesor = ({ navigation, route }) => {
     

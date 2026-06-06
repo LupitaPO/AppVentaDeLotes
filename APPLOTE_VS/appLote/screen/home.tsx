@@ -43,7 +43,7 @@ import { API_URL } from "../config/apiUrl";
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
 
-const home = ({ route, navigation }: any) => {
+const Home = ({ route, navigation }: any) => {
   const { width } = useWindowDimensions();
   const esPantallaPc = width >= 900;
   const esMovilCompacto = width < 390;
@@ -1415,4 +1415,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default home;
+export default Home;

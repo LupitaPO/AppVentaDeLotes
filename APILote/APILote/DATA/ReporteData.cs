@@ -203,6 +203,39 @@ namespace APILote.DATA
         }
 
 
+        // =====================================================
+        // ATAMAINE - DATA REPORTE DE PAGOS
+        // Procedimiento conectado:
+        // dbo.reportePagos_pa
+        // =====================================================
+
+        public DataTable reporte_Pagos(
+            string estadoPago,
+            int? idVenta,
+            DateTime? fechaDesde,
+            DateTime? fechaHasta
+        )
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "reportePagos_pa",
+                    estadoPago,
+                    idVenta,
+                    fechaDesde,
+                    fechaHasta
+                ).Tables[0];
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+
+
 
     }
 }

@@ -22,6 +22,7 @@ type ReporteItem = Record<string, unknown>;
 
 type LoteReporteItem = {
 	IdLote: string;
+	IdProyecto: string;
 	CodigoLote: string;
 	Proyecto: string;
 	Manzana: string;
@@ -35,9 +36,16 @@ type ReporteLotesProps = {
 	navigation: any;
 };
 
+type ProyectoSelectItem = {
+	id: string;
+	nombre: string;
+};
+
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
 const EMPRESA_CONTACTO = "www.tulote.somee.com";
 const EMPRESA_SIGLAS = "LS";
+const API_BASE_URL = API_URL.replace(/\/+$/, "");
+const ESTADOS_LOTE_RESPALDO = ["Libre", "Vendido", "En Deuda"];
 
 const escapeHtml = (value: unknown) =>
 	String(value ?? "")
@@ -74,6 +82,42 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
 	}
 };
 
+const normalizarTexto = (value: unknown) => String(value ?? "").trim();
+const pareceIdNumerico = (value: unknown) => /^\d+$/.test(normalizarTexto(value));
+
+const consultarPrimerEndpointDisponible = async (urls: string[], signal?: AbortSignal) => {
+	let ultimoError: Error | null = null;
+
+	for (const url of urls) {
+		try {
+			const response = await fetch(url, { signal });
+			if (!response.ok) throw new Error(`HTTP ${response.status}`);
+			return await response.text();
+		} catch (error) {
+			if ((error as Error).name === "AbortError") throw error;
+			ultimoError = error as Error;
+		}
+	}
+
+	throw ultimoError ?? new Error("Endpoint no disponible");
+};
+
+const construirUrlsEstadosLote = () => [
+	`${API_BASE_URL}/api/Lote/lote_Estado_Listar`,
+	`${API_BASE_URL}/Lote/lote_Estado_Listar`,
+	`${API_BASE_URL}/api/Lote/lote_EstadoListar`,
+	`${API_BASE_URL}/Lote/lote_EstadoListar`,
+];
+
+const construirUrlsProyectos = () => [
+	`${API_BASE_URL}/api/Proyecto/proyecto_Listar_Select`,
+	`${API_BASE_URL}/Proyecto/proyecto_Listar_Select`,
+	`${API_BASE_URL}/api/Proyecto/proyecto_ListarSelect`,
+	`${API_BASE_URL}/Proyecto/proyecto_ListarSelect`,
+	`${API_BASE_URL}/api/Proyecto/proyecto_Listar`,
+	`${API_BASE_URL}/Proyecto/proyecto_Listar`,
+];
+
 const COLUMNAS_REPORTE: Array<{
 	key: keyof LoteReporteItem;
 	label: string;
@@ -102,23 +146,187 @@ const normalizarEstadoLote = (estado: unknown) => {
 	return estadoTexto ? estadoTexto.charAt(0).toUpperCase() + estadoTexto.slice(1) : "Libre";
 };
 
+const obtenerTextoEstadoLote = (item: ReporteItem) => {
+	if (typeof item === "string" || typeof item === "number") return String(item).trim();
+	if (!item || typeof item !== "object") return "";
+
+	const registro = item as Record<string, unknown>;
+	const claves = [
+		"EstadoLote",
+		"estadoLote",
+		"Estado",
+		"estado",
+		"NombreEstado",
+		"DescripcionEstado",
+		"Descripcion",
+		"Nombre",
+		"Texto",
+		"Valor",
+		"Value",
+	];
+
+	for (const clave of claves) {
+		const valor = registro[clave];
+		if (typeof valor === "string" || typeof valor === "number") {
+			const texto = String(valor).trim();
+			if (texto) return texto;
+		}
+	}
+
+	const entrada = Object.entries(registro).find(([clave, valor]) => {
+		const claveNormalizada = clave.toLowerCase();
+		return !claveNormalizada.includes("id") && (typeof valor === "string" || typeof valor === "number") && String(valor).trim();
+	});
+
+	return entrada ? String(entrada[1]).trim() : "";
+};
+
+const normalizarOpcionEstadoLote = (estado: unknown) => {
+	const texto = String(estado ?? "").trim().replace(/[_-]+/g, " ");
+	if (!texto) return "";
+	const normalizado = normalizarEstadoLote(texto);
+	if (normalizado.toLowerCase() === "en deuda") return "En Deuda";
+	return normalizado;
+};
+
+const normalizarEstadosLote = (items: ReporteItem[]) => {
+	const estados = new Map<string, string>();
+
+	items.forEach((item) => {
+		const estado = normalizarOpcionEstadoLote(obtenerTextoEstadoLote(item));
+		if (estado) estados.set(estado.toLowerCase(), estado);
+	});
+
+	return estados.size ? Array.from(estados.values()) : ESTADOS_LOTE_RESPALDO;
+};
+
+const consultarEstadosLote = async (signal?: AbortSignal) => {
+	const rawData = await consultarPrimerEndpointDisponible(construirUrlsEstadosLote(), signal);
+	return normalizarEstadosLote(parseReporteResponse(rawData));
+};
+
+const obtenerTextoProyecto = (item: ReporteItem) => {
+	if (typeof item === "string" || typeof item === "number") return normalizarTexto(item);
+	if (!item || typeof item !== "object") return "";
+
+	const registro = item as Record<string, unknown>;
+	const claves = [
+		"NombreProyecto",
+		"nombreProyecto",
+		"Nombre",
+		"nombre",
+		"Proyecto",
+		"proyecto",
+		"Descripcion",
+		"descripcion",
+		"Texto",
+		"texto",
+		"Text",
+		"text",
+		"Label",
+		"label",
+		"Valor",
+		"valor",
+		"Value",
+		"value",
+	];
+	const candidatos: string[] = [];
+
+	for (const clave of claves) {
+		const valor = registro[clave];
+		if (typeof valor === "string" || typeof valor === "number") {
+			const texto = normalizarTexto(valor);
+			if (texto) candidatos.push(texto);
+		}
+	}
+
+	const entrada = Object.entries(registro).find(([clave, valor]) => {
+		const claveNormalizada = clave.toLowerCase();
+		return !claveNormalizada.includes("id") && (typeof valor === "string" || typeof valor === "number") && normalizarTexto(valor);
+	});
+	if (entrada) candidatos.push(normalizarTexto(entrada[1]));
+
+	return candidatos.find((texto) => !pareceIdNumerico(texto)) ?? candidatos[0] ?? "";
+};
+
+const obtenerIdProyecto = (item: ReporteItem) => {
+	if (!item || typeof item !== "object") return "";
+
+	const registro = item as Record<string, unknown>;
+	const clavesProyecto = ["IdProyecto", "idProyecto", "IDProyecto", "ProyectoId", "proyectoId"];
+	const clavesGenericas = ["Id", "ID", "id"];
+	const tieneIdLote = "IdLote" in registro || "idLote" in registro || "IDLote" in registro;
+	const claves = tieneIdLote ? clavesProyecto : [...clavesProyecto, ...clavesGenericas];
+
+	for (const clave of claves) {
+		const valor = registro[clave];
+		const id = normalizarTexto(valor);
+		if (id) return id;
+	}
+
+	return "";
+};
+
+const normalizarProyectos = (items: ReporteItem[]): ProyectoSelectItem[] => {
+	const proyectos = new Map<string, ProyectoSelectItem>();
+
+	items.forEach((item) => {
+		const nombre = obtenerTextoProyecto(item);
+		if (!nombre || pareceIdNumerico(nombre)) return;
+
+		const id = obtenerIdProyecto(item);
+		const clave = id ? `id:${id}` : `nombre:${nombre.toLowerCase()}`;
+		proyectos.set(clave, { id, nombre });
+	});
+
+	return Array.from(proyectos.values());
+};
+
+const consultarProyectos = async (signal?: AbortSignal) => {
+	const rawData = await consultarPrimerEndpointDisponible(construirUrlsProyectos(), signal);
+	return normalizarProyectos(parseReporteResponse(rawData));
+};
+
+const buscarNombreProyectoPorId = (idProyecto: string, proyectos: ProyectoSelectItem[]) => {
+	const id = normalizarTexto(idProyecto);
+	if (!id) return "";
+	return proyectos.find((proyecto) => proyecto.id && proyecto.id === id)?.nombre ?? "";
+};
+
+const resolverNombreProyectoLote = (item: ReporteItem, proyectos: ProyectoSelectItem[] = []) => {
+	const idProyecto = obtenerIdProyecto(item);
+	const nombrePorId = buscarNombreProyectoPorId(idProyecto, proyectos);
+	if (nombrePorId) return nombrePorId;
+
+	const candidato = obtenerTextoProyecto(item);
+	const nombrePorCandidatoId = buscarNombreProyectoPorId(candidato, proyectos);
+	if (nombrePorCandidatoId) return nombrePorCandidatoId;
+
+	if (candidato && !pareceIdNumerico(candidato)) return candidato;
+	return candidato || idProyecto || "-";
+};
+
 const formatoMoneda = (value: unknown) => {
 	const numero = Number(value ?? 0);
 	if (!Number.isFinite(numero)) return "S/ 0.00";
 	return `S/ ${numero.toFixed(2)}`;
 };
 
-const normalizarLotes = (items: ReporteItem[]): LoteReporteItem[] =>
-	items.map((item) => ({
-		IdLote: String(item.IdLote ?? item.ID ?? item.Id ?? "-"),
-		CodigoLote: String(item.CodigoLote ?? item.CodLote ?? item.Codigo ?? "-"),
-		Proyecto: String(item.NombreProyecto ?? item.Proyecto ?? item.Nombre ?? item.IdProyecto ?? "-"),
-		Manzana: String(item.Manzana ?? item.Mz ?? "-"),
-		NumeroLote: String(item.NumeroLote ?? item.NumLote ?? item.Lote ?? "-"),
-		Area: String(item.TamañoMetros2 ?? item.TamanoMetros2 ?? item.Area ?? item.Metros2 ?? "-"),
-		Precio: formatoMoneda(item.Precio ?? item.PrecioLote ?? item.Valor),
-		EstadoLote: normalizarEstadoLote(item.EstadoLote ?? item.Estado),
-	}));
+const normalizarLotes = (items: ReporteItem[], proyectos: ProyectoSelectItem[] = []): LoteReporteItem[] =>
+	items.map((item) => {
+		const idProyecto = obtenerIdProyecto(item);
+		return {
+			IdLote: String(item.IdLote ?? item.ID ?? item.Id ?? "-"),
+			IdProyecto: idProyecto,
+			CodigoLote: String(item.CodigoLote ?? item.CodLote ?? item.Codigo ?? "-"),
+			Proyecto: resolverNombreProyectoLote(item, proyectos),
+			Manzana: String(item.Manzana ?? item.Mz ?? "-"),
+			NumeroLote: String(item.NumeroLote ?? item.NumLote ?? item.Lote ?? "-"),
+			Area: String(item.TamañoMetros2 ?? item.TamanoMetros2 ?? item.Area ?? item.Metros2 ?? "-"),
+			Precio: formatoMoneda(item.Precio ?? item.PrecioLote ?? item.Valor),
+			EstadoLote: normalizarEstadoLote(item.EstadoLote ?? item.Estado),
+		};
+	});
 
 const esEstadoDisponible = (estado: string) => estado.trim().toLowerCase() === "libre";
 
@@ -159,11 +367,37 @@ const filtrarLotesLocal = (
 	});
 };
 
-const consultarLotesBase = async (signal?: AbortSignal) => {
+const obtenerProyectosDesdeLotes = (items: LoteReporteItem[]) => {
+	const proyectos = new Map<string, ProyectoSelectItem>();
+
+	items.forEach((item) => {
+		const proyecto = item.Proyecto.trim();
+		if (proyecto && proyecto !== "-" && !pareceIdNumerico(proyecto)) {
+			const clave = item.IdProyecto ? `id:${item.IdProyecto}` : `nombre:${proyecto.toLowerCase()}`;
+			proyectos.set(clave, { id: item.IdProyecto, nombre: proyecto });
+		}
+	});
+
+	return Array.from(proyectos.values());
+};
+
+const aplicarNombresProyectoALotes = (items: LoteReporteItem[], proyectos: ProyectoSelectItem[]) =>
+	items.map((item) => ({
+		...item,
+		Proyecto: resolverNombreProyectoLote(
+			{
+				IdProyecto: item.IdProyecto,
+				Proyecto: item.Proyecto,
+			},
+			proyectos,
+		),
+	}));
+
+const consultarLotesBase = async (signal?: AbortSignal, proyectos: ProyectoSelectItem[] = []) => {
 	const response = await fetch(`${API_URL}/Lote/lote_Listar`, { signal });
 	if (!response.ok) throw new Error(`HTTP ${response.status}`);
 	const rawData = await response.text();
-	return normalizarLotes(parseReporteResponse(rawData));
+	return normalizarLotes(parseReporteResponse(rawData), proyectos);
 };
 
 const consultarLotesReporte = async (
@@ -171,6 +405,7 @@ const consultarLotesReporte = async (
 	nombreProyecto: string,
 	precioDesde: string,
 	signal?: AbortSignal,
+	proyectos: ProyectoSelectItem[] = [],
 ) => {
 	const params = new URLSearchParams();
 	if (estadoLote.trim()) params.append("estadoLote", estadoLote.trim());
@@ -182,12 +417,18 @@ const consultarLotesReporte = async (
 	const response = await fetch(url, { signal });
 	if (!response.ok) throw new Error(`HTTP ${response.status}`);
 	const rawData = await response.text();
-	return normalizarLotes(parseReporteResponse(rawData));
+	return normalizarLotes(parseReporteResponse(rawData), proyectos);
 };
 
 const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 	const [estadoLote, setEstadoLote] = useState("");
+	const [estadosLote, setEstadosLote] = useState<string[]>(ESTADOS_LOTE_RESPALDO);
+	const [mostrarEstadosLote, setMostrarEstadosLote] = useState(false);
+	const [cargandoEstadosLote, setCargandoEstadosLote] = useState(false);
 	const [nombreProyecto, setNombreProyecto] = useState("");
+	const [proyectos, setProyectos] = useState<ProyectoSelectItem[]>([]);
+	const [mostrarProyectos, setMostrarProyectos] = useState(false);
+	const [cargandoProyectos, setCargandoProyectos] = useState(false);
 	const [precioDesde, setPrecioDesde] = useState("");
 	const [todosLotes, setTodosLotes] = useState<LoteReporteItem[]>([]);
 	const [reporte, setReporte] = useState<LoteReporteItem[]>([]);
@@ -197,22 +438,112 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 	const [ultimoFiltro, setUltimoFiltro] = useState("");
 	const [horaActual, setHoraActual] = useState(new Date());
 	const fetchControllerRef = useRef<AbortController | null>(null);
+	const estadosControllerRef = useRef<AbortController | null>(null);
+	const proyectosControllerRef = useRef<AbortController | null>(null);
+
+	const cargarEstadosLote = async (signal?: AbortSignal) => {
+		try {
+			setCargandoEstadosLote(true);
+			const estadosApi = await consultarEstadosLote(signal);
+			setEstadosLote(estadosApi.length ? estadosApi : ESTADOS_LOTE_RESPALDO);
+		} catch (error) {
+			if ((error as Error).name === "AbortError") return;
+			console.error("Error al cargar estados de lote:", error);
+			setEstadosLote(ESTADOS_LOTE_RESPALDO);
+		} finally {
+			if (!signal?.aborted) setCargandoEstadosLote(false);
+		}
+	};
+
+	const refrescarEstadosLote = () => {
+		if (estadosControllerRef.current) estadosControllerRef.current.abort();
+		const controller = new AbortController();
+		estadosControllerRef.current = controller;
+		void cargarEstadosLote(controller.signal);
+	};
+
+	const cargarProyectos = async (signal?: AbortSignal) => {
+		try {
+			setCargandoProyectos(true);
+			const proyectosApi = await consultarProyectos(signal);
+			const proyectosFinal = proyectosApi.length ? proyectosApi : obtenerProyectosDesdeLotes(todosLotes);
+			setProyectos(proyectosFinal);
+			if (proyectosFinal.length) {
+				setTodosLotes((actuales) => aplicarNombresProyectoALotes(actuales, proyectosFinal));
+				setReporte((actuales) => aplicarNombresProyectoALotes(actuales, proyectosFinal));
+			}
+		} catch (error) {
+			if ((error as Error).name === "AbortError") return;
+			// ATAMAINE: Si el select nuevo aun no esta publicado, seguimos con nombres reales desde lote_Listar.
+			setProyectos((actuales) => (actuales.length ? actuales : obtenerProyectosDesdeLotes(todosLotes)));
+		} finally {
+			if (!signal?.aborted) setCargandoProyectos(false);
+		}
+	};
+
+	const refrescarProyectos = () => {
+		if (proyectosControllerRef.current) proyectosControllerRef.current.abort();
+		const controller = new AbortController();
+		proyectosControllerRef.current = controller;
+		void cargarProyectos(controller.signal);
+	};
+
+	const alternarEstadosLote = () => {
+		if (mostrarEstadosLote) {
+			setMostrarEstadosLote(false);
+			return;
+		}
+		setMostrarProyectos(false);
+		setMostrarEstadosLote(true);
+		refrescarEstadosLote();
+	};
+
+	const alternarProyectos = () => {
+		if (mostrarProyectos) {
+			setMostrarProyectos(false);
+			return;
+		}
+		setMostrarEstadosLote(false);
+		setMostrarProyectos(true);
+		refrescarProyectos();
+	};
+
+	const seleccionarEstadoLote = (estado: string) => {
+		setEstadoLote(estado);
+		setMostrarEstadosLote(false);
+	};
+
+	const seleccionarProyecto = (proyecto: string) => {
+		setNombreProyecto(proyecto);
+		setMostrarProyectos(false);
+	};
 
 	useEffect(() => {
 		const timer = setInterval(() => setHoraActual(new Date()), 1000);
 		return () => clearInterval(timer);
 	}, []);
 
+	useEffect(() => {
+		refrescarEstadosLote();
+		refrescarProyectos();
+		return () => {
+			if (estadosControllerRef.current) estadosControllerRef.current.abort();
+			if (proyectosControllerRef.current) proyectosControllerRef.current.abort();
+		};
+	}, []);
+
 	const cargarLotesIniciales = async () => {
 		try {
 			setCargando(true);
 			setMensaje("");
-			const lotesBase = await consultarLotesBase();
-			setTodosLotes(lotesBase);
-			setReporte(lotesBase);
+			const lotesBase = await consultarLotesBase(undefined, proyectos);
+			const lotesConProyecto = proyectos.length ? aplicarNombresProyectoALotes(lotesBase, proyectos) : lotesBase;
+			setTodosLotes(lotesConProyecto);
+			setReporte(lotesConProyecto);
+			setProyectos((actuales) => (actuales.length ? actuales : obtenerProyectosDesdeLotes(lotesConProyecto)));
 			setBuscado(false);
 			setUltimoFiltro("");
-			if (!lotesBase.length) setMensaje("No existen lotes registrados.");
+			if (!lotesConProyecto.length) setMensaje("No existen lotes registrados.");
 		} catch (error) {
 			console.error("Error al cargar lotes registrados:", error);
 			setTodosLotes([]);
@@ -229,7 +560,9 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 
 	const limpiarFiltro = async () => {
 		setEstadoLote("");
+		setMostrarEstadosLote(false);
 		setNombreProyecto("");
+		setMostrarProyectos(false);
 		setPrecioDesde("");
 		setBuscado(false);
 		setMensaje("");
@@ -246,6 +579,8 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 
 	const consultarReporte = async () => {
 		const hayFiltro = Boolean(estadoLote.trim() || nombreProyecto.trim() || precioDesde.trim());
+		setMostrarEstadosLote(false);
+		setMostrarProyectos(false);
 
 		if (!hayFiltro) {
 			await cargarLotesIniciales();
@@ -266,15 +601,18 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 					nombreProyecto,
 					precioDesde,
 					fetchControllerRef.current.signal,
+					proyectos,
 				);
 			} catch (error) {
-				const base = todosLotes.length ? todosLotes : await consultarLotesBase(fetchControllerRef.current.signal);
-				filtrados = filtrarLotesLocal(base, estadoLote, nombreProyecto, precioDesde);
+				const base = todosLotes.length ? todosLotes : await consultarLotesBase(fetchControllerRef.current.signal, proyectos);
+				const baseConProyecto = proyectos.length ? aplicarNombresProyectoALotes(base, proyectos) : base;
+				filtrados = filtrarLotesLocal(baseConProyecto, estadoLote, nombreProyecto, precioDesde);
 			}
 
-			setReporte(filtrados);
+			const filtradosConProyecto = proyectos.length ? aplicarNombresProyectoALotes(filtrados, proyectos) : filtrados;
+			setReporte(filtradosConProyecto);
 			setBuscado(true);
-			if (!filtrados.length) setMensaje("No se encontraron lotes para ese criterio.");
+			if (!filtradosConProyecto.length) setMensaje("No se encontraron lotes para ese criterio.");
 		} catch (error) {
 			if ((error as Error).name === "AbortError") return;
 			console.error("Error al consultar reporte de lotes:", error);
@@ -395,11 +733,65 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 				<View style={styles.searchCard}>
 					<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
 					<Text style={styles.fieldLabel}>Estado del lote:</Text>
-					<TextInput value={estadoLote} onChangeText={setEstadoLote} placeholder="Libre, Vendido, En Deuda..." placeholderTextColor="#8ba8ae" style={styles.input} returnKeyType="search" onSubmitEditing={consultarReporte} />
+					<View style={styles.estadoSelectWrap}>
+						<TouchableOpacity activeOpacity={0.84} style={[styles.input, styles.estadoSelectInput]} onPress={alternarEstadosLote}>
+							<Text style={estadoLote ? styles.estadoSelectText : styles.estadoSelectPlaceholder} numberOfLines={1}>
+								{estadoLote || (cargandoEstadosLote ? "Cargando estados..." : "Libre, Vendido, En Deuda...")}
+							</Text>
+							{cargandoEstadosLote ? (
+								<ActivityIndicator size="small" color="#0f766e" />
+							) : (
+								<MaterialCommunityIcons name={mostrarEstadosLote ? "chevron-up" : "chevron-down"} size={22} color="#0f766e" />
+							)}
+						</TouchableOpacity>
+						{mostrarEstadosLote ? (
+							<View style={styles.estadoOptionsBox}>
+								{estadosLote.map((estado) => {
+									const activo = estadoLote.trim().toLowerCase() === estado.trim().toLowerCase();
+									return (
+										<TouchableOpacity key={estado} activeOpacity={0.84} style={[styles.estadoOptionItem, activo ? styles.estadoOptionItemActive : null]} onPress={() => seleccionarEstadoLote(estado)}>
+											<Text style={[styles.estadoOptionText, activo ? styles.estadoOptionTextActive : null]}>{estado}</Text>
+											{activo ? <MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" /> : null}
+										</TouchableOpacity>
+									);
+								})}
+							</View>
+						) : null}
+					</View>
 					<Text style={styles.fieldLabel}>Proyecto:</Text>
-					<TextInput value={nombreProyecto} onChangeText={setNombreProyecto} placeholder="Nombre del proyecto" placeholderTextColor="#8ba8ae" style={styles.input} returnKeyType="search" onSubmitEditing={consultarReporte} />
+					<View style={styles.estadoSelectWrap}>
+						<TouchableOpacity activeOpacity={0.84} style={[styles.input, styles.estadoSelectInput]} onPress={alternarProyectos}>
+							<Text style={nombreProyecto ? styles.estadoSelectText : styles.estadoSelectPlaceholder} numberOfLines={1}>
+								{nombreProyecto || (cargandoProyectos ? "Cargando proyectos..." : "Nombre del proyecto")}
+							</Text>
+							{cargandoProyectos ? (
+								<ActivityIndicator size="small" color="#0f766e" />
+							) : (
+								<MaterialCommunityIcons name={mostrarProyectos ? "chevron-up" : "chevron-down"} size={22} color="#0f766e" />
+							)}
+						</TouchableOpacity>
+						{mostrarProyectos ? (
+							<View style={styles.estadoOptionsBox}>
+								{proyectos.length ? (
+									proyectos.map((proyecto) => {
+										const activo = nombreProyecto.trim().toLowerCase() === proyecto.nombre.trim().toLowerCase();
+										return (
+											<TouchableOpacity key={proyecto.id || proyecto.nombre} activeOpacity={0.84} style={[styles.estadoOptionItem, activo ? styles.estadoOptionItemActive : null]} onPress={() => seleccionarProyecto(proyecto.nombre)}>
+												<Text style={[styles.estadoOptionText, activo ? styles.estadoOptionTextActive : null]}>{proyecto.nombre}</Text>
+												{activo ? <MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" /> : null}
+											</TouchableOpacity>
+										);
+									})
+								) : (
+									<View style={styles.estadoOptionItem}>
+										<Text style={styles.estadoOptionText}>{cargandoProyectos ? "Cargando proyectos..." : "Sin proyectos disponibles"}</Text>
+									</View>
+								)}
+							</View>
+						) : null}
+					</View>
 					<Text style={styles.fieldLabel}>Precio desde:</Text>
-					<TextInput value={precioDesde} onChangeText={setPrecioDesde} placeholder="Ej. 15000" placeholderTextColor="#8ba8ae" style={styles.input} keyboardType="numeric" returnKeyType="search" onSubmitEditing={consultarReporte} />
+					<TextInput value={precioDesde} onChangeText={setPrecioDesde} onFocus={() => { setMostrarEstadosLote(false); setMostrarProyectos(false); }} placeholder="Ej. 15000" placeholderTextColor="#8ba8ae" style={styles.input} keyboardType="numeric" returnKeyType="search" onSubmitEditing={consultarReporte} />
 
 					<View style={styles.actionRow}>
 						<TouchableOpacity style={styles.primaryAction} onPress={consultarReporte}>
