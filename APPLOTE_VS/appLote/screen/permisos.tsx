@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator
 } from 'react-native';
+import { API_URL } from "../config/apiUrl";
 
 // Interfaz para el manejo estricto de tipos de los permisos
 interface PermisoItem {
@@ -23,8 +24,6 @@ interface PerfilItem {
   id_perfil: number;
   nombre_perfil: string;
 }
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export default function PermisosScreen() {
   // --- ESTADOS DE LA APLICACIÓN ---
