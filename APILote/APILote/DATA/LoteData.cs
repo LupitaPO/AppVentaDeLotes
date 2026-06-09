@@ -124,6 +124,34 @@ namespace APILote.DATA
         }
 
 
+        // =====================================================
+        // ATAMAINE - DATA PARA LISTAR ESTADOS DE LOTE
+        // Procedimiento conectado:
+        // dbo.lote_Estado_Listar_pa
+        // =====================================================
+
+        public DataTable lote_Estado_Listar()
+        {
+            try
+            {
+                // Tabla donde se guardarán los estados de lote desde SQL Server
+                DataTable Datos = new DataTable();
+                // Ejecutamos el procedimiento almacenado sin parámetros
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "lote_Estado_Listar_pa"
+                ).Tables[0];
+                // Retornamos los datos al Controller
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                // Si ocurre algún error, retornamos null
+                return null;
+            }
+        }
+
+
 
     }
 }

@@ -8,8 +8,8 @@ import {
   Alert,
 } from "react-native";
 import React, { useState } from "react";
+import { API_URL } from "../../config/apiUrl";
 
-const API_URL = "http://www.tulote.somee.com";
 
 const RegistrarCliente = ({ navigation, route }) => {
   const [dni, setDni] = useState("");

@@ -16,7 +16,7 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import { Languages } from "../../localizacion";
 import i18n, {changeLanguage} from "../../i18n";
 
-const loginCambiarContraseña = ({ navigation }) => {
+const LoginCambiarContrasena = ({ navigation }) => {
   const route = useRoute();
 
   const formatearNumero = (num) => {
@@ -195,4 +195,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default loginCambiarContraseña;
+export default LoginCambiarContrasena;

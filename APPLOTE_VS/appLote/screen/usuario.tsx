@@ -23,7 +23,7 @@ import { API_URL } from "../config/apiUrl";
 // URL base del backend para consultar y administrar usuarios.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
-const usuario = ({ navigation, route }) => {
+const Usuario = ({ navigation, route }) => {
   // Datos recibidos desde navegación para personalizar la pantalla según el contexto del usuario.
   const { nombre, rol, usuarioSeleccionadoId, usuarioSeleccionadoNombre } = route.params || {};
 
@@ -481,4 +481,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default usuario
+export default Usuario

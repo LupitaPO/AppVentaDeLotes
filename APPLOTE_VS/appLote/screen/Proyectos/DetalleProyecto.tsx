@@ -12,9 +12,9 @@ import {
 import Svg, { Rect, G, Text as SvgText } from "react-native-svg";
 import Papa from "papaparse";
 import { useFocusEffect } from "@react-navigation/native";
+import { API_URL } from "../../config/apiUrl";
 
 const { width } = Dimensions.get("window");
-const API_URL = "http://www.tulote.somee.com";
 
 
 const DetalleProyecto = ({ route, navigation }) => {

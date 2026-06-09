@@ -19,9 +19,59 @@ import Feather from "@expo/vector-icons/Feather";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
-import { API_URL } from "../config/apiUrl";
+import { API_REAL_URL, API_URL } from "../config/apiUrl";
 
-const login = ({ navigation }: { navigation: any }) => {
+const normalizarBaseUrl = (baseUrl: string) => baseUrl.replace(/\/+$/, "");
+
+const construirUrlApi = (baseUrl: string, ruta: string) => `${normalizarBaseUrl(baseUrl)}${ruta}`;
+
+const obtenerBasesApiLogin = () => {
+  const bases = [API_URL];
+
+  if (Platform.OS === "web") {
+    bases.push(API_REAL_URL);
+  }
+
+  return Array.from(new Set(bases.map(normalizarBaseUrl).filter(Boolean)));
+};
+
+const consultarLogin = async (correoSeguro: string, passwordSeguro: string) => {
+  const ruta = `/Usuario/usuario_Login/${correoSeguro}/${passwordSeguro}`;
+  let ultimoError: unknown;
+
+  for (const baseUrl of obtenerBasesApiLogin()) {
+    try {
+      const response = await fetch(construirUrlApi(baseUrl, ruta));
+
+      if (!response.ok) {
+        ultimoError = new Error(`HTTP ${response.status}`);
+        continue;
+      }
+
+      return response.json();
+    } catch (error) {
+      ultimoError = error;
+    }
+  }
+
+  throw ultimoError instanceof Error ? ultimoError : new Error("No se pudo conectar con la API.");
+};
+
+const actualizarEstadosLotes = async () => {
+  for (const baseUrl of obtenerBasesApiLogin()) {
+    try {
+      const response = await fetch(construirUrlApi(baseUrl, "/Lote/lote_ActualizarEstadoMasivo"), {
+        method: "POST",
+      });
+
+      if (response.ok) return;
+    } catch (error) {
+      console.warn("No se pudo actualizar estados de lotes desde login:", error);
+    }
+  }
+};
+
+const Login = ({ navigation }: { navigation: any }) => {
   const [Correo, setEmail] = useState("");
   const [Contraseña, setPassword] = useState("");
   const [loading, setloading] = useState(false);
@@ -96,16 +146,13 @@ const login = ({ navigation }: { navigation: any }) => {
       const correoSeguro = encodeURIComponent(Correo.trim());
       const passwordSeguro = encodeURIComponent(Contraseña.trim());
 
-      const [reslogin] = await Promise.all([
-        fetch(`${API_URL}/Usuario/usuario_Login/${correoSeguro}/${passwordSeguro}`),
-        fetch(`${API_URL}/Lote/lote_ActualizarEstadoMasivo`),
-      ]);
-
-      const data = await reslogin.json();
+      const data = await consultarLogin(correoSeguro, passwordSeguro);
 
       if (data && data.length > 0) {
         const usuario = data[0];
         const idUsuario = usuario.IdUsuario || usuario.idUsuario || usuario.Id || usuario.id;
+
+        void actualizarEstadosLotes();
 
         navigation.replace("MainTabs", {
           rol: usuario.TipoUsuario,
@@ -116,7 +163,8 @@ const login = ({ navigation }: { navigation: any }) => {
         alert("Usuario o contraseña incorrectos");
       }
     } catch (error) {
-      alert("Error al iniciar sesión");
+      console.error("Error al iniciar sesion:", error);
+      alert("Error al iniciar sesión. Verifique que la API web esté activa.");
     } finally {
       setloading(false);
     }
@@ -850,4 +898,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default login;
+export default Login;

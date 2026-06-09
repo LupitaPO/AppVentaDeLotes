@@ -11,8 +11,8 @@ import {
   Platform
 } from "react-native";
 import React, { useState, useEffect } from "react";
+import { API_URL } from "../../config/apiUrl";
 
-const API_URL = "http://www.tulote.somee.com";
 
 const RegistrarUsuario = ({ navigation, route }) => {
 

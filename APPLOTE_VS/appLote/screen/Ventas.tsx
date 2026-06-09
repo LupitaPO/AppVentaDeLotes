@@ -10,7 +10,8 @@ import {
   Alert,
   Modal,
   Pressable,
-  Dimensions
+  Dimensions,
+  Platform
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -19,6 +20,7 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
+import { API_URL } from "../config/apiUrl";
 ///////////////////////////////////////////////////
 
 ///import para imprimr reporte de cronograma///////
@@ -29,11 +31,9 @@ import * as Sharing from 'expo-sharing';
 // Alto disponible de la ventana para calcular tamaños proporcionales en la UI.
 const { height } = Dimensions.get('window');
 
-// URL base del backend donde se consultan ventas, clientes y cronograma.
-const API_URL = "http://www.tulote.somee.com";
-
 
 const Ventas = ({ navigation, route }) => {
+  const esWeb = Platform.OS === "web";
 
   // funcion de idiomas //////////////////////////////////////////////
 
@@ -308,10 +308,10 @@ const Ventas = ({ navigation, route }) => {
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   return (
-    <View style={styles.mainContainer}>
+    <View style={[styles.mainContainer, esWeb && styles.mainContainerWeb]}>
       {/* Contenedor principal de la lista de ventas del usuario. */}
       {/* --- LISTA DE VENTAS (CONTENEDOR FIJO) --- */}
-      <View style={styles.ventasContainer}>
+      <View style={[styles.ventasContainer, esWeb && styles.ventasContainerWeb]}>
         {/* Encabezado visual de la pantalla. */}
         <View style={styles.header}>
           <Text style={styles.title}>Mis Ventas</Text>
@@ -360,7 +360,7 @@ const Ventas = ({ navigation, route }) => {
         {/* Lista desplazable con todas las ventas asociadas al usuario. */}
         <ScrollView
           style={styles.scrollVentas}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, esWeb && styles.scrollContentWeb]}
           showsVerticalScrollIndicator={true}
         >
           {cargando ? (
@@ -408,16 +408,21 @@ const Ventas = ({ navigation, route }) => {
 
       {/* Indicador visual inferior para invitar a deslizar la lista. */}
       {/* PIE DE PÁGINA (OPCIONAL) */}
-      <View style={styles.footerHint}>
+      <View style={[styles.footerHint, esWeb && styles.footerHintWeb]}>
         <MaterialCommunityIcons name="gesture-swipe-up" size={20} color="#999" />
         <Text style={styles.footerText}>Desliza para ver más lotes</Text>
       </View>
 
       
 
-      <View style={styles.ctnbtn}>
-        <TouchableOpacity onPress={()=> navigation.navigate("RegistrarVenta")} style={styles.btnregistrar}>
-          <Text style={{color:"#fff",fontWeight:"bold"}}>REGISTRAR VENTA</Text>
+      <View style={[styles.ctnbtn, esWeb && styles.ctnbtnWeb]}>
+        <TouchableOpacity
+          onPress={()=> navigation.navigate("RegistrarVenta")}
+          style={[styles.btnregistrar, esWeb && styles.btnregistrarWeb]}
+          activeOpacity={0.86}
+        >
+          <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#ffffff" />
+          <Text style={styles.btnregistrarText}>REGISTRAR VENTA</Text>
         </TouchableOpacity>
       </View>
 
@@ -553,6 +558,12 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: "#f4fcfb" // Fondo premium unificado suave
   },
+  mainContainerWeb: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 24,
+    gap: 14,
+  },
   ventasContainer: {
     height: screenHeight * 0.8, // Usa screenHeight de forma segura
     backgroundColor: '#ffffff',
@@ -567,6 +578,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 10 },
     shadowRadius: 20,
+  },
+  ventasContainerWeb: {
+    flex: 1,
+    height: "auto",
+    minHeight: 0,
+    borderRadius: 24,
+    paddingTop: 34,
+    paddingBottom: 12,
+    maxWidth: 1120,
+    width: "100%",
+    alignSelf: "center",
   },
   header: { 
     flexDirection: 'row', 
@@ -590,6 +612,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: { 
     paddingBottom: 20 
+  },
+  scrollContentWeb: {
+    paddingBottom: 28,
   },
 
   // Tarjetas del listado estilizadas como el loginPanel/cards
@@ -662,6 +687,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     marginTop: 20, 
     opacity: 0.5 
+  },
+  footerHintWeb: {
+    marginTop: 0,
   },
   footerText: { 
     fontSize: 12, 
@@ -769,6 +797,8 @@ const styles = StyleSheet.create({
     width: "85%", 
     height: 52, 
     backgroundColor: "#069488", // Verde éxito unificado
+    flexDirection: "row",
+    gap: 8,
     justifyContent: "center", 
     alignItems: "center",
     borderRadius: 12,
@@ -778,10 +808,25 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 4,
   },
+  btnregistrarWeb: {
+    width: "100%",
+    maxWidth: 420,
+    height: 54,
+  },
+  btnregistrarText: {
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: 15,
+    letterSpacing: 0,
+  },
   ctnbtn: { 
     marginTop: 24, // Cambiado top por un margen relativo limpio para evitar desbordes
     alignItems: "center",
     width: "100%"
+  },
+  ctnbtnWeb: {
+    marginTop: 0,
+    paddingBottom: 82,
   }
 });
 

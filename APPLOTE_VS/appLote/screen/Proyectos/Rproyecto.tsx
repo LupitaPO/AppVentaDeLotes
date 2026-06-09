@@ -21,10 +21,9 @@ import i18n, { changeLanguage } from "../../i18n";
 
 // Tipo que restringe los idiomas válidos manejados por la aplicación.
 import { Languages } from "../../localizacion";
+import { API_URL } from "../../config/apiUrl";
 
 
-
-const API_URL = "http://www.tulote.somee.com";
 
 const Rproyecto = ({ navigation, route }) => {
   const { nombre, rol } = route.params;

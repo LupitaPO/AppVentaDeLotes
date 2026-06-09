@@ -16,12 +16,11 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
-
-// URL base del backend usada para consultar y actualizar datos de clientes.
-const API_URL = "http://www.tulote.somee.com";
+import { API_URL } from "../config/apiUrl";
 
 
-const clientes = ({ navigation, route }) => {
+
+const Clientes = ({ navigation, route }) => {
   // Datos recibidos desde la navegación para personalizar la vista según el usuario.
   const { nombre, rol, clienteSeleccionadoDNI, clienteSeleccionadoNombre } = route.params || {};
 
@@ -516,4 +515,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default clientes;
+export default Clientes;

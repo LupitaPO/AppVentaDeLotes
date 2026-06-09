@@ -1,0 +1,20 @@
+# Visual Studio and local caches
+.vs/
+**/.vs/
+.expo/
+**/.expo/
+
+# Dependencies and build outputs
+node_modules/
+**/node_modules/
+bin/
+**/bin/
+obj/
+**/obj/
+
+# Backend/API projects are not needed for the mobile APK build
+APILote/
+ApiLotes/
+
+# Database dumps are not needed for EAS Build
+*.sql

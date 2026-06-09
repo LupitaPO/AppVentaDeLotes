@@ -8,8 +8,8 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
+import { API_URL } from "../../config/apiUrl";
 
-const API_URL = "http://www.tulote.somee.com";
 
 
 const RegistrarVenta = ({ route, navigation }) => {

@@ -156,6 +156,74 @@ namespace APILote.Controllers
         }
 
 
+        // =====================================================
+        // ATAMAINE - API REPORTE DE COBRANZAS
+        // Ruta final en Swagger:
+        // GET: api/Reporte/reporte_Cobranzas
+        // =====================================================
+
+        [HttpGet]
+        [Route("reporte_Cobranzas")]
+        public string reporte_Cobranzas(
+            string estadoVenta = null,
+            string tipoVenta = null,
+            string tipoPago = null,
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null,
+            int? idCliente = null
+        )
+        {
+            // Variable donde se guardará el JSON final
+            string jsoString = string.Empty;
+            // Tabla donde recibiremos los datos desde la capa DATA
+            DataTable Datos = new DataTable();
+            // Instancia de la clase donde está el método de conexión al procedimiento
+            ReporteData objCobranzas = new ReporteData();
+            // Llamamos al procedimiento reporteCobranzas_pa mediante DATA
+            Datos = objCobranzas.reporte_Cobranzas(
+                estadoVenta,
+                tipoVenta,
+                tipoPago,
+                fechaDesde,
+                fechaHasta,
+                idCliente
+            );
+            // Convertimos el DataTable a formato JSON para Swagger, navegador o frontend
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            // Retornamos el resultado final
+            return jsoString;
+        }
+
+
+        // =====================================================
+        // ATAMAINE - API REPORTE DE PAGOS
+        // Ruta final en Swagger:
+        // GET: Reporte/reporte_Pagos
+        // =====================================================
+
+        [HttpGet]
+        [Route("reporte_Pagos")]
+        public string reporte_Pagos(
+            string estadoPago = null,
+            int? idVenta = null,
+            DateTime? fechaDesde = null,
+            DateTime? fechaHasta = null
+        )
+        {
+            string jsoString = string.Empty;
+            DataTable Datos = new DataTable();
+            ReporteData objPagos = new ReporteData();
+            Datos = objPagos.reporte_Pagos(
+                estadoPago,
+                idVenta,
+                fechaDesde,
+                fechaHasta
+            );
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsoString;
+        }
+
+
 
 
 

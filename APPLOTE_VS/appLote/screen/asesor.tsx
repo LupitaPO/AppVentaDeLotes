@@ -14,10 +14,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import { Languages } from "../localizacion";
 import i18n, { changeLanguage } from "../i18n";
+import { API_URL } from "../config/apiUrl";
 
-const API_URL = "http://www.tulote.somee.com";
 //Revisión
-const asesor = ({ navigation, route }) => {
+const Asesor = ({ navigation, route }) => {
   const { nombre, rol, asesorSeleccionadoDNI, asesorSeleccionadoNombre } = route.params || {};
   const tabBarHeight = useBottomTabBarHeight();
   const [asesores, setAsesores] = useState([]);
@@ -460,4 +460,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default asesor
+export default Asesor

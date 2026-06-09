@@ -69,5 +69,34 @@ namespace APILote.DATA
                 return null;
             }
         }
+
+
+        // =====================================================
+        // ATAMAINE - DATA PARA LISTAR PROYECTOS ACTIVOS
+        // Procedimiento conectado:
+        // dbo.proyecto_Listar_Select
+        // Uso: llenar select/combo en frontend
+        // =====================================================
+
+        public DataTable proyecto_Listar_Select()
+        {
+            try
+            {
+                // Tabla donde se guardarán los proyectos activos desde SQL Server
+                DataTable Datos = new DataTable();
+                // Ejecutamos el procedimiento almacenado sin parámetros
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    "proyecto_Listar_Select"
+                ).Tables[0];
+                // Retornamos los datos al Controller
+                return Datos;
+            }
+            catch (Exception e)
+            {
+                // Si ocurre algún error, retornamos null
+                return null;
+            }
+        }
     }
 }

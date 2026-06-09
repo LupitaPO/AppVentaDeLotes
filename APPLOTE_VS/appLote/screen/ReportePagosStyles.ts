@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
-// ATAMAINE: Export nombrado para que Metro tome este stylesheet real y no una version cacheada vacia.
-export const reporteProyectosStyles = StyleSheet.create({
+// ATAMAINE: Estilos propios del reporte de pagos; archivo separado y sin depender de otros reportes.
+export const reportePagosStyles = StyleSheet.create({
 	container: {
 		flex: 1,
 		height: "100vh" as any,
@@ -10,7 +10,6 @@ export const reporteProyectosStyles = StyleSheet.create({
 		position: "relative",
 		overflow: "hidden",
 	},
-	// ATAMAINE: En web el ScrollView necesita altura real para permitir bajar hasta toda la tabla.
 	scrollView: {
 		flex: 1,
 		width: "100%",
@@ -26,7 +25,7 @@ export const reporteProyectosStyles = StyleSheet.create({
 		left: -120,
 		width: 360,
 		height: 360,
-		backgroundColor: "rgba(10, 148, 136, 0.12)",
+		backgroundColor: "rgba(13, 148, 136, 0.13)",
 		borderRadius: 180,
 		zIndex: 0,
 	},
@@ -36,7 +35,7 @@ export const reporteProyectosStyles = StyleSheet.create({
 		right: -130,
 		width: 340,
 		height: 340,
-		backgroundColor: "rgba(21, 101, 192, 0.08)",
+		backgroundColor: "rgba(37, 99, 235, 0.08)",
 		borderRadius: 170,
 		zIndex: 0,
 	},
@@ -68,7 +67,6 @@ export const reporteProyectosStyles = StyleSheet.create({
 		marginBottom: 16,
 		gap: 12,
 	},
-	// ATAMAINE: El touch externo separa la interaccion del brillo interno del boton volver.
 	backButtonTouch: {
 		width: 48,
 		height: 48,
@@ -250,7 +248,6 @@ export const reporteProyectosStyles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
-		gap: 10,
 		borderBottomWidth: 1,
 		borderBottomColor: "#eef7f8",
 	},
@@ -258,7 +255,6 @@ export const reporteProyectosStyles = StyleSheet.create({
 		backgroundColor: "#ecfdf3",
 	},
 	estadoOptionText: {
-		flex: 1,
 		fontSize: 14,
 		fontWeight: "800",
 		color: "#334155",
@@ -310,7 +306,6 @@ export const reporteProyectosStyles = StyleSheet.create({
 		shadowOpacity: 0.16,
 		shadowRadius: 10,
 	},
-	// ATAMAINE: Los bordes conservan la identidad de color y el gradiente vive en el componente.
 	primaryActionSurface: {
 		borderColor: "#2d6cdf",
 	},
@@ -406,7 +401,7 @@ export const reporteProyectosStyles = StyleSheet.create({
 		fontWeight: "900",
 		color: "#0f766e",
 		marginBottom: 12,
-		letterSpacing: 0.2,
+		letterSpacing: 0,
 		textTransform: "uppercase",
 		backgroundColor: "#ecfdf3",
 		borderWidth: 1,
@@ -414,32 +409,6 @@ export const reporteProyectosStyles = StyleSheet.create({
 		borderRadius: 12,
 		paddingHorizontal: 12,
 		paddingVertical: 9,
-	},
-	emptyState: {
-		alignItems: "center",
-		paddingVertical: 40,
-	},
-	emptyIconWrap: {
-		width: 56,
-		height: 56,
-		borderRadius: 28,
-		backgroundColor: "#ccfbf1",
-		justifyContent: "center",
-		alignItems: "center",
-		marginBottom: 12,
-	},
-	emptyTitle: {
-		fontSize: 15,
-		fontWeight: "700",
-		color: "#0f172a",
-		marginBottom: 6,
-	},
-	emptyText: {
-		fontSize: 13,
-		fontWeight: "500",
-		color: "#64748b",
-		textAlign: "center",
-		lineHeight: 18,
 	},
 	tableWrapper: {
 		borderWidth: 1,
@@ -481,7 +450,6 @@ export const reporteProyectosStyles = StyleSheet.create({
 		color: "#ffffff",
 		textAlign: "center",
 	},
-	// ATAMAINE: Filas mas bajas para que el listado respire menos y quepan mas registros.
 	tableDataRow: {
 		flexDirection: "row",
 		minHeight: 66,
@@ -562,7 +530,7 @@ export const reporteProyectosStyles = StyleSheet.create({
 		fontSize: 10,
 		fontWeight: "800",
 		color: "#ffffff",
-        },
+	},
 });
 
-export default reporteProyectosStyles;
+export default reportePagosStyles;

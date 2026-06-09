@@ -19,9 +19,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import * as Print from 'expo-print'; // AGREGADO
 import * as Sharing from 'expo-sharing'; // AGREGADO
+import { API_URL } from "../config/apiUrl";
 
-// URL base del backend usada para registrar pagos.
-const API_URL = "http://www.tulote.somee.com";
 
 const DetallePago = ({ route, navigation }) => {
   // Recibe la cuota seleccionada desde la pantalla anterior.
