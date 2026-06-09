@@ -9,6 +9,7 @@ export default StyleSheet.create({
                 overflow: "hidden",
         },
 
+        
         scrollView: {
                 flex: 1,
                 width: "100%",
