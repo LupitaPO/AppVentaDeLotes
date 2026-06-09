@@ -1,5 +1,5 @@
-import { 
-  View, 
+import {
+  View,
   Text,
   TextInput,
   KeyboardAvoidingView,
@@ -8,54 +8,53 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
-  Modal
-} from 'react-native'
-import React, { useState, useEffect }  from 'react'
+  Modal,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { API_URL } from "../../config/apiUrl";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-const ModificarUsuario = ({route, navigation}) => {
-// Recibimos el objeto usuario actual desde la pantalla anterior
+const ModificarUsuario = ({ route, navigation }) => {
   const { usuario } = route.params || {};
 
-  // Estados basados en los parámetros del procedimiento almacenado
   const [nombre, setNombre] = useState(usuario?.Nombre || "");
   const [correo, setCorreo] = useState(usuario?.Correo || "");
-  const [contraseña, setContraseña] = useState(usuario?.Contraseña || "");
-  const [tipoUsuario, setTipoUsuario] = useState(usuario?.TipoUsuario || ""); // Ej: "Administrador", "Asesor", etc.
+  const [contrasena, setContrasena] = useState(usuario?.Contraseña || "");
+  const [tipoUsuario, setTipoUsuario] = useState(usuario?.TipoUsuario || "");
   const [celular, setCelular] = useState(usuario?.Celular || "");
-
-   // Estados para el Modal de roles
-  const [listaTipos, setListarTipos] = useState([]);
+  const [listaTipos, setListaTipos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [cargando, setCargando] = useState(false);
 
-  // Al montar la pantalla, consumimos la API para llenar el modal
   useEffect(() => {
-    TipoUsuarioListar();
+    listarTiposUsuario();
   }, []);
 
-  // Obtiene los roles dinámicamente desde la base de datos
-  const TipoUsuarioListar = async () => {
+  const listarTiposUsuario = async () => {
     try {
       const response = await fetch(`${API_URL}/Usuario/usuario_Tipo_Listar`);
       const textoCrudo = await response.text();
-      
-      if (textoCrudo && textoCrudo.trim() !== "") {
-        const data = JSON.parse(textoCrudo);
-        setListarTipos(data); 
-      } else {
-        setListarTipos([]);
-      }
+      const data = textoCrudo?.trim() ? JSON.parse(textoCrudo) : [];
+      setListaTipos(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error al procesar el listado de roles:", error);
+      console.error("Error al listar tipos de usuario:", error);
+      setListaTipos([]);
     }
   };
 
   const actualizarUsuario = async () => {
-    // Validaciones básicas antes de disparar el PA
-    if (!nombre.trim() || !correo.trim() || !contraseña.trim() || !tipoUsuario.trim()) {
-      Alert.alert("Error", "Nombre, Correo, Contraseña y Tipo de Usuario son obligatorios");
+    if (!usuario?.IdUsuario) {
+      Alert.alert("Error", "No se encontro el usuario seleccionado.");
+      return;
+    }
+
+    if (!nombre.trim() || !correo.trim() || !contrasena.trim() || !tipoUsuario.trim()) {
+      Alert.alert("Error", "Nombre, correo, contraseña y tipo de usuario son obligatorios.");
+      return;
+    }
+
+    const celularLimpio = celular.trim();
+    if (celularLimpio && (celularLimpio.length !== 9 || Number.isNaN(Number(celularLimpio)))) {
+      Alert.alert("Celular invalido", "El numero de celular debe tener exactamente 9 digitos.");
       return;
     }
 
@@ -65,19 +64,19 @@ const ModificarUsuario = ({route, navigation}) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idusuario: usuario?.IdUsuario, // Llave primaria para el WHERE del PA          
-          nombre: nombre.trim(),
-          correo: correo.trim(),
-          contraseña: contraseña.trim(),
-          tipousuario: tipoUsuario.trim(), // El PA se encargará de buscar el @idtipo correspondiente
-          celular: celular.trim(),
-          Estado: "A"
+          IdUsuario: usuario.IdUsuario,
+          Nombre: nombre.trim(),
+          Correo: correo.trim().toLowerCase(),
+          Contraseña: contrasena.trim(),
+          TipoUsuario: tipoUsuario.trim(),
+          Celular: celularLimpio,
+          Estado: usuario?.Estado || "A",
         }),
       });
 
       const data = await response.text();
       if (response.ok) {
-        Alert.alert("Éxito", "Usuario actualizado correctamente", [
+        Alert.alert("Exito", data || "Usuario actualizado correctamente", [
           {
             text: "OK",
             onPress: () => {
@@ -87,11 +86,11 @@ const ModificarUsuario = ({route, navigation}) => {
           },
         ]);
       } else {
-        Alert.alert("Error del servidor", data);
+        Alert.alert("Error del servidor", data || "No se pudo actualizar el usuario.");
       }
     } catch (error) {
       console.error("Error al actualizar usuario:", error);
-      Alert.alert("Error", "Error de conexión con el servidor");
+      Alert.alert("Error", "Error de conexion con el servidor.");
     } finally {
       setCargando(false);
     }
@@ -110,15 +109,11 @@ const ModificarUsuario = ({route, navigation}) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Información Fija Clave */}
-          <View style={{ marginBottom: 8 }}>
-            <Text style={styles.label}>
-              ID Usuario: <Text style={{ fontWeight: "900" }}>{usuario?.IdUsuario}</Text>
-            </Text>
-          </View>
+          <Text style={styles.readonlyLabel}>
+            ID Usuario: <Text style={styles.readonlyValue}>{usuario?.IdUsuario || "N/A"}</Text>
+          </Text>
 
-          {/* Campo Completo: Nombre Completo o Razón */}
-          <Text style={styles.label}>Nombre Completo</Text>
+          <Text style={styles.label}>Nombre completo</Text>
           <TextInput
             style={styles.input}
             value={nombre}
@@ -127,8 +122,7 @@ const ModificarUsuario = ({route, navigation}) => {
             placeholderTextColor="#94a3b8"
           />
 
-          {/* Campo Completo: Correo Electrónico */}
-          <Text style={styles.label}>Correo Electrónico</Text>
+          <Text style={styles.label}>Correo electronico</Text>
           <TextInput
             style={styles.input}
             value={correo}
@@ -139,29 +133,28 @@ const ModificarUsuario = ({route, navigation}) => {
             autoCapitalize="none"
           />
 
-          {/* Fila Dividida: Contraseña y Tipo de Usuario */}
           <View style={styles.row}>
             <View style={styles.column}>
               <Text style={styles.label}>Contraseña</Text>
               <TextInput
                 style={styles.input}
-                value={contraseña}
-                onChangeText={setContraseña}
+                value={contrasena}
+                onChangeText={setContrasena}
                 placeholder="Nueva clave"
                 placeholderTextColor="#94a3b8"
-                secureTextEntry // Oculta el texto por seguridad
+                secureTextEntry
                 autoCapitalize="none"
               />
             </View>
+
             <View style={styles.column}>
-              <Text style={styles.label}>Tipo de Usuario:</Text>
-              {/* Contenedor transparente que intercepta el clic para desplegar el modal */}
-              <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.7}>
+              <Text style={styles.label}>Tipo de usuario</Text>
+              <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.75}>
                 <View pointerEvents="none">
                   <TextInput
                     style={styles.input}
                     value={tipoUsuario}
-                    editable={false} // Deshabilitamos escritura manual
+                    editable={false}
                     placeholder="Seleccionar..."
                     placeholderTextColor="#94a3b8"
                   />
@@ -170,8 +163,7 @@ const ModificarUsuario = ({route, navigation}) => {
             </View>
           </View>
 
-          {/* Campo Completo: Celular */}
-          <Text style={styles.label}>Número de Celular</Text>
+          <Text style={styles.label}>Numero de celular</Text>
           <TextInput
             style={styles.input}
             value={celular}
@@ -179,40 +171,33 @@ const ModificarUsuario = ({route, navigation}) => {
             placeholder="Ej. 987654321"
             placeholderTextColor="#94a3b8"
             keyboardType="phone-pad"
-            maxLength={9} // Restringido a los 9 dígitos del parámetro varchar(9)
+            maxLength={9}
           />
 
-          {/* Espaciador estético */}
-          <View style={{ height: 20 }} />
-
-          {/* Botón Principal: Guardar Cambios */}
           <TouchableOpacity
-            style={[styles.btnGuardar, cargando && { opacity: 0.6 }]}
+            style={[styles.btnGuardar, cargando && styles.btnDisabled]}
             disabled={cargando}
             onPress={actualizarUsuario}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <Text style={styles.btnText}>
-              {cargando ? "Guardando..." : "Guardar Cambios"}
-            </Text>
+            <Text style={styles.btnText}>{cargando ? "Guardando..." : "Guardar Cambios"}</Text>
           </TouchableOpacity>
 
-          {/* Botón Secundario: Cancelar */}
           <TouchableOpacity
             style={styles.btnCancelar}
             onPress={() => navigation.goBack()}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <Text style={styles.btnCancelarText}>Cancelar</Text>
+            <Text style={styles.btnText}>Cancelar</Text>
           </TouchableOpacity>
 
           <View style={{ height: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
-      {/* MODAL SELECTOR DE ROLES INTEGRADO */}
+
       <Modal
         visible={modalVisible}
-        transparent={true}
+        transparent
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}
       >
@@ -220,29 +205,28 @@ const ModificarUsuario = ({route, navigation}) => {
           <View style={styles.modalContenedor}>
             <Text style={styles.modalTitulo}>Selecciona Tipo de Usuario</Text>
 
-            <ScrollView style={{ width: "100%", maxHeight: 260 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.modalLista} showsVerticalScrollIndicator={false}>
               {listaTipos.map((tipo) => (
                 <TouchableOpacity
                   key={tipo.IdTipo}
                   style={styles.modalOpcion}
                   onPress={() => {
-                    setTipoUsuario(tipo.Descripcion); // Al presionar, inyecta la descripción en el input
-                    setModalVisible(false); // Cierra la ventana flotante
+                    setTipoUsuario(tipo.Descripcion);
+                    setModalVisible(false);
                   }}
-                  activeOpacity={0.7}
+                  activeOpacity={0.75}
                 >
                   <Text style={styles.modalOpcionTexto}>{tipo.Descripcion}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
-            {/* Botón Cerrar Modal */}
             <TouchableOpacity
               style={styles.modalBtnCerrar}
               onPress={() => setModalVisible(false)}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              <Text style={styles.modalBtnCerrarText}>Cerrar</Text>
+              <Text style={styles.btnText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -252,43 +236,45 @@ const ModificarUsuario = ({route, navigation}) => {
 };
 
 const styles = StyleSheet.create({
-  // Fondo principal de la pantalla suave y consistente
   container: {
     flex: 1,
-    backgroundColor: "#f4fcfb", // Fondo premium unificado sutil
+    backgroundColor: "#f4fcfb",
     paddingHorizontal: 16,
     paddingTop: 50,
   },
-  
-  // Título principal del formulario en tipografía robusta
   title: {
     fontSize: 24,
-    fontWeight: "900", // Peso visual fuerte idéntico al login y dashboards
-    color: "#111827",  // Tono oscuro principal para alta legibilidad
+    fontWeight: "900",
+    color: "#111827",
     textAlign: "center",
     marginBottom: 24,
   },
-  
   scrollView: {
     flex: 1,
   },
-  
-  // Etiquetas de los campos adaptadas al diseño móvil unificado
+  readonlyLabel: {
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#475569",
+    marginBottom: 6,
+  },
+  readonlyValue: {
+    color: "#111827",
+    fontWeight: "900",
+  },
   label: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#111827",  // Texto oscuro limpio
+    color: "#111827",
     marginTop: 16,
     marginBottom: 8,
   },
-  
-  // Campos de texto estilizados exactamente como el login nativo
   input: {
     height: 48,
-    backgroundColor: "#fbfffe", // Blanco menta muy limpio
+    backgroundColor: "#fbfffe",
     borderWidth: 1,
-    borderColor: "#d5e7e3",    // Contorno esmeralda suave
-    borderRadius: 15,          // Curvatura idéntica a tus otras pantallas
+    borderColor: "#d5e7e3",
+    borderRadius: 15,
     paddingHorizontal: 14,
     fontSize: 15,
     fontWeight: "500",
@@ -300,22 +286,17 @@ const styles = StyleSheet.create({
     elevation: 1,
     marginBottom: 6,
   },
-  
-  // Distribución en columnas para campos compartidos (Contraseña y Rol)
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 4,
     marginBottom: 8,
   },
-  
   column: {
     width: "48%",
   },
-  
-  // Botón Guardar / Confirmar (Diseño responsivo premium)
   btnGuardar: {
-    backgroundColor: "#10b981", // Verde éxito moderno de tu marca
+    backgroundColor: "#10b981",
     width: "100%",
     maxWidth: 420,
     height: 52,
@@ -331,48 +312,37 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 12,
   },
-  
-  // Botón Cancelar en bloque sólido para simetría exacta con el de Guardar
   btnCancelar: {
-    backgroundColor: "#ef4444", // Rojo moderno plano y vivo
+    backgroundColor: "#ef4444",
     width: "100%",
     maxWidth: 420,
-    height: 52, // Altura idéntica a btnGuardar para balance visual
+    height: 52,
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
-    shadowColor: "#ef4444", // Sombra roja nativa del mismo tono
+    shadowColor: "#ef4444",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 14,
     elevation: 4,
     marginBottom: 24,
   },
-  
-  // Texto interno del botón de guardar
+  btnDisabled: {
+    opacity: 0.6,
+  },
   btnText: {
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "900",
   },
-  
-  // Texto blanco para contraste óptimo sobre el botón de cancelar
-  btnCancelarText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "900", // Mismo peso visual que el botón guardar
-  },
-  // Fondo oscuro traslúcido para dar un enfoque premium al modal
   modalFondo: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)", // Difuminado sutil idéntico al de cuotas
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
-  
-  // Caja contenedora blanca con esquinas redondeadas y sombras fluidas
   modalContenedor: {
     width: "100%",
     maxWidth: 360,
@@ -388,8 +358,6 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 10,
   },
-  
-  // Título del encabezado del modal en tipografía robusta
   modalTitulo: {
     fontSize: 18,
     fontWeight: "900",
@@ -397,32 +365,30 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     textAlign: "center",
   },
-  
-  // Cada celda o fila opcional de rol dentro del listado
+  modalLista: {
+    width: "100%",
+    maxHeight: 260,
+  },
   modalOpcion: {
     width: "100%",
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: "#fbfffe", // Blanco menta idéntico a tus inputs nativos
+    backgroundColor: "#fbfffe",
     borderWidth: 1,
     borderColor: "#d5e7e3",
     marginBottom: 8,
     alignItems: "center",
   },
-  
-  // Texto interno de las opciones con el color insignia de la marca
   modalOpcionTexto: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#069488", // Verde esmeralda insignia
+    color: "#069488",
   },
-  
-  // Botón para cancelar o cerrar el modal
   modalBtnCerrar: {
     width: "100%",
     height: 46,
-    backgroundColor: "#ef4444", // Rojo plano moderno y vivo
+    backgroundColor: "#ef4444",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
@@ -433,13 +399,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  
-  // Texto interno del botón de cierre
-  modalBtnCerrarText: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "900",
-  },
 });
 
-export default ModificarUsuario
+export default ModificarUsuario;

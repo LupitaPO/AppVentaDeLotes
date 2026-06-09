@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
+import { API_URL } from "../../config/apiUrl";
 
-const API_URL = "http://www.tulote.somee.com";
 
 const ModificarProyecto = ({ navigation, route }) => {
   const { proyecto } = route.params || {};
