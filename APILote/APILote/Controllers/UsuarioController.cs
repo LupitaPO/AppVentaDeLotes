@@ -96,5 +96,16 @@ namespace APILote.Controllers
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
+        [HttpGet]
+        [Route("formularios_Listar_pa")]
+        public string formularios_Listar_pa()
+        {
+            string jsoString = string.Empty;
+            DataTable Datos = new DataTable();
+            UsuarioData objCliente = new UsuarioData();
+            Datos = objCliente.formularios_Listar_pa();
+            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+            return jsoString;
+        }
     }
 }
