@@ -7,6 +7,9 @@ export default StyleSheet.create({
                 backgroundColor: "#020811",
                 position: "relative",
                 overflow: "hidden",
+                paddingTop: 15,
+                paddingBottom: 15,
+                paddingVertical: 12,
         },
 
         
