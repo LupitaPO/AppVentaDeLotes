@@ -44,21 +44,25 @@ resolve_expo_cmd() {
 
 resolve_expo_cmd
 
+start_expo_with_proxy() {
+  exec node ./script/start-with-api-proxy.js "$@"
+}
+
 case "$MODE" in
   start|run|tunnel|--tunnel)
-    exec "${EXPO_CMD[@]}" start --tunnel --clear
+    start_expo_with_proxy start --tunnel --clear
     ;;
   lan|--lan)
-    exec "${EXPO_CMD[@]}" start --lan
+    start_expo_with_proxy start --lan
     ;;
   local|--local|localhost|--localhost)
-    exec "${EXPO_CMD[@]}" start --localhost
+    start_expo_with_proxy start --localhost
     ;;
   android|--android)
-    exec "${EXPO_CMD[@]}" start --android --tunnel --clear
+    start_expo_with_proxy start --android --tunnel --clear
     ;;
   ios|--ios)
-    exec "${EXPO_CMD[@]}" start --ios --tunnel --clear
+    start_expo_with_proxy start --ios --tunnel --clear
     ;;
   web|--web)
     exec npm run web

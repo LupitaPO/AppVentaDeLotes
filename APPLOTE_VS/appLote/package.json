@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "start /B npm run api-proxy && expo start --web",
+    "start": "node script/start-with-api-proxy.js start",
+    "android": "node script/start-with-api-proxy.js start --android",
+    "ios": "node script/start-with-api-proxy.js start --ios",
+    "web": "node script/start-with-api-proxy.js start --web",
     "api-proxy": "node web-api-proxy.js",
     "web:full": "npm run web"
   },

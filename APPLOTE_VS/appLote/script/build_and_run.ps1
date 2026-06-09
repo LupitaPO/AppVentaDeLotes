@@ -39,7 +39,8 @@ function Invoke-Npm {
 
 function Start-Expo {
   param([string[]]$ExpoArgs)
-  Invoke-Npx (@("expo") + $ExpoArgs)
+  & node ".\script\start-with-api-proxy.js" @ExpoArgs
+  exit $LASTEXITCODE
 }
 
 switch ($Mode.ToLowerInvariant()) {
