@@ -1,6 +1,7 @@
 ﻿using APILote.Models;
 using Microsoft.ApplicationBlocks.Data;
 using System.Data;
+using System.Data.SqlClient;
 
 namespace APILote.DATA
 {
@@ -123,6 +124,27 @@ namespace APILote.DATA
             }
         }
 
+        public DataTable PermisosPerfil(int idRol)
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+
+                Datos = SqlHelper.ExecuteDataset(
+                    conexion.cnConexion,
+                    CommandType.StoredProcedure,
+                    "permisos_ListarPerfil",
+                    new SqlParameter("@CodRolUsuario", idRol)
+                ).Tables[0];
+
+                return Datos;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+    }
 
     }
-}
+
