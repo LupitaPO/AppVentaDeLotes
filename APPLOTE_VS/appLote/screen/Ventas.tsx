@@ -413,11 +413,19 @@ const Ventas = ({ navigation, route }) => {
         <Text style={styles.footerText}>Desliza para ver más lotes</Text>
       </View>
 
-      
+
 
       <View style={[styles.ctnbtn, esWeb && styles.ctnbtnWeb]}>
         <TouchableOpacity
-          onPress={()=> navigation.navigate("RegistrarVenta")}
+          onPress={() => {
+            const idUsuarioLogueado = route.params?.idUsuario || usuarioGlobal?.id || 1;
+
+            navigation.navigate("RegistrarVenta", {
+              idUsuario: idUsuarioLogueado,
+              
+              onRefresh: cargarVentas 
+            });
+          }}
           style={[styles.btnregistrar, esWeb && styles.btnregistrarWeb]}
           activeOpacity={0.86}
         >
@@ -500,9 +508,9 @@ const styles = StyleSheet.create({
   // Contenedor del menú flotante superior derecho
   containerFlotante: {
     position: 'absolute',
-    top: 40,           
+    top: 40,
     right: 20,
-    zIndex: 999,       
+    zIndex: 999,
     alignItems: 'center',
   },
   menuDesplegado: {
@@ -524,17 +532,17 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   idioma: {
-    top:5,
+    top: 5,
     backgroundColor: '#ffffff', // Fondo blanco limpio consistente
     width: 42,
     height: 42,
-    borderRadius: 21,     
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#e5e7eb',
-    elevation: 3,         
-    shadowColor: '#0f172a',  
+    elevation: 3,
+    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -554,8 +562,8 @@ const styles = StyleSheet.create({
   },
 
   // Estilos base de la pantalla principal y tarjetas de ventas
-  mainContainer: { 
-    flex: 1, 
+  mainContainer: {
+    flex: 1,
     backgroundColor: "#f4fcfb" // Fondo premium unificado suave
   },
   mainContainerWeb: {
@@ -590,28 +598,28 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 10 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10
   },
-  title: { 
-    fontSize: 28, 
+  title: {
+    fontSize: 28,
     fontWeight: '900', // Tipografía robusta idéntica al login y home
-    color: '#111827' 
+    color: '#111827'
   },
-  sectionTitle: { 
-    fontSize: 13.5, 
-    color: '#64748b', 
+  sectionTitle: {
+    fontSize: 13.5,
+    color: '#64748b',
     fontWeight: "600",
-    marginBottom: 15 
+    marginBottom: 15
   },
-  scrollVentas: { 
-    flex: 1 
+  scrollVentas: {
+    flex: 1
   },
-  scrollContent: { 
-    paddingBottom: 20 
+  scrollContent: {
+    paddingBottom: 20
   },
   scrollContentWeb: {
     paddingBottom: 28,
@@ -633,76 +641,76 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
-  cardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 12 
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12
   },
-  loteInfo: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
+  loteInfo: {
+    flexDirection: 'row',
+    alignItems: 'center'
   },
-  cardLabel: { 
-    fontSize: 11, 
-    color: '#64748b', 
+  cardLabel: {
+    fontSize: 11,
+    color: '#64748b',
     fontWeight: '700',
     textTransform: "uppercase"
   },
-  cardValue: { 
-    fontSize: 18, 
-    fontWeight: '900', 
-    color: '#111827' 
+  cardValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#111827'
   },
 
-  cardFooter: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'flex-end' 
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end'
   },
-  priceText: { 
-    fontSize: 18, 
-    fontWeight: '900', 
-    color: '#069488' 
+  priceText: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#069488'
   },
-  subtext: { 
-    fontSize: 12, 
+  subtext: {
+    fontSize: 12,
     color: '#64748b',
     fontWeight: '500'
   },
-  badge: { 
+  badge: {
     backgroundColor: '#e8fff8', // Verde menta muy sutil y limpio
-    paddingHorizontal: 12, 
-    paddingVertical: 6, 
-    borderRadius: 8 
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8
   },
-  badgeText: { 
-    color: '#069488', 
-    fontSize: 12, 
-    fontWeight: '800' 
+  badgeText: {
+    color: '#069488',
+    fontSize: 12,
+    fontWeight: '800'
   },
 
   // Texto guía inferior
-  footerHint: { 
-    alignItems: 'center', 
-    marginTop: 20, 
-    opacity: 0.5 
+  footerHint: {
+    alignItems: 'center',
+    marginTop: 20,
+    opacity: 0.5
   },
   footerHintWeb: {
     marginTop: 0,
   },
-  footerText: { 
-    fontSize: 12, 
+  footerText: {
+    fontSize: 12,
     color: '#64748b',
     fontWeight: '600',
-    marginTop: 4 
+    marginTop: 4
   },
 
   // Modal y Cronograma premium
-  modalOverlay: { 
-    flex: 1, 
+  modalOverlay: {
+    flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.4)', // Fondo oscuro suavizado
-    justifyContent: 'flex-end' 
+    justifyContent: 'flex-end'
   },
   modalContent: {
     backgroundColor: '#ffffff',
@@ -722,25 +730,25 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f1f5f9',
     paddingBottom: 15
   },
-  modalTitle: { 
-    fontSize: 22, 
-    fontWeight: '900', 
-    color: '#111827' 
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#111827'
   },
-  modalSubtitle: { 
-    fontSize: 14, 
-    color: '#069488', 
-    fontWeight: '800' 
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#069488',
+    fontWeight: '800'
   },
-  modalScroll: { 
-    paddingBottom: 30 
+  modalScroll: {
+    paddingBottom: 30
   },
-  grid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'space-between' 
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between'
   },
-  
+
   // Mini tarjetas de cuotas refinadas
   miniCard: {
     width: '48%',
@@ -758,48 +766,48 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 }
   },
-  cuotaHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 5 
+  cuotaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5
   },
-  cuotaTitle: { 
-    fontSize: 10.5, 
-    color: '#64748b', 
-    fontWeight: '700', 
-    textTransform: 'uppercase' 
+  cuotaTitle: {
+    fontSize: 10.5,
+    color: '#64748b',
+    fontWeight: '700',
+    textTransform: 'uppercase'
   },
-  cuotaMonto: { 
-    fontSize: 17, 
-    fontWeight: '900', 
-    color: '#111827' 
+  cuotaMonto: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#111827'
   },
-  cuotaFecha: { 
-    fontSize: 12, 
-    color: '#94a3b8', 
+  cuotaFecha: {
+    fontSize: 12,
+    color: '#94a3b8',
     fontWeight: '500',
-    marginTop: 4 
+    marginTop: 4
   },
-  modalLoading: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  modalLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  label: { 
+  label: {
     color: "#ffffff",
     fontWeight: "900",
     fontSize: 16
   },
-  
+
   // Botón registrar adaptado al diseño de botones del Login
-  btnregistrar: { 
-    width: "85%", 
-    height: 52, 
+  btnregistrar: {
+    width: "85%",
+    height: 52,
     backgroundColor: "#069488", // Verde éxito unificado
     flexDirection: "row",
     gap: 8,
-    justifyContent: "center", 
+    justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
     shadowColor: "#069488",
@@ -819,7 +827,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: 0,
   },
-  ctnbtn: { 
+  ctnbtn: {
     marginTop: 24, // Cambiado top por un margen relativo limpio para evitar desbordes
     alignItems: "center",
     width: "100%"

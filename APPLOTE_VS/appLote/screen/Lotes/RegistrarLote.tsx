@@ -15,9 +15,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 
 const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) => {
-  const { idProyecto, proyectoNombre: proyectoNombreParam, onRefresh } = route.params || {};
-  console.log("RegistrarLote route.params:", route.params);
-  const [proyectoNombre, setProyectoNombre] = useState(proyectoNombreParam || "");
+  const { idProyecto, proyectoNombre, onRefresh } = route.params || {};
+  console.log("console para ver los datos de route:", route.params);
   const [codLote, setCodLote] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [frenteStr, setFrenteStr] = useState("");
@@ -32,31 +31,6 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
   const [descrip, setDescrip] = useState("");
   const [imgUrl, setImgUrl] = useState("");
   const [cargando, setCargando] = useState(false);
-
-  useEffect(() => {
-    console.log("RegistrarLote idProyecto/proyectoNombre:", { idProyecto, proyectoNombre });
-    if (idProyecto && !proyectoNombre) {
-      const obtenerNombreProyecto = async () => {
-        try {
-          const response = await fetch(`${API_URL}/Proyecto/proyecto_Listar`);
-          const data = await response.json();
-          const proyecto = (data || []).find(
-            (item: any) =>
-              item.IdProyecto?.toString() === idProyecto?.toString() ||
-              item.idProyecto?.toString() === idProyecto?.toString()
-          );
-          if (proyecto) {
-            setProyectoNombre(
-              proyecto.NombreProyecto || proyecto.nombreProyecto || proyecto.Nombre || proyecto.nombre || ""
-            );
-          }
-        } catch (error) {
-          console.error("Error obteniendo nombre de proyecto:", error);
-        }
-      };
-      obtenerNombreProyecto();
-    }
-  }, [idProyecto, proyectoNombre]);
 
   const parseDimension = (value: string): number | null => {
     if (!value) return null;
@@ -115,19 +89,18 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
 
   const registrarLote = async () => {
     if (
-      !codLote ||
-      !ubicacion ||
-      !frenteStr ||
-      !fondoStr ||
-      !derechaStr ||
-      !izquierdaStr ||
+      !codLote.trim() ||
+      !ubicacion.trim() ||
+      !frenteStr.trim() ||
+      !fondoStr.trim() ||
+      !derechaStr.trim() ||
+      !izquierdaStr.trim() ||
       !perimetro ||
       !tamañosM2 ||
-      !numLote ||
-      !manzana ||
-      !precio ||
-      !descrip ||
-      !imgUrl
+      !numLote.trim() ||
+      !manzana.trim() ||
+      !precio.trim()
+      
     ) {
       Alert.alert("Error", "Todos los campos son obligatorios");
       return;
@@ -208,10 +181,10 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
         onChangeText={setCodLote}
       />
 
-      <Text style={styles.label}>Ubicación</Text>
+      <Text style={styles.label}>Direccion</Text>
       <TextInput
         style={styles.input}
-        placeholder="Ubicación"
+        placeholder="Direccion"
         value={ubicacion}
         onChangeText={setUbicacion}
       />
@@ -326,7 +299,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingTop:35,
+    paddingBottom: 50,
   },
   title: {
     fontSize: 32,
@@ -337,10 +311,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   projectInfoBox: {
-    marginBottom: 24,
+    marginBottom: 10,
     backgroundColor: "#ffffff",
     borderRadius: 18,
-    padding: 18,
+    padding: 15,
     borderWidth: 2,
     borderColor: "#10b981",
     shadowColor: "#10b981",
@@ -373,7 +347,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "800",
     color: "#0f766e",
-    marginBottom: 14,
+    marginBottom: 1,
     marginTop: 8,
     letterSpacing: 0.3,
   },
@@ -381,7 +355,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#1e293b",
-    marginBottom: 8,
+    marginBottom: 5,
     letterSpacing: 0.2,
   },
   input: {
@@ -413,7 +387,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 5,
   },
   column50: {
     width: "48%",
