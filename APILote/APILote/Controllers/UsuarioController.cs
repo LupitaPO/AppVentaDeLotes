@@ -3,12 +3,13 @@ using APILote.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Net;
+using System.Collections.Generic;
 
 namespace APILote.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class UsuarioController
+    public class UsuarioController : ControllerBase
     {
         [HttpPost]
         [Route("usuario_Actualizar")]
@@ -107,23 +108,51 @@ namespace APILote.Controllers
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
-        [HttpGet]
-        [Route("permisos-perfil")]
-        public string permisosPerfil(int idRol)
+
+        [HttpGet("permisos-perfil")]
+        public IActionResult PermisosPerfil(int idRol)
         {
-            string jsoString = string.Empty;
+            try
+            {
+                UsuarioData data = new UsuarioData();
+                DataTable resultado = data.PermisosPerfil(idRol);
 
-            DataTable Datos = new DataTable();
+                if (resultado == null || resultado.Rows.Count == 0)
+                {
+                    return NotFound(new
+                    {
+                        mensaje = "No se encontraron permisos para este rol",
+                        data = new object[] { }
+                    });
+                }
 
-            UsuarioData objUsuario = new UsuarioData();
+                // Convert DataTable to a serializable structure (list of dictionaries)
+                var rows = new List<Dictionary<string, object>>();
+                foreach (DataRow row in resultado.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in resultado.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    rows.Add(dict);
+                }
 
-            Datos = objUsuario.PermisosPerfil(idRol);
-
-            jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
-
-            return jsoString;
-        }
+                return Ok(new
+                {
+                    success = true,
+                    data = rows
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    error = ex.Message
+                });
+            }
+        }                       
 
     }
-
 }
