@@ -112,10 +112,15 @@ namespace APILote.Controllers
         public string permisosPerfil(int idRol)
         {
             string jsoString = string.Empty;
+
             DataTable Datos = new DataTable();
+
             UsuarioData objUsuario = new UsuarioData();
+
             Datos = objUsuario.PermisosPerfil(idRol);
+
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
+
             return jsoString;
         }
 
