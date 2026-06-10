@@ -218,20 +218,29 @@ const RegistrarVenta = ({ route, navigation }) => {
   // Filtrar lotes
   const lotesFiltrados = lotes.filter((lote) => {
     const codigo = (lote.CodigoLote || lote.codigoLote || "").toString().toLowerCase();
-    const ubicacion = (lote.Ubicacion || lote.ubicacion || "").toString().toLowerCase();
-    const proyecto = (
-      lote.NombreProyecto || lote.nombreProyecto || lote.Proyecto || lote.proyecto || ""
-    )
+  const ubicacion = (lote.Ubicacion || lote.ubicacion || "").toString().toLowerCase();
+  
+  // 1. Obtenemos el ID del proyecto de este lote
+  const idProyectoDelLote = lote.IdProyecto || lote.idProyecto;
+  
+  // 2. Buscamos el objeto proyecto correspondiente en memoria
+  const proyectoAsociado = proyectos.find(
+    (p) => (p.IdProyecto || p.idProyecto)?.toString() === idProyectoDelLote?.toString()
+  );
+  
+  // 3. Extraemos su nombre real utilizando la propiedad '.Nombre' que nos dio el log
+  const nombreDelProyecto = proyectoAsociado 
+    ? (proyectoAsociado.Nombre || proyectoAsociado.nombre || "").toString().toLowerCase()
+    : "";
 
-      .toString()
-      .toLowerCase();
+  const textoBusqueda = busquedaLotes.toLowerCase();
 
-    return (
-
-      codigo.includes(busquedaLotes.toLowerCase()) ||
-      ubicacion.includes(busquedaLotes.toLowerCase()) ||
-      proyecto.includes(busquedaLotes.toLowerCase())
-    );
+  // 4. Evaluamos si coincide con el código, la ubicación O el nombre del proyecto
+  return (
+    codigo.includes(textoBusqueda) ||
+    ubicacion.includes(textoBusqueda) ||
+    nombreDelProyecto.includes(textoBusqueda) // <-- Nueva condición de búsqueda
+  );
   });
 
   // Filtrar clientes
