@@ -58,8 +58,7 @@
               "RelativeToolTip": "APILote\\Controllers\\ProyectoController.cs",
               "ViewState": "AgIAADYAAAAAAAAAAADwvy0AAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-29T04:27:32.167Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-29T04:27:32.167Z"
             },
             {
               "$type": "Document",
@@ -69,7 +68,7 @@
               "RelativeDocumentMoniker": "APILote\\Controllers\\UsuarioController.cs",
               "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\Controllers\\UsuarioController.cs",
               "RelativeToolTip": "APILote\\Controllers\\UsuarioController.cs",
-              "ViewState": "AgIAAEAAAAAAAAAAAAAcwEsAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAF8AAAAAAAAAAAAiwFcAAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-15T16:15:10.319Z",
               "EditorCaption": ""
@@ -94,7 +93,7 @@
               "RelativeDocumentMoniker": "APILote\\DATA\\UsuarioData.cs",
               "ToolTip": "C:\\Users\\Juan HC\\Desktop\\AppVentaDeLotes\\APILote\\APILote\\DATA\\UsuarioData.cs",
               "RelativeToolTip": "APILote\\DATA\\UsuarioData.cs",
-              "ViewState": "AgIAAEYAAAAAAAAAAAAcwHcAAAAgAAAAAAAAAA==",
+              "ViewState": "AgIAAGMAAAAAAAAAAAAuwH0AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-20T15:01:58.697Z",
               "EditorCaption": ""
@@ -109,8 +108,7 @@
               "RelativeToolTip": "APILote\\Models\\Usuarios.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAqwAcAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-20T15:02:26.31Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-20T15:02:26.31Z"
             },
             {
               "$type": "Document",
@@ -122,8 +120,7 @@
               "RelativeToolTip": "APILote\\DATA\\ProyectoData.cs",
               "ViewState": "AgIAAA0AAAAAAAAAAAAgwBIAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-29T04:27:04.903Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-29T04:27:04.903Z"
             },
             {
               "$type": "Document",
@@ -135,8 +132,7 @@
               "RelativeToolTip": "APILote\\Models\\Proyecto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-29T04:24:52.737Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-29T04:24:52.737Z"
             },
             {
               "$type": "Document",
@@ -148,8 +144,7 @@
               "RelativeToolTip": "APILote\\Controllers\\ReporteController.cs",
               "ViewState": "AgIAAEMAAAAAAAAAAAAcwE0AAAA5AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-05-15T16:15:15.778Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-05-15T16:15:15.778Z"
             }
           ]
         }

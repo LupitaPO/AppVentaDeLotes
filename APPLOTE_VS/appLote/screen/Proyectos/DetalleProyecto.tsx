@@ -233,6 +233,7 @@ const DetalleProyecto = ({ route, navigation }) => {
                                     idUsuario: route.params?.idUsuario,
                                     codigoLote: dbInfo.CodigoLote,
                                     precioVenta: dbInfo.Precio,
+                                    proyectoNombre: proyectoInfo?.NombreProyecto || proyectoInfo?.nombreProyecto || "Proyecto sin nombre",
                                     onRefresh: cargarTodo,
                                   });
                                 },
@@ -275,7 +276,11 @@ const DetalleProyecto = ({ route, navigation }) => {
         <TouchableOpacity
           style={styles.botonRegistrar}
           onPress={() =>
-            navigation.navigate('RegistrarLote', { idProyecto: idProyecto, onRefresh: cargarTodo })
+            navigation.navigate('RegistrarLote', { 
+              idProyecto: idProyecto, 
+              proyectoNombre: proyectoInfo?.NombreProyecto || proyectoInfo?.nombreProyecto || "Proyecto sin nombre",
+              onRefresh: cargarTodo 
+            })
           }
         >
           <Text style={styles.textoBoton}>Registrar Lote</Text>
@@ -327,6 +332,7 @@ const DetalleProyecto = ({ route, navigation }) => {
                             idUsuario: route.params?.idUsuario,
                             codigoLote: loteItem.CodigoLote,
                             precioVenta: loteItem.Precio,
+                            proyectoNombre: proyectoInfo?.NombreProyecto || proyectoInfo?.nombreProyecto || proyectoInfo?.Nombre || "Proyecto sin nombre",
                             onRefresh: cargarTodo,
                           });
                         },
@@ -395,7 +401,7 @@ const styles = StyleSheet.create({
     height: 380,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#b99f9f",
     margin: 15,
     borderRadius: 15,
     elevation: 5,
