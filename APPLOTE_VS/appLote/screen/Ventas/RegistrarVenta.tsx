@@ -50,17 +50,17 @@ const RegistrarVenta = ({ route, navigation }) => {
   const [clientes, setClientes] = useState([]);
   const [asesores, setAsesores] = useState([]);
   const [proyectos, setProyectos] = useState([]);
-  
+
   const [modalLotesVisible, setModalLotesVisible] = useState(false);
   const [modalClientesVisible, setModalClientesVisible] = useState(false);
   const [modalAsesoresVisible, setModalAsesoresVisible] = useState(false);
   const [modalProyectosVisible, setModalProyectosVisible] = useState(false);
-  
+
   const [cargandoLotes, setCargandoLotes] = useState(false);
   const [cargandoClientes, setCargandoClientes] = useState(false);
   const [cargandoAsesores, setCargandoAsesores] = useState(false);
   const [cargandoProyectos, setCargandoProyectos] = useState(false);
-  
+
   const [busquedaLotes, setBusquedaLotes] = useState("");
   const [busquedaClientes, setBusquedaClientes] = useState("");
   const [busquedaAsesores, setBusquedaAsesores] = useState("");
@@ -70,6 +70,12 @@ const RegistrarVenta = ({ route, navigation }) => {
   // Estado para simular cuotas
   const [mostrarSimulacion, setMostrarSimulacion] = useState(false);
   const [cuotasSimuladas, setCuotasSimuladas] = useState([]);
+
+  // Cargar la lista de proyectos automáticamente al abrir el formulario
+  useEffect(() => {
+    cargarProyectos();
+  }, []);
+
 
   useEffect(() => {
     if (precioInicial) {
@@ -90,6 +96,9 @@ const RegistrarVenta = ({ route, navigation }) => {
     try {
       const response = await fetch(`${API_URL}/Lote/lote_Listar`);
       const data = await response.json();
+
+      console.log("👉 ESTRUCTURA DE UN LOTE:", data[0]);
+
       setLotes(data || []);
     } catch (error) {
       console.error("Error al obtener lotes:", error);
@@ -135,6 +144,9 @@ const RegistrarVenta = ({ route, navigation }) => {
     try {
       const response = await fetch(`${API_URL}/Proyecto/proyecto_Listar`);
       const data = await response.json();
+
+      console.log("👉 ESTRUCTURA DE UN PROYECTO:", data[0]);
+
       setProyectos(data || []);
     } catch (error) {
       console.error("Error al obtener proyectos:", error);
@@ -152,6 +164,27 @@ const RegistrarVenta = ({ route, navigation }) => {
       lote.NombreProyecto || lote.nombreProyecto || lote.Proyecto || lote.proyecto || ""
     );
     setPrecioVenta((lote.Precio || lote.precio)?.toString() || "");
+
+    // 1. Extraemos el Id del proyecto que viene del lote de la API
+    const idProyectoDelLote = lote.IdProyecto || lote.idProyecto;
+    setIdProyecto(idProyectoDelLote);
+
+    // 2. Buscamos el objeto proyecto correspondiente dentro de nuestro estado local 'proyectos'
+    if (idProyectoDelLote && proyectos.length > 0) {
+      const proyectoEncontrado = proyectos.find(
+        (p) => (p.IdProyecto || p.idProyecto)?.toString() === idProyectoDelLote.toString()
+      );
+
+      if (proyectoEncontrado) {
+        // 3. Si lo encuentra, asignamos el nombre real
+        const nombreReal = proyectoEncontrado.NombreProyecto || proyectoEncontrado.nombreProyecto || proyectoEncontrado.Nombre || proyectoEncontrado.nombre;
+        setProyectoNombre(nombreReal);
+      } else {
+        setProyectoNombre("Proyecto ID: " + idProyectoDelLote); // Respaldo si no coincide el ID
+      }
+    } else {
+      setProyectoNombre("Sin Proyecto Asignado");
+    }
     setModalLotesVisible(false);
   };
 
@@ -189,10 +222,12 @@ const RegistrarVenta = ({ route, navigation }) => {
     const proyecto = (
       lote.NombreProyecto || lote.nombreProyecto || lote.Proyecto || lote.proyecto || ""
     )
+
       .toString()
       .toLowerCase();
 
     return (
+
       codigo.includes(busquedaLotes.toLowerCase()) ||
       ubicacion.includes(busquedaLotes.toLowerCase()) ||
       proyecto.includes(busquedaLotes.toLowerCase())
@@ -430,8 +465,9 @@ const RegistrarVenta = ({ route, navigation }) => {
           <Text style={styles.sectionLabel}>Información del Lote</Text>
           <TouchableOpacity
             style={styles.selectorContainer}
-            onPress={() => {
-              cargarLotes();
+            onPress={async () => {
+              // Cargamos ambos en paralelo para asegurar que la información esté lista
+              await Promise.all([cargarLotes(), cargarProyectos()]);
               setModalLotesVisible(true);
             }}
           >
@@ -451,17 +487,17 @@ const RegistrarVenta = ({ route, navigation }) => {
               <Text style={styles.infoLabel}>ID Lote:</Text>
               <Text style={styles.infoValue}>{idLote || "No Disponible"}</Text>
             </View>
-            <View style={[styles.infoItem, { marginTop: 10 }]}> 
+            <View style={[styles.infoItem, { marginTop: 10 }]}>
               <Text style={styles.infoLabel}>Proyecto:</Text>
               <Text style={styles.infoValue}>{proyectoNombre || "No disponible"}</Text>
             </View>
           </View>
 
           {/* Selector de Proyecto Asociado */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.selectorContainer}
-            onPress={() => {
-              cargarProyectos();
+            onPress={async () => {
+              await cargarProyectos();
               setModalProyectosVisible(true);
             }}
           >
@@ -474,7 +510,7 @@ const RegistrarVenta = ({ route, navigation }) => {
               </View>
               <MaterialIcons name="expand-more" size={24} color="#069488" />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Sección de Cliente */}
@@ -786,7 +822,24 @@ const RegistrarVenta = ({ route, navigation }) => {
                         {item.Ubicacion || item.ubicacion || ""}
                       </Text>
                       <Text style={styles.listItemSubtitle}>
-                        Proyecto: {item.NombreProyecto || item.nombreProyecto || item.Proyecto || item.proyecto || "-"}
+                        Proyecto: {
+                          (() => {
+                            const idLoteProj = item.IdProyecto || item.idProyecto;
+
+                            // Buscamos el proyecto en la lista local por ID
+                            const pEncontrado = proyectos.find(p =>
+                              (p.IdProyecto || p.idProyecto)?.toString() === idLoteProj?.toString()
+                            );
+
+                            // SOLUCIÓN: Usamos '.Nombre' o '.nombre' porque así viene en tu JSON
+                            if (pEncontrado) {
+                              return pEncontrado.Nombre || pEncontrado.nombre || pEncontrado.NombreProyecto || "Sin Nombre";
+                            }
+
+                            // Respaldo visual si el ID 14 no existe en la lista que bajó de la API
+                            return `Proyecto ID: ${idLoteProj || "-"}`;
+                          })()
+                        }
                       </Text>
                       <Text style={styles.listItemPrice}>
                         S/ {(item.Precio || item.precio)?.toFixed(2)}
