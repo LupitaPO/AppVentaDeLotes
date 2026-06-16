@@ -109,7 +109,7 @@ namespace APILote.Controllers
             return jsoString;
         }
 
-        [HttpGet("permisos-perfil")]
+        [HttpGet("permisos-perfil/{idRol}")]
         public IActionResult PermisosPerfil(int idRol)
         {
             try
