@@ -17,16 +17,23 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 const RegistrarVenta = ({ route, navigation }) => {
   const {
     idLote: idLoteInicial,
-    idUsuario,
+    idUsuario:idusuarioMin_Omitir,
     codigoLote: codigoLoteInicial,
     precioVenta: precioInicial,
     proyectoNombre: proyectoNombreInicial,
     nombreProyecto: nombreProyectoInicial,
     onRefresh,
   } = route.params || {};
+  const idUsuario = route.params?.idUsuario || route.params?.IdUsuario || route.params?.id || null;
+
+  console.log("📊 Todos los parámetros recibidos:", route.params);
+  console.log("👤 ID de Usuario unificado y detectado:", idUsuario);
+
+  // Estados para datos actuales (Tus estados siguen exactamente igual abajo...)
+  const [idLote, setIdLote] = useState(idLoteInicial || null);
   console.log(route.params)
   // Estados para datos actuales
-  const [idLote, setIdLote] = useState(idLoteInicial || null);
+
   const [codigoLote, setCodigoLote] = useState(codigoLoteInicial || "");
   const [clienteDni, setClienteDni] = useState("");
   const [clienteNombre, setClienteNombre] = useState("");
@@ -218,29 +225,29 @@ const RegistrarVenta = ({ route, navigation }) => {
   // Filtrar lotes
   const lotesFiltrados = lotes.filter((lote) => {
     const codigo = (lote.CodigoLote || lote.codigoLote || "").toString().toLowerCase();
-  const ubicacion = (lote.Ubicacion || lote.ubicacion || "").toString().toLowerCase();
-  
-  // 1. Obtenemos el ID del proyecto de este lote
-  const idProyectoDelLote = lote.IdProyecto || lote.idProyecto;
-  
-  // 2. Buscamos el objeto proyecto correspondiente en memoria
-  const proyectoAsociado = proyectos.find(
-    (p) => (p.IdProyecto || p.idProyecto)?.toString() === idProyectoDelLote?.toString()
-  );
-  
-  // 3. Extraemos su nombre real utilizando la propiedad '.Nombre' que nos dio el log
-  const nombreDelProyecto = proyectoAsociado 
-    ? (proyectoAsociado.Nombre || proyectoAsociado.nombre || "").toString().toLowerCase()
-    : "";
+    const ubicacion = (lote.Ubicacion || lote.ubicacion || "").toString().toLowerCase();
 
-  const textoBusqueda = busquedaLotes.toLowerCase();
+    // 1. Obtenemos el ID del proyecto de este lote
+    const idProyectoDelLote = lote.IdProyecto || lote.idProyecto;
 
-  // 4. Evaluamos si coincide con el código, la ubicación O el nombre del proyecto
-  return (
-    codigo.includes(textoBusqueda) ||
-    ubicacion.includes(textoBusqueda) ||
-    nombreDelProyecto.includes(textoBusqueda) // <-- Nueva condición de búsqueda
-  );
+    // 2. Buscamos el objeto proyecto correspondiente en memoria
+    const proyectoAsociado = proyectos.find(
+      (p) => (p.IdProyecto || p.idProyecto)?.toString() === idProyectoDelLote?.toString()
+    );
+
+    // 3. Extraemos su nombre real utilizando la propiedad '.Nombre' que nos dio el log
+    const nombreDelProyecto = proyectoAsociado
+      ? (proyectoAsociado.Nombre || proyectoAsociado.nombre || "").toString().toLowerCase()
+      : "";
+
+    const textoBusqueda = busquedaLotes.toLowerCase();
+
+    // 4. Evaluamos si coincide con el código, la ubicación O el nombre del proyecto
+    return (
+      codigo.includes(textoBusqueda) ||
+      ubicacion.includes(textoBusqueda) ||
+      nombreDelProyecto.includes(textoBusqueda) // <-- Nueva condición de búsqueda
+    );
   });
 
   // Filtrar clientes
@@ -1031,10 +1038,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "900",
     color: "#111827",
-    marginBottom: 24,
+    marginBottom: 15,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 10,
     backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,

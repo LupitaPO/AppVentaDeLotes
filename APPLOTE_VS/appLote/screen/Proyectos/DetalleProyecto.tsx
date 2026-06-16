@@ -278,7 +278,7 @@ const DetalleProyecto = ({ route, navigation }) => {
           onPress={() =>
             navigation.navigate('RegistrarLote', { 
               idProyecto: idProyecto, 
-              proyectoNombre: proyectoInfo?.NombreProyecto || proyectoInfo?.nombreProyecto || "Proyecto sin nombre",
+              proyectoNombre: proyectoInfo?.Nombre || proyectoInfo?.nombre || "Proyecto sin nombre",
               onRefresh: cargarTodo 
             })
           }
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     height: 380,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#b99f9f",
+    backgroundColor: "#000",
     margin: 15,
     borderRadius: 15,
     elevation: 5,
