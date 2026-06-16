@@ -109,24 +109,26 @@ namespace APILote.Controllers
             return jsoString;
         }
 
-        [HttpGet("permisos-perfil/{idRol}")]
-        public IActionResult PermisosPerfil(int idRol)
+        [HttpGet("permisos-perfil")]
+        public IActionResult PermisosPerfil([FromQuery] int idRol) // <-- [FromQuery] lee el ?idRol= de React Native
         {
             try
             {
                 UsuarioData data = new UsuarioData();
+                // Se ejecuta tu SP pasándole el idRol que viene desde la app
                 DataTable resultado = data.PermisosPerfil(idRol);
 
                 if (resultado == null || resultado.Rows.Count == 0)
                 {
                     return NotFound(new
                     {
+                        success = false,
                         mensaje = "No se encontraron permisos para este rol",
                         data = new object[] { }
                     });
                 }
 
-                // Convert DataTable to a serializable structure (list of dictionaries)
+                // Convertimos el DataTable a una lista para enviarlo como JSON
                 var rows = new List<Dictionary<string, object>>();
                 foreach (DataRow row in resultado.Rows)
                 {
@@ -152,7 +154,8 @@ namespace APILote.Controllers
                     error = ex.Message
                 });
             }
-        }                       
-
+        }
     }
 }
+
+
