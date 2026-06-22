@@ -18,8 +18,8 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
 import reporteBaseStyles from "./ReporteClientesStyles";
-import { API_URL } from "../config/apiUrl";
-import i18n from "../i18n";
+import { API_URL } from "../../config/apiUrl";
+import i18n from "../../i18n";
 
 // ATAMAINE: URL base del backend .NET donde consultamos la lista real de proyectos.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
@@ -527,7 +527,7 @@ const obtenerLogoPdfUri = () => {
 		return "";
 	}
 
-	return resolver(require("../assets/splash-icon.png"))?.uri || "";
+	return resolver(require("../../assets/splash-icon.png"))?.uri || "";
 };
 
 // ATAMAINE: Fuente principal del listado: proyectos registrados directamente desde el modulo Proyecto.

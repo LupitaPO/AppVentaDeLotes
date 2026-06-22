@@ -15,8 +15,8 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
-import { API_URL } from "../config/apiUrl";
-import i18n from "../i18n";
+import { API_URL } from "../../config/apiUrl";
+import i18n from "../../i18n";
 import styles from "./ReporteAsesorStyles";
 
 type ReporteItem = Record<string, unknown>;
@@ -202,7 +202,7 @@ const abrirAsesorRegistrado = (navigation: any, item: AsesorReporteItem) => {
 const obtenerLogoPdfUri = () => {
 	const resolver = (Image as any).resolveAssetSource;
 	if (typeof resolver !== "function") return "";
-	return resolver(require("../assets/splash-icon.png"))?.uri || "";
+	return resolver(require("../../assets/splash-icon.png"))?.uri || "";
 };
 
 const COLUMNAS_REPORTE: Array<{ key: keyof AsesorReporteItem; label: string; flex: number }> = [

@@ -16,7 +16,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
 import styles from "./ReporteClientesStyles";
-import { API_URL } from "../config/apiUrl";
+import { API_URL } from "../../config/apiUrl";
 
 // ATAMAINE: URL base del backend .NET donde consultamos la lista real de clientes.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
@@ -369,7 +369,7 @@ const obtenerLogoPdfUri = () => {
 		return "";
 	}
 
-	return resolver(require("../assets/splash-icon.png"))?.uri || "";
+	return resolver(require("../../assets/splash-icon.png"))?.uri || "";
 };
 
 const consultarClientesRegistrados = async (signal?: AbortSignal) => {

@@ -15,9 +15,9 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
-import { API_URL } from "../config/apiUrl";
+import { API_URL } from "../../config/apiUrl";
 import styles from "./ReporteLotesStyles";
-import i18n from "../i18n";
+import i18n from "../../i18n";
 
 type ReporteItem = Record<string, unknown>;
 
@@ -406,7 +406,7 @@ const abrirProyectoDelLote = (navigation: any, item: LoteReporteItem) => {
 const obtenerLogoPdfUri = () => {
 	const resolver = (Image as any).resolveAssetSource;
 	if (typeof resolver !== "function") return "";
-	return resolver(require("../assets/splash-icon.png"))?.uri || "";
+	return resolver(require("../../assets/splash-icon.png"))?.uri || "";
 };
 
 const filtrarLotesLocal = (
