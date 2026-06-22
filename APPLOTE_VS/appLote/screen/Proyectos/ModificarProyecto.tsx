@@ -10,6 +10,7 @@ import {
 import React, { useState } from "react";
 import * as DocumentPicker from "expo-document-picker";
 import { API_URL } from "../../config/apiUrl";
+import { agregarArchivoFormData } from "../../utils/formData";
 
 
 const ModificarProyecto = ({ navigation, route }) => {
@@ -21,7 +22,7 @@ const ModificarProyecto = ({ navigation, route }) => {
   const [ubicacion, setUbicacion] = useState(proyecto?.Ubicacion || "");
   const [numHectareas, setNumHectareas] = useState(proyecto?.NumHectareas?.toString() || "");
   const [partidaRegistral, setPartidaRegistral] = useState(proyecto?.PartidaRegistral || "");
-  const [archivoCSV, setArchivoCSV] = useState(null);
+  const [archivoCSV, setArchivoCSV] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
   // Función para seleccionar el archivo CSV
   const seleccionarArchivo = async () => {
@@ -57,20 +58,14 @@ const ModificarProyecto = ({ navigation, route }) => {
     formData.append("Estado", proyecto?.Estado || "A");
 
     if (archivoCSV) {
-      formData.append("ArchivoPlano", {
-        uri: archivoCSV.uri,
-        name: archivoCSV.name,
-        type: "text/csv",
-      });
+      // Adjunta File en web y el descriptor URI esperado por React Native en móvil.
+      agregarArchivoFormData(formData, "ArchivoPlano", archivoCSV);
     }
 
     try {
       const response = await fetch(`${API_URL}/Proyecto/proyecto_Actualizar`, {
         method: "POST",
         body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
       });
 
       const result = await response.text();

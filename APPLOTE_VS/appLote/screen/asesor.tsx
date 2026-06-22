@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -15,12 +16,16 @@ import Fontisto from "@expo/vector-icons/Fontisto";
 import { Languages } from "../localizacion";
 import i18n, { changeLanguage } from "../i18n";
 import { API_URL } from "../config/apiUrl";
+import { WebListHeader, webListStyles } from "../components/web-list-layout";
 
 //Revisión
-const Asesor = ({ navigation, route }) => {
+type AsesorScreenProps = { navigation: any; route: any };
+
+const Asesor = ({ navigation, route }: AsesorScreenProps) => {
+  const esWeb = Platform.OS === "web";
   const { nombre, rol, asesorSeleccionadoDNI, asesorSeleccionadoNombre } = route.params || {};
   const tabBarHeight = useBottomTabBarHeight();
-  const [asesores, setAsesores] = useState([]);
+  const [asesores, setAsesores] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const scrollAsesoresRef = useRef<ScrollView | null>(null);
   const posicionesAsesoresRef = useRef<Record<string, number>>({});
@@ -50,7 +55,7 @@ const Asesor = ({ navigation, route }) => {
     }
   };
 
-   const anularAsesor = async (asesorItem) => {
+   const anularAsesor = async (asesorItem: any) => {
     // 1. Validamos el estado de manera segura (tolerante a mayúsculas/minúsculas y espacios)
     const estadoRaw = asesorItem.Estado || "Inactivo";
     const esActivo = String(estadoRaw).trim().toUpperCase() === "ACTIVO";
@@ -115,9 +120,25 @@ const Asesor = ({ navigation, route }) => {
   };
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  // ATAMAINE: Ver desde ReporteAsesores muestra exclusivamente el asesor
+  // seleccionado; el acceso normal conserva el listado completo.
+  const asesoresVisibles = asesorSeleccionadoDNI
+    ? asesores.filter(
+      (asesorItem) => String(asesorItem.DNI || "") === String(asesorSeleccionadoDNI),
+    )
+    : asesores;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Gestion de Asesores:</Text>
+    <View style={[styles.container, esWeb && webListStyles.page]}>
+      {esWeb ? (
+        <WebListHeader
+          title="Gestión de Asesores"
+          subtitle="Organiza el equipo comercial y consulta su información actualizada."
+          count={asesoresVisibles.length}
+          actionLabel="Nuevo Asesor"
+          onAction={() => navigation.navigate("RegistrarAsesor", { onRefresh: obtenerAsesores })}
+        />
+      ) : <Text style={styles.title}>Gestion de Asesores:</Text>}
       {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
       {/* funcion de boton desplegable patra idioma y exit */}
 
@@ -158,19 +179,19 @@ const Asesor = ({ navigation, route }) => {
       <ScrollView
         ref={scrollAsesoresRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 20 }}
+        contentContainerStyle={[{ paddingBottom: tabBarHeight + 20 }, esWeb && webListStyles.listContent]}
         showsVerticalScrollIndicator={true}
       >
-        <Text style={styles.subtitle}>Selecciona un Asesor:</Text>
+        {!esWeb ? <Text style={styles.subtitle}>Selecciona un Asesor:</Text> : null}
         {asesorSeleccionadoDNI ? (
-          <View style={styles.selectedNotice}>
+          <View style={[styles.selectedNotice, esWeb && webListStyles.fullWidth]}>
             <Text style={styles.selectedNoticeText}>
-              Asesor seleccionado desde reporte: {asesorSeleccionadoNombre || asesorSeleccionadoDNI}
+              Mostrando solo el asesor seleccionado: {asesorSeleccionadoNombre || asesorSeleccionadoDNI}
             </Text>
           </View>
         ) : null}
 
-        {asesores.map((asesorItem, index) => {
+        {asesoresVisibles.map((asesorItem, index) => {
           const nombreCompleto = [
             asesorItem.Nombre1,
             asesorItem.Nombre2,
@@ -190,7 +211,7 @@ const Asesor = ({ navigation, route }) => {
           return (
             <TouchableOpacity
               key={asesorItem.IdAsesor ? asesorItem.IdAsesor.toString() : index.toString()}
-              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+              style={[styles.card, esWeb && webListStyles.card, estaSeleccionado && styles.cardSeleccionada]}
               onLayout={(event) => {
                 if (asesorItem.DNI) {
                   posicionesAsesoresRef.current[String(asesorItem.DNI)] = event.nativeEvent.layout.y;
@@ -250,7 +271,7 @@ const Asesor = ({ navigation, route }) => {
         })}
       </ScrollView>
 
-      <View style={styles.grid}>
+      {!esWeb ? <View style={styles.grid}>
         <TouchableOpacity
           onPress={() =>
             navigation.navigate("RegistrarAsesor", { onRefresh: obtenerAsesores })
@@ -259,7 +280,7 @@ const Asesor = ({ navigation, route }) => {
         >
           <Text style={styles.btnRegisText}>Nuevo Asesor</Text>
         </TouchableOpacity>
-      </View>
+      </View> : null}
     </View>
   );
 };

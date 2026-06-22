@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   Dimensions,
+  Platform,
 } from "react-native";
 
 // Hooks de React para manejar estado local del componente.
@@ -45,11 +46,13 @@ import { API_URL } from "../config/apiUrl";
 
 const Home = ({ route, navigation }: any) => {
   const { width } = useWindowDimensions();
-  const esPantallaPc = width >= 900;
+  const esPantallaPc = Platform.OS === "web" && width >= 900;
   const esMovilCompacto = width < 390;
-  const anchoContenido = esPantallaPc ? 760 : width;
-  const anchoGrafico = Math.max(215, Math.min(anchoContenido - 104, 480));
-  const anchoDona = esPantallaPc ? Math.min(anchoGrafico, 260) : esMovilCompacto ? 132 : 152;
+  const anchoContenido = esPantallaPc ? Math.max(900, width - 96) : width;
+  const anchoGrafico = esPantallaPc
+    ? Math.min(anchoContenido * 0.56, 720)
+    : Math.max(215, Math.min(anchoContenido - 104, 480));
+  const anchoDona = esPantallaPc ? Math.min(anchoGrafico, 320) : esMovilCompacto ? 132 : 152;
   const altoDona = esMovilCompacto ? 122 : 138;
 
   // Altura de la barra inferior para dejar espacio visual al final del contenido.
@@ -113,7 +116,7 @@ const Home = ({ route, navigation }: any) => {
 
   // ATAMAINE: Componente premium para las tarjetas del resumen, conectado a los mismos datos reales.
   const DashCard = ({ titulo, valor, detalle, icono, color }: any) => (
-    <View style={[styles.card, { borderLeftColor: color }]}>
+    <View style={[styles.card, esPantallaPc && styles.cardDesktop, { borderLeftColor: color }]}>
       <View style={[styles.cardIconBox, { backgroundColor: color }]}>
         <MaterialCommunityIcons name={icono} size={28} color="#ffffff" />
       </View>
@@ -682,10 +685,10 @@ const styles = StyleSheet.create({
   // ATAMAINE: En laptop se mantiene como dashboard movil premium sin estirarse demasiado.
 
   containerDesktop: {
-    maxWidth: 820,
+    maxWidth: "100%",
     alignSelf: "center",
     width: "100%",
-    paddingHorizontal: 28,
+    paddingHorizontal: 32,
   },
 
 
@@ -1146,14 +1149,6 @@ const styles = StyleSheet.create({
   },
 
 
-  // Tarjetas pequeñas individuales adaptadas a loginPanel
-  card: {
-    backgroundColor: "#ffffff",
-    width: "48%",
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-
   // ATAMAINE: Tarjetas pequenas con icono cuadrado, borde lateral y sombra premium.
   card: {
     backgroundColor: "#ffffff",
@@ -1175,6 +1170,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
+  },
+  cardDesktop: {
+    width: "24%",
+    minWidth: 240,
+    flexGrow: 1,
   },
 
   info: {
@@ -1267,21 +1267,6 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "800",
-  },
-
-  reportPillWrapper: {
-    paddingHorizontal: 0, 
-    marginTop: 8,
-    marginBottom: 16,
-  },
-
-  // Píldora de reporte perfectamente integrada
-
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
-    shadowRadius: 14,
-    elevation: 4,
   },
 
   // ATAMAINE: Caja de icono colorida para cada metrica.

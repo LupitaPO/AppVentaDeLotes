@@ -2,6 +2,7 @@ import {
 	ActivityIndicator,
 	Alert,
 	Image,
+	Keyboard,
 	Platform,
 	ScrollView,
 	Text,
@@ -9,7 +10,7 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -39,6 +40,8 @@ type ReporteLotesProps = {
 type ProyectoSelectItem = {
 	id: string;
 	nombre: string;
+	codigo: string;
+	ubicacion: string;
 };
 
 const EMPRESA_NOMBRE = "Residencial Santa Fe";
@@ -84,6 +87,29 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
 
 const normalizarTexto = (value: unknown) => String(value ?? "").trim();
 const pareceIdNumerico = (value: unknown) => /^\d+$/.test(normalizarTexto(value));
+
+// ATAMAINE: Las coincidencias ignoran tildes y mayusculas para aceptar escritura natural.
+const normalizarTerminoBusqueda = (value: unknown) =>
+	normalizarTexto(value)
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase();
+
+const coincideProyecto = (proyecto: ProyectoSelectItem, criterio: string) => {
+	const termino = normalizarTerminoBusqueda(criterio);
+	if (!termino) return true;
+	return [proyecto.nombre, proyecto.codigo, proyecto.ubicacion, proyecto.id]
+		.some((valor) => normalizarTerminoBusqueda(valor).includes(termino));
+};
+
+const coincideEstado = (estado: string, criterio: string) =>
+	normalizarTerminoBusqueda(estado).includes(normalizarTerminoBusqueda(criterio));
+
+const limpiarPrecio = (value: string) => {
+	const normalizado = value.replace(",", ".").replace(/[^0-9.]/g, "");
+	const [entero, ...decimales] = normalizado.split(".");
+	return decimales.length ? `${entero}.${decimales.join("").slice(0, 2)}` : entero;
+};
 
 const consultarPrimerEndpointDisponible = async (urls: string[], signal?: AbortSignal) => {
 	let ultimoError: Error | null = null;
@@ -267,6 +293,16 @@ const obtenerIdProyecto = (item: ReporteItem) => {
 	return "";
 };
 
+const obtenerCampoProyecto = (item: ReporteItem, claves: string[]) => {
+	if (!item || typeof item !== "object") return "";
+	const registro = item as Record<string, unknown>;
+	for (const clave of claves) {
+		const valor = normalizarTexto(registro[clave]);
+		if (valor) return valor;
+	}
+	return "";
+};
+
 const normalizarProyectos = (items: ReporteItem[]): ProyectoSelectItem[] => {
 	const proyectos = new Map<string, ProyectoSelectItem>();
 
@@ -276,7 +312,12 @@ const normalizarProyectos = (items: ReporteItem[]): ProyectoSelectItem[] => {
 
 		const id = obtenerIdProyecto(item);
 		const clave = id ? `id:${id}` : `nombre:${nombre.toLowerCase()}`;
-		proyectos.set(clave, { id, nombre });
+		proyectos.set(clave, {
+			id,
+			nombre,
+			codigo: obtenerCampoProyecto(item, ["CodProyecto", "codProyecto", "CodigoProyecto", "Codigo", "codigo"]),
+			ubicacion: obtenerCampoProyecto(item, ["Ubicacion", "ubicacion", "Direccion", "direccion"]),
+		});
 	});
 
 	return Array.from(proyectos.values());
@@ -285,6 +326,27 @@ const normalizarProyectos = (items: ReporteItem[]): ProyectoSelectItem[] => {
 const consultarProyectos = async (signal?: AbortSignal) => {
 	const rawData = await consultarPrimerEndpointDisponible(construirUrlsProyectos(), signal);
 	return normalizarProyectos(parseReporteResponse(rawData));
+};
+
+const consultarProyectosDetallados = async (signal?: AbortSignal) => {
+	const response = await fetch(`${API_URL}/Proyecto/proyecto_Listar`, { signal });
+	if (!response.ok) throw new Error(`HTTP ${response.status}`);
+	return normalizarProyectos(parseReporteResponse(await response.text()));
+};
+
+const combinarProyectos = (selectItems: ProyectoSelectItem[], detalles: ProyectoSelectItem[]) => {
+	const base = selectItems.length ? selectItems : detalles;
+	return base.map((proyecto) => {
+		const detalle = detalles.find((candidato) =>
+			(proyecto.id && candidato.id === proyecto.id) ||
+			normalizarTerminoBusqueda(candidato.nombre) === normalizarTerminoBusqueda(proyecto.nombre),
+		);
+		return {
+			...proyecto,
+			codigo: proyecto.codigo || detalle?.codigo || "",
+			ubicacion: proyecto.ubicacion || detalle?.ubicacion || "",
+		};
+	});
 };
 
 const buscarNombreProyectoPorId = (idProyecto: string, proyectos: ProyectoSelectItem[]) => {
@@ -353,18 +415,34 @@ const filtrarLotesLocal = (
 	nombreProyecto: string,
 	precioDesde: string,
 ) => {
-	const estado = estadoLote.trim().toLowerCase();
-	const proyecto = nombreProyecto.trim().toLowerCase();
+	const estado = normalizarTerminoBusqueda(estadoLote);
+	const proyecto = normalizarTerminoBusqueda(nombreProyecto);
 	const precio = Number(precioDesde || 0);
 
 	// ATAMAINE: Fallback local para cuando el controller reporte_Lotes aun no esta publicado en Somee.
 	return items.filter((item) => {
 		const precioItem = Number(item.Precio.replace(/[^\d.]/g, ""));
-		const coincideEstado = !estado || item.EstadoLote.toLowerCase().includes(estado);
-		const coincideProyecto = !proyecto || item.Proyecto.toLowerCase().includes(proyecto);
+		const coincideEstadoFiltro = !estado || normalizarTerminoBusqueda(item.EstadoLote).includes(estado);
+		const coincideProyectoFiltro = !proyecto || normalizarTerminoBusqueda(item.Proyecto).includes(proyecto);
 		const coincidePrecio = !precioDesde || (Number.isFinite(precioItem) && precioItem >= precio);
-		return coincideEstado && coincideProyecto && coincidePrecio;
+		return coincideEstadoFiltro && coincideProyectoFiltro && coincidePrecio;
 	});
+};
+
+// ATAMAINE: Si el usuario escribe codigo, ubicacion o una coincidencia unica,
+// convertimos ese texto al nombre que espera reporte_Lotes en el backend.
+const resolverNombreProyectoFiltro = (criterio: string, proyectos: ProyectoSelectItem[]) => {
+	const termino = normalizarTerminoBusqueda(criterio);
+	if (!termino) return "";
+
+	const exactas = proyectos.filter((proyecto) =>
+		[proyecto.id, proyecto.nombre, proyecto.codigo, proyecto.ubicacion]
+			.some((valor) => normalizarTerminoBusqueda(valor) === termino),
+	);
+	if (exactas.length === 1) return exactas[0].nombre;
+
+	const parciales = proyectos.filter((proyecto) => coincideProyecto(proyecto, criterio));
+	return parciales.length === 1 ? parciales[0].nombre : criterio.trim();
 };
 
 const obtenerProyectosDesdeLotes = (items: LoteReporteItem[]) => {
@@ -374,7 +452,7 @@ const obtenerProyectosDesdeLotes = (items: LoteReporteItem[]) => {
 		const proyecto = item.Proyecto.trim();
 		if (proyecto && proyecto !== "-" && !pareceIdNumerico(proyecto)) {
 			const clave = item.IdProyecto ? `id:${item.IdProyecto}` : `nombre:${proyecto.toLowerCase()}`;
-			proyectos.set(clave, { id: item.IdProyecto, nombre: proyecto });
+			proyectos.set(clave, { id: item.IdProyecto, nombre: proyecto, codigo: "", ubicacion: "" });
 		}
 	});
 
@@ -429,6 +507,7 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 	const [proyectos, setProyectos] = useState<ProyectoSelectItem[]>([]);
 	const [mostrarProyectos, setMostrarProyectos] = useState(false);
 	const [cargandoProyectos, setCargandoProyectos] = useState(false);
+	const [campoActivo, setCampoActivo] = useState<"estado" | "proyecto" | null>(null);
 	const [precioDesde, setPrecioDesde] = useState("");
 	const [todosLotes, setTodosLotes] = useState<LoteReporteItem[]>([]);
 	const [reporte, setReporte] = useState<LoteReporteItem[]>([]);
@@ -465,12 +544,19 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 	const cargarProyectos = async (signal?: AbortSignal) => {
 		try {
 			setCargandoProyectos(true);
-			const proyectosApi = await consultarProyectos(signal);
-			const proyectosFinal = proyectosApi.length ? proyectosApi : obtenerProyectosDesdeLotes(todosLotes);
-			setProyectos(proyectosFinal);
-			if (proyectosFinal.length) {
-				setTodosLotes((actuales) => aplicarNombresProyectoALotes(actuales, proyectosFinal));
-				setReporte((actuales) => aplicarNombresProyectoALotes(actuales, proyectosFinal));
+			const [selectResultado, detalleResultado] = await Promise.allSettled([
+				consultarProyectos(signal),
+				consultarProyectosDetallados(signal),
+			]);
+			if (signal?.aborted) return;
+			const proyectosApi = selectResultado.status === "fulfilled" ? selectResultado.value : [];
+			const proyectosDetalle = detalleResultado.status === "fulfilled" ? detalleResultado.value : [];
+			const proyectosFinal = combinarProyectos(proyectosApi, proyectosDetalle);
+			const proyectosDisponibles = proyectosFinal.length ? proyectosFinal : obtenerProyectosDesdeLotes(todosLotes);
+			setProyectos(proyectosDisponibles);
+			if (proyectosDisponibles.length) {
+				setTodosLotes((actuales) => aplicarNombresProyectoALotes(actuales, proyectosDisponibles));
+				setReporte((actuales) => aplicarNombresProyectoALotes(actuales, proyectosDisponibles));
 			}
 		} catch (error) {
 			if ((error as Error).name === "AbortError") return;
@@ -491,31 +577,39 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 	const alternarEstadosLote = () => {
 		if (mostrarEstadosLote) {
 			setMostrarEstadosLote(false);
+			setCampoActivo(null);
 			return;
 		}
 		setMostrarProyectos(false);
 		setMostrarEstadosLote(true);
+		setCampoActivo("estado");
 		refrescarEstadosLote();
 	};
 
 	const alternarProyectos = () => {
 		if (mostrarProyectos) {
 			setMostrarProyectos(false);
+			setCampoActivo(null);
 			return;
 		}
 		setMostrarEstadosLote(false);
 		setMostrarProyectos(true);
+		setCampoActivo("proyecto");
 		refrescarProyectos();
 	};
 
 	const seleccionarEstadoLote = (estado: string) => {
 		setEstadoLote(estado);
 		setMostrarEstadosLote(false);
+		setCampoActivo(null);
+		Keyboard.dismiss();
 	};
 
-	const seleccionarProyecto = (proyecto: string) => {
-		setNombreProyecto(proyecto);
+	const seleccionarProyecto = (proyecto: ProyectoSelectItem) => {
+		setNombreProyecto(proyecto.nombre);
 		setMostrarProyectos(false);
+		setCampoActivo(null);
+		Keyboard.dismiss();
 	};
 
 	useEffect(() => {
@@ -563,6 +657,8 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 		setMostrarEstadosLote(false);
 		setNombreProyecto("");
 		setMostrarProyectos(false);
+		setCampoActivo(null);
+		Keyboard.dismiss();
 		setPrecioDesde("");
 		setBuscado(false);
 		setMensaje("");
@@ -579,8 +675,16 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 
 	const consultarReporte = async () => {
 		const hayFiltro = Boolean(estadoLote.trim() || nombreProyecto.trim() || precioDesde.trim());
+		const nombreProyectoConsulta = resolverNombreProyectoFiltro(nombreProyecto, proyectos);
 		setMostrarEstadosLote(false);
 		setMostrarProyectos(false);
+		setCampoActivo(null);
+		Keyboard.dismiss();
+
+		if (precioDesde.trim() && !Number.isFinite(Number(precioDesde))) {
+			setMensaje("Ingresa un precio valido para realizar la busqueda.");
+			return;
+		}
 
 		if (!hayFiltro) {
 			await cargarLotesIniciales();
@@ -596,17 +700,21 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 
 			let filtrados: LoteReporteItem[] = [];
 			try {
-				filtrados = await consultarLotesReporte(
+				const respuestaApi = await consultarLotesReporte(
 					estadoLote,
-					nombreProyecto,
+					nombreProyectoConsulta,
 					precioDesde,
 					fetchControllerRef.current.signal,
 					proyectos,
 				);
+				const respuestaConProyecto = proyectos.length ? aplicarNombresProyectoALotes(respuestaApi, proyectos) : respuestaApi;
+				const filtradosApi = filtrarLotesLocal(respuestaConProyecto, estadoLote, nombreProyectoConsulta, precioDesde);
+				const respaldoLocal = filtrarLotesLocal(todosLotes, estadoLote, nombreProyectoConsulta, precioDesde);
+				filtrados = filtradosApi.length ? filtradosApi : respaldoLocal;
 			} catch (error) {
 				const base = todosLotes.length ? todosLotes : await consultarLotesBase(fetchControllerRef.current.signal, proyectos);
 				const baseConProyecto = proyectos.length ? aplicarNombresProyectoALotes(base, proyectos) : base;
-				filtrados = filtrarLotesLocal(baseConProyecto, estadoLote, nombreProyecto, precioDesde);
+				filtrados = filtrarLotesLocal(baseConProyecto, estadoLote, nombreProyectoConsulta, precioDesde);
 			}
 
 			const filtradosConProyecto = proyectos.length ? aplicarNombresProyectoALotes(filtrados, proyectos) : filtrados;
@@ -690,182 +798,267 @@ const ReporteLotes = ({ navigation }: ReporteLotesProps) => {
 	};
 
 	const listadoMostrar = buscado ? reporte : todosLotes;
+	const estadosFiltrados = useMemo(
+		() => estadosLote.filter((estado) => coincideEstado(estado, estadoLote)),
+		[estadosLote, estadoLote],
+	);
+	const proyectosFiltrados = useMemo(
+		() => proyectos.filter((proyecto) => coincideProyecto(proyecto, nombreProyecto)).slice(0, 20),
+		[proyectos, nombreProyecto],
+	);
+	const totalLotes = todosLotes.length;
+	const totalLibres = todosLotes.filter((item) => esEstadoDisponible(item.EstadoLote)).length;
+	const totalVendidos = todosLotes.filter((item) => normalizarTerminoBusqueda(item.EstadoLote) === "vendido").length;
 	const esColumnaCorta = (key: keyof LoteReporteItem) =>
 		key === "Manzana" || key === "NumeroLote" || key === "Area" || key === "Precio";
+
+	const abrirRegistroLote = () => {
+		const criterio = normalizarTerminoBusqueda(nombreProyecto);
+		const coincidencias = criterio ? proyectos.filter((proyecto) => coincideProyecto(proyecto, nombreProyecto)) : [];
+		const proyectoExacto = proyectos.find((proyecto) =>
+			normalizarTerminoBusqueda(proyecto.nombre) === criterio
+			|| normalizarTerminoBusqueda(proyecto.codigo) === criterio
+			|| normalizarTerminoBusqueda(proyecto.id) === criterio,
+		);
+		const proyectoSeleccionado = proyectoExacto ?? (coincidencias.length === 1 ? coincidencias[0] : null);
+
+		if (!proyectoSeleccionado?.id) {
+			// ATAMAINE: RegistrarLote necesita un IdProyecto real; evitamos abrir el
+			// formulario con datos incompletos o navegar por ListarProyectos fuera del tab.
+			setCampoActivo("proyecto");
+			setMostrarProyectos(true);
+			setMostrarEstadosLote(false);
+			Alert.alert("Selecciona un proyecto", "Escribe o elige un proyecto activo antes de registrar el nuevo lote.");
+			return;
+		}
+
+		Keyboard.dismiss();
+		navigation.navigate("RegistrarLote", {
+			idProyecto: proyectoSeleccionado.id,
+			proyectoNombre: proyectoSeleccionado.nombre,
+		});
+	};
 
 	return (
 		<View style={styles.container}>
 			<View style={styles.backgroundGlowTop} />
 			<View style={styles.backgroundGlowBottom} />
-			<ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-				<LinearGradient colors={["#0f766e", "#155e63", "#172554"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-					<View style={styles.headerRow}>
-						<TouchableOpacity style={styles.backButtonTouch} onPress={() => navigation.goBack()}>
-							{/* ATAMAINE: Boton volver mantiene el patron visual premium de reportes. */}
-							<LinearGradient colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.12)"]} style={styles.backButton}>
-								<MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
-							</LinearGradient>
+			<ScrollView
+				style={styles.scrollView}
+				contentContainerStyle={styles.scrollContent}
+				contentInsetAdjustmentBehavior="automatic"
+				keyboardShouldPersistTaps="handled"
+				showsVerticalScrollIndicator={false}
+			>
+				<LinearGradient colors={["#061b2b", "#064e5a", "#0f766e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+					<View style={styles.heroToolbar}>
+						<TouchableOpacity style={styles.menuButton} onPress={() => navigation.goBack()} accessibilityLabel="Regresar">
+							<MaterialCommunityIcons name="arrow-left" size={16} color="#ffffff" />
+							{Platform.OS === "web" ? <Text style={styles.backButtonText}>Regresar</Text> : null}
 						</TouchableOpacity>
-						<View style={styles.heroContent}>
-							<View style={styles.liveBadge}>
-								<View style={styles.liveDot} />
-								<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
+						<View style={styles.liveBadge}>
+							<View style={styles.liveDot} />
+							<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
+						</View>
+						<View style={styles.dateCard}>
+							<View style={styles.dateLine}>
+								<MaterialCommunityIcons name="calendar-month-outline" size={11} color="#bfdbfe" />
+								<Text style={styles.dateText}>{fechaFormateada}</Text>
 							</View>
-							<Text style={styles.title}>Gestion Integral</Text>
-							<Text style={styles.title}>de Lotes</Text>
-							<Text style={styles.subtitle}>Consulta lotes por estado, proyecto o precio con datos reales en tiempo real.</Text>
+							<View style={styles.dateLine}>
+								<MaterialCommunityIcons name="clock-outline" size={11} color="#bfdbfe" />
+								<Text style={styles.dateText}>{horaFormateada}</Text>
+							</View>
 						</View>
 					</View>
-					<View style={styles.statsRow}>
+
+					<View style={styles.heroMainRow}>
+						<View style={styles.heroContent}>
+							<Text style={styles.title}>Gestion Integral</Text>
+							<Text style={styles.title}>de Lotes</Text>
+							<Text style={styles.subtitle}>Filtra por estado, proyecto o precio con datos reales del API.</Text>
+						</View>
+						<View style={styles.peopleScene}>
+							<View style={[styles.personBubble, styles.personBubbleBlue]}><MaterialCommunityIcons name="view-grid-outline" size={17} color="#ffffff" /></View>
+							<View style={[styles.personBubble, styles.personBubbleGreen]}><MaterialCommunityIcons name="map-marker-radius-outline" size={17} color="#ffffff" /></View>
+							<View style={[styles.personBubble, styles.personBubblePurple]}><MaterialCommunityIcons name="cash-multiple" size={17} color="#ffffff" /></View>
+							<View style={styles.peopleBase} />
+						</View>
+					</View>
+
+					<View style={styles.statsGrid}>
 						<View style={styles.statCard}>
-							<Text style={styles.statLabel}>Lotes Registrados</Text>
-							{cargando ? <ActivityIndicator size="small" color="#ffffff" /> : <Text style={styles.statValue}>{Math.max(todosLotes.length, reporte.length)}</Text>}
-							<Text style={styles.statCaption}>Lotes totales</Text>
+							<View style={[styles.statIconWrap, { backgroundColor: "#dbeafe" }]}><MaterialCommunityIcons name="view-grid" size={13} color="#2563eb" /></View>
+							<Text style={styles.statLabel}>Registrados</Text>
+							{cargando ? <ActivityIndicator size="small" color="#2563eb" style={styles.statLoader} /> : <Text style={styles.statValue}>{totalLotes}</Text>}
+							<Text style={styles.statCaption}>Total de lotes</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#2563eb" }]} />
 						</View>
 						<View style={styles.statCard}>
+							<View style={[styles.statIconWrap, { backgroundColor: "#d1fae5" }]}><MaterialCommunityIcons name="check-circle-outline" size={13} color="#059669" /></View>
+							<Text style={styles.statLabel}>Libres</Text>
+							<Text style={styles.statValue}>{totalLibres}</Text>
+							<Text style={styles.statCaption}>Disponibles</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#10b981" }]} />
+						</View>
+						<View style={styles.statCard}>
+							<View style={[styles.statIconWrap, { backgroundColor: "#ffe4e6" }]}><MaterialCommunityIcons name="home-outline" size={13} color="#e11d48" /></View>
+							<Text style={styles.statLabel}>Vendidos</Text>
+							<Text style={styles.statValue}>{totalVendidos}</Text>
+							<Text style={styles.statCaption}>Comprometidos</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#f43f5e" }]} />
+						</View>
+						<TouchableOpacity style={styles.statCard} activeOpacity={0.82} onPress={cargarLotesIniciales}>
+							<View style={[styles.statIconWrap, { backgroundColor: "#f3e8ff" }]}><MaterialCommunityIcons name="refresh" size={13} color="#7c3aed" /></View>
 							<Text style={styles.statLabel}>Ultimo Filtro</Text>
-							<Text style={styles.statValueSmall}>{ultimoFiltro || "Sin filtro"}</Text>
-							<Text style={styles.statCaption}>Dato consultado</Text>
-						</View>
+							<Text style={[styles.statValue, styles.statValueText]} numberOfLines={2}>{ultimoFiltro || "Sin filtro"}</Text>
+							<Text style={styles.statCaption}>Toca para actualizar</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#8b5cf6" }]} />
+						</TouchableOpacity>
 					</View>
 				</LinearGradient>
 
 				<View style={styles.searchCard}>
 					<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
-					<Text style={styles.fieldLabel}>Estado del lote:</Text>
-					<View style={styles.estadoSelectWrap}>
-						<TouchableOpacity activeOpacity={0.84} style={[styles.input, styles.estadoSelectInput]} onPress={alternarEstadosLote}>
-							<Text style={estadoLote ? styles.estadoSelectText : styles.estadoSelectPlaceholder} numberOfLines={1}>
-								{estadoLote || (cargandoEstadosLote ? "Cargando estados..." : "Libre, Vendido, En Deuda...")}
-							</Text>
-							{cargandoEstadosLote ? (
-								<ActivityIndicator size="small" color="#0f766e" />
-							) : (
-								<MaterialCommunityIcons name={mostrarEstadosLote ? "chevron-up" : "chevron-down"} size={22} color="#0f766e" />
-							)}
-						</TouchableOpacity>
+					<Text style={styles.fieldLabel}>Estado del lote</Text>
+					<View style={[styles.selectorWrap, styles.selectorWrapTop]}>
+						<View style={[styles.selectorShell, campoActivo === "estado" ? styles.selectorShellFocused : null]}>
+							<MaterialCommunityIcons name="tag-outline" size={17} color={campoActivo === "estado" ? "#0f766e" : "#8aa0b5"} />
+							<TextInput
+								value={estadoLote}
+								onChangeText={(texto) => { setEstadoLote(texto); setMostrarEstadosLote(true); setMostrarProyectos(false); }}
+								onFocus={() => { setCampoActivo("estado"); setMostrarEstadosLote(true); setMostrarProyectos(false); if (!estadosLote.length) refrescarEstadosLote(); }}
+								placeholder={cargandoEstadosLote ? "Cargando estados..." : "Escribe o selecciona un estado"}
+								placeholderTextColor="#91a3b6"
+								style={styles.selectorInput}
+								returnKeyType="next"
+								autoCorrect={false}
+								accessibilityLabel="Filtrar por estado del lote"
+							/>
+							{estadoLote ? <TouchableOpacity style={styles.selectorClearButton} onPress={() => { setEstadoLote(""); setMostrarEstadosLote(true); }} accessibilityLabel="Borrar estado"><MaterialCommunityIcons name="close-circle" size={16} color="#94a3b8" /></TouchableOpacity> : null}
+							<TouchableOpacity style={styles.selectorIconButton} onPress={alternarEstadosLote} accessibilityLabel="Mostrar estados">
+								{cargandoEstadosLote ? <ActivityIndicator size="small" color="#0f766e" /> : <MaterialCommunityIcons name={mostrarEstadosLote ? "chevron-up" : "chevron-down"} size={19} color="#0f766e" />}
+							</TouchableOpacity>
+						</View>
 						{mostrarEstadosLote ? (
-							<View style={styles.estadoOptionsBox}>
-								{estadosLote.map((estado) => {
-									const activo = estadoLote.trim().toLowerCase() === estado.trim().toLowerCase();
+							<View style={styles.optionsBox}>
+								<View style={styles.optionsHeader}><Text style={styles.optionsHeaderText}>Estados disponibles</Text><Text style={styles.optionsHeaderText}>{estadosFiltrados.length}</Text></View>
+								{estadosFiltrados.length ? estadosFiltrados.map((estado) => {
+									const seleccionado = normalizarTerminoBusqueda(estadoLote) === normalizarTerminoBusqueda(estado);
 									return (
-										<TouchableOpacity key={estado} activeOpacity={0.84} style={[styles.estadoOptionItem, activo ? styles.estadoOptionItemActive : null]} onPress={() => seleccionarEstadoLote(estado)}>
-											<Text style={[styles.estadoOptionText, activo ? styles.estadoOptionTextActive : null]}>{estado}</Text>
-											{activo ? <MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" /> : null}
+										<TouchableOpacity key={estado} style={[styles.optionItem, seleccionado ? styles.optionItemActive : null]} activeOpacity={0.82} onPress={() => seleccionarEstadoLote(estado)}>
+											<View style={styles.optionIcon}><MaterialCommunityIcons name={esEstadoDisponible(estado) ? "check-circle-outline" : "tag-outline"} size={16} color="#0f766e" /></View>
+											<View style={styles.optionContent}><Text style={styles.optionTitle}>{estado}</Text><Text style={styles.optionMeta}>Seleccionar estado del lote</Text></View>
+											{seleccionado ? <MaterialCommunityIcons name="check-circle" size={17} color="#10b981" /> : <MaterialCommunityIcons name="chevron-right" size={16} color="#94a3b8" />}
 										</TouchableOpacity>
 									);
-								})}
+								}) : <View style={styles.optionEmpty}><MaterialCommunityIcons name="text-search" size={22} color="#94a3b8" /><Text style={styles.optionEmptyText}>No hay estados que coincidan con "{estadoLote}".</Text></View>}
 							</View>
 						) : null}
 					</View>
-					<Text style={styles.fieldLabel}>Proyecto:</Text>
-					<View style={styles.estadoSelectWrap}>
-						<TouchableOpacity activeOpacity={0.84} style={[styles.input, styles.estadoSelectInput]} onPress={alternarProyectos}>
-							<Text style={nombreProyecto ? styles.estadoSelectText : styles.estadoSelectPlaceholder} numberOfLines={1}>
-								{nombreProyecto || (cargandoProyectos ? "Cargando proyectos..." : "Nombre del proyecto")}
-							</Text>
-							{cargandoProyectos ? (
-								<ActivityIndicator size="small" color="#0f766e" />
-							) : (
-								<MaterialCommunityIcons name={mostrarProyectos ? "chevron-up" : "chevron-down"} size={22} color="#0f766e" />
-							)}
-						</TouchableOpacity>
+
+					<Text style={styles.fieldLabel}>Proyecto</Text>
+					<View style={styles.selectorWrap}>
+						<View style={[styles.selectorShell, campoActivo === "proyecto" ? styles.selectorShellFocused : null]}>
+							<MaterialCommunityIcons name="office-building-marker-outline" size={17} color={campoActivo === "proyecto" ? "#0f766e" : "#8aa0b5"} />
+							<TextInput
+								value={nombreProyecto}
+								onChangeText={(texto) => { setNombreProyecto(texto); setMostrarProyectos(true); setMostrarEstadosLote(false); }}
+								onFocus={() => { setCampoActivo("proyecto"); setMostrarProyectos(true); setMostrarEstadosLote(false); if (!proyectos.length) refrescarProyectos(); }}
+								placeholder={cargandoProyectos ? "Cargando proyectos..." : "Escribe nombre, codigo o ubicacion"}
+								placeholderTextColor="#91a3b6"
+								style={styles.selectorInput}
+								returnKeyType="search"
+								autoCorrect={false}
+								autoCapitalize="words"
+								onSubmitEditing={consultarReporte}
+								accessibilityLabel="Filtrar por proyecto"
+							/>
+							{nombreProyecto ? <TouchableOpacity style={styles.selectorClearButton} onPress={() => { setNombreProyecto(""); setMostrarProyectos(true); }} accessibilityLabel="Borrar proyecto"><MaterialCommunityIcons name="close-circle" size={16} color="#94a3b8" /></TouchableOpacity> : null}
+							<TouchableOpacity style={styles.selectorIconButton} onPress={alternarProyectos} accessibilityLabel="Mostrar proyectos">
+								{cargandoProyectos ? <ActivityIndicator size="small" color="#0f766e" /> : <MaterialCommunityIcons name={mostrarProyectos ? "chevron-up" : "chevron-down"} size={19} color="#0f766e" />}
+							</TouchableOpacity>
+						</View>
 						{mostrarProyectos ? (
-							<View style={styles.estadoOptionsBox}>
-								{proyectos.length ? (
-									proyectos.map((proyecto) => {
-										const activo = nombreProyecto.trim().toLowerCase() === proyecto.nombre.trim().toLowerCase();
-										return (
-											<TouchableOpacity key={proyecto.id || proyecto.nombre} activeOpacity={0.84} style={[styles.estadoOptionItem, activo ? styles.estadoOptionItemActive : null]} onPress={() => seleccionarProyecto(proyecto.nombre)}>
-												<Text style={[styles.estadoOptionText, activo ? styles.estadoOptionTextActive : null]}>{proyecto.nombre}</Text>
-												{activo ? <MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" /> : null}
-											</TouchableOpacity>
-										);
-									})
-								) : (
-									<View style={styles.estadoOptionItem}>
-										<Text style={styles.estadoOptionText}>{cargandoProyectos ? "Cargando proyectos..." : "Sin proyectos disponibles"}</Text>
-									</View>
-								)}
+							<View style={styles.optionsBox}>
+								<View style={styles.optionsHeader}><Text style={styles.optionsHeaderText}>Proyectos activos</Text><Text style={styles.optionsHeaderText}>{proyectosFiltrados.length} coincidencia{proyectosFiltrados.length === 1 ? "" : "s"}</Text></View>
+								{proyectosFiltrados.length ? (
+									<ScrollView style={styles.optionsScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+										{proyectosFiltrados.map((proyecto) => {
+											const seleccionado = normalizarTerminoBusqueda(nombreProyecto) === normalizarTerminoBusqueda(proyecto.nombre);
+											const detalle = [proyecto.codigo ? `Cod. ${proyecto.codigo}` : "", proyecto.ubicacion].filter(Boolean).join("  |  ");
+											return (
+												<TouchableOpacity key={proyecto.id || `${proyecto.nombre}-${proyecto.codigo}`} style={[styles.optionItem, seleccionado ? styles.optionItemActive : null]} activeOpacity={0.82} onPress={() => seleccionarProyecto(proyecto)}>
+													<View style={styles.optionIcon}><MaterialCommunityIcons name="office-building-marker-outline" size={16} color="#0f766e" /></View>
+													<View style={styles.optionContent}><Text style={styles.optionTitle} numberOfLines={1}>{proyecto.nombre}</Text><Text style={styles.optionMeta} numberOfLines={2}>{detalle || "Proyecto activo"}</Text></View>
+													{seleccionado ? <MaterialCommunityIcons name="check-circle" size={17} color="#10b981" /> : <MaterialCommunityIcons name="chevron-right" size={16} color="#94a3b8" />}
+												</TouchableOpacity>
+											);
+										})}
+									</ScrollView>
+								) : <View style={styles.optionEmpty}><MaterialCommunityIcons name="text-search" size={22} color="#94a3b8" /><Text style={styles.optionEmptyText}>No hay proyectos que coincidan con "{nombreProyecto}".</Text></View>}
 							</View>
 						) : null}
 					</View>
-					<Text style={styles.fieldLabel}>Precio desde:</Text>
-					<TextInput value={precioDesde} onChangeText={setPrecioDesde} onFocus={() => { setMostrarEstadosLote(false); setMostrarProyectos(false); }} placeholder="Ej. 15000" placeholderTextColor="#8ba8ae" style={styles.input} keyboardType="numeric" returnKeyType="search" onSubmitEditing={consultarReporte} />
+
+					<Text style={styles.fieldLabel}>Precio desde</Text>
+					<View style={[styles.inputShell, styles.priceShell]}>
+						<MaterialCommunityIcons name="cash" size={17} color="#8aa0b5" />
+						<TextInput
+							value={precioDesde}
+							onChangeText={(texto) => setPrecioDesde(limpiarPrecio(texto))}
+							onFocus={() => { setCampoActivo(null); setMostrarEstadosLote(false); setMostrarProyectos(false); }}
+							placeholder="Ej. 15000.00"
+							placeholderTextColor="#9aa9ba"
+							style={styles.input}
+							keyboardType="decimal-pad"
+							returnKeyType="search"
+							onSubmitEditing={consultarReporte}
+						/>
+					</View>
 
 					<View style={styles.actionRow}>
-						<TouchableOpacity style={styles.primaryAction} onPress={consultarReporte}>
-							{/* ATAMAINE: Accion principal conectada al reporte real/fallback de lotes. */}
-							<LinearGradient colors={["#ffffff", "#edf5ff"]} style={[styles.actionSurface, styles.primaryActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.primaryActionBadge]}>
-									<MaterialCommunityIcons name="magnify" size={18} color="#2563eb" />
-								</View>
-								<Text style={styles.primaryActionText}>Buscar</Text>
-							</LinearGradient>
-						</TouchableOpacity>
-						<TouchableOpacity style={styles.newAction} onPress={() => navigation.navigate("ListarProyectos")}>
-							<LinearGradient colors={["#ffffff", "#e8fff8"]} style={[styles.actionSurface, styles.newActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.newActionBadge]}>
-									<MaterialCommunityIcons name="plus-circle-outline" size={18} color="#0f766e" />
-								</View>
-								<Text style={styles.newActionText}>Nuevo</Text>
-							</LinearGradient>
-						</TouchableOpacity>
-						<TouchableOpacity style={styles.clearAction} onPress={limpiarFiltro}>
-							<LinearGradient colors={["#ffffff", "#f4f7fb"]} style={[styles.actionSurface, styles.clearActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.clearActionBadge]}>
-									<MaterialCommunityIcons name="close-circle-outline" size={18} color="#64748b" />
-								</View>
-								<Text style={styles.clearActionText}>Limpiar</Text>
-							</LinearGradient>
-						</TouchableOpacity>
-					</View>
-					<View style={styles.actionRowSecondary}>
-						<TouchableOpacity style={[styles.secondaryAction, (!loteParaPdf.length || cargando) && styles.buttonDisabled]} onPress={generarPDF} disabled={!loteParaPdf.length || cargando}>
-							<LinearGradient colors={["#ffffff", "#fff7e6"]} style={[styles.actionSurface, styles.secondaryActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.secondaryActionBadge]}>
-									<MaterialCommunityIcons name="file-pdf-box" size={18} color="#f59e0b" />
-								</View>
-								<Text style={styles.secondaryActionText}>PDF</Text>
-							</LinearGradient>
-						</TouchableOpacity>
+						<TouchableOpacity style={styles.actionButton} onPress={consultarReporte}><LinearGradient colors={["#1f75ff", "#0657d9"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="magnify" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>Buscar</Text></LinearGradient></TouchableOpacity>
+						<TouchableOpacity style={styles.actionButton} onPress={abrirRegistroLote}><LinearGradient colors={["#0f9f73", "#047857"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="plus-circle-outline" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>Nuevo</Text></LinearGradient></TouchableOpacity>
+						<TouchableOpacity style={styles.actionButton} onPress={limpiarFiltro}><LinearGradient colors={["#6b7280", "#475569"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="trash-can-outline" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>Limpiar</Text></LinearGradient></TouchableOpacity>
+						<TouchableOpacity style={[styles.actionButton, (!loteParaPdf.length || cargando) && styles.buttonDisabled]} onPress={generarPDF} disabled={!loteParaPdf.length || cargando}><LinearGradient colors={["#f59e0b", "#f97316"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="file-pdf-box" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>PDF</Text></LinearGradient></TouchableOpacity>
 					</View>
 				</View>
 
 				<View style={styles.contentCard}>
-					<Text style={styles.contentTitle}>Listado del Reporte</Text>
-					{cargando ? <ActivityIndicator size="large" color="#069488" style={styles.loader} /> : null}
+					<View style={styles.contentTitleRow}><MaterialCommunityIcons name="view-list-outline" size={18} color="#2563eb" /><Text style={styles.contentTitle}>Listado del Reporte</Text></View>
+					{cargando ? <ActivityIndicator size="large" color="#2563eb" style={styles.loader} /> : null}
 					{!cargando && mensaje ? <View style={styles.messageBox}><Text style={styles.messageText}>{mensaje}</Text></View> : null}
-					{!cargando && buscado && reporte.length > 0 ? <Text style={styles.resultCounter}>Mostrando {reporte.length} resultado{reporte.length === 1 ? "" : "s"} para: {ultimoFiltro}</Text> : null}
+					{!cargando && buscado && reporte.length > 0 ? <Text selectable style={styles.resultCounter}>Mostrando {reporte.length} resultado{reporte.length === 1 ? "" : "s"} para: {ultimoFiltro}</Text> : null}
+					{!cargando && buscado && reporte.length === 0 && !mensaje ? <View style={styles.emptyState}><View style={styles.emptyIconWrap}><MaterialCommunityIcons name="file-search-outline" size={28} color="#0f766e" /></View><Text style={styles.emptyTitle}>Sin resultados</Text><Text style={styles.emptyText}>No se encontraron lotes para los filtros ingresados.</Text></View> : null}
 					{!cargando && listadoMostrar.length > 0 ? (
 						<View style={styles.tableWrapper}>
-							<View style={styles.tableTopAccent} />
-							<View style={styles.tableHeaderRow}>
+							<LinearGradient colors={["#0f2f89", "#184ec8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tableHeaderRow}>
 								{COLUMNAS_REPORTE.map((columna) => (
 									<View key={columna.key} style={[styles.tableHeaderCell, { flex: columna.flex }]}>
 										<Text style={styles.tableHeaderText}>{columna.label}</Text>
 									</View>
 								))}
 								<View style={styles.tableActionHeaderCell}><Text style={styles.tableHeaderText}>Ver</Text></View>
-							</View>
+							</LinearGradient>
 							{listadoMostrar.map((item, index) => (
 								<View key={index} style={[styles.tableDataRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>
 									{COLUMNAS_REPORTE.map((columna) => (
 										<View key={`${index}-${columna.key}`} style={[styles.tableDataCell, { flex: columna.flex }]}>
 											{columna.key === "EstadoLote" ? (
 												<View style={[styles.estadoBadge, esEstadoDisponible(String(item.EstadoLote)) ? styles.estadoBadgeActivo : styles.estadoBadgeInactivo]}>
-													<Text style={[styles.estadoBadgeText, esEstadoDisponible(String(item.EstadoLote)) ? styles.estadoBadgeTextActivo : styles.estadoBadgeTextInactivo]}>{String(item[columna.key] ?? "-")}</Text>
-												</View>
-											) : (
-												<Text style={[styles.tableDataText, esColumnaCorta(columna.key) ? styles.tableDataTextTight : null]} numberOfLines={2} adjustsFontSizeToFit={esColumnaCorta(columna.key)} minimumFontScale={0.78}>
+											<Text selectable style={[styles.estadoBadgeText, esEstadoDisponible(String(item.EstadoLote)) ? styles.estadoBadgeTextActivo : styles.estadoBadgeTextInactivo]}>{String(item[columna.key] ?? "-")}</Text>
+										</View>
+									) : (
+										<Text selectable style={[styles.tableDataText, esColumnaCorta(columna.key) ? styles.tableDataTextTight : null]} numberOfLines={2} adjustsFontSizeToFit={esColumnaCorta(columna.key)} minimumFontScale={0.78}>
 													{String(item[columna.key] ?? "-")}
 												</Text>
 											)}
 										</View>
 									))}
-									<View style={styles.tableActionCell}>
-										<TouchableOpacity style={styles.verButton} onPress={() => abrirProyectoDelLote(navigation, item)}>
-											<Text style={styles.verButtonText}>Ver</Text>
+								<View style={styles.tableActionCell}>
+									<TouchableOpacity style={styles.verButton} onPress={() => abrirProyectoDelLote(navigation, item)}>
+										<MaterialCommunityIcons name="eye-outline" size={14} color="#0f766e" />
 										</TouchableOpacity>
 									</View>
 								</View>

@@ -18,6 +18,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
 import { API_URL } from "../config/apiUrl";
+import { WebListHeader, webListStyles } from "../components/web-list-layout";
 
 
 
@@ -157,7 +158,7 @@ const ListarProyectos = ({ navigation, route }) => {
 
 
   return (
-    <View style={[styles.container, esWeb && styles.containerWeb]}>
+    <View style={[styles.container, esWeb && webListStyles.page]}>
       {/* Encabezado con el nombre del usuario autenticado.
       <View style={{ flexDirection: "row", justifyContent: "space-between"}}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -207,20 +208,31 @@ const ListarProyectos = ({ navigation, route }) => {
       {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
 
 
-      <View></View>
-      <Text style={styles.title}>Gestion de Proyectos:</Text>
-      <Text style={styles.subtitle}>Selecciona un Proyecto:</Text>
+      {esWeb ? (
+        <WebListHeader
+          title="Gestión de Proyectos"
+          subtitle="Consulta, administra y abre el plano de cualquier proyecto registrado."
+          count={proyectos.length}
+          actionLabel={rol !== "Cliente" ? "Nuevo Proyecto" : undefined}
+          onAction={rol !== "Cliente" ? () => navigation.navigate("Rproyecto", { onRefresh: obtenerProyectos }) : undefined}
+        />
+      ) : (
+        <>
+          <Text style={styles.title}>Gestion de Proyectos:</Text>
+          <Text style={styles.subtitle}>Selecciona un Proyecto:</Text>
+        </>
+      )}
 
       {/* Área principal con la lista desplazable de proyectos. */}
       <View style={styles.form}>
         <ScrollView
           ref={scrollProyectosRef}
           style={{ flex: 1 }}
-          contentContainerStyle={[styles.scrollContent, esWeb && styles.scrollContentWeb]}
+          contentContainerStyle={[styles.scrollContent, esWeb && styles.scrollContentWeb, esWeb && webListStyles.listContent]}
           showsVerticalScrollIndicator={true}
         >
           {proyectoSeleccionadoId || proyectoSeleccionadoNombre ? (
-            <View style={styles.selectedNotice}>
+            <View style={[styles.selectedNotice, esWeb && webListStyles.fullWidth]}>
               <Text style={styles.selectedNoticeText}>
                 Proyecto seleccionado desde reporte: {proyectoSeleccionadoNombre || proyectoSeleccionadoId}
                 {loteSeleccionadoCodigo ? ` | Lote: ${loteSeleccionadoCodigo}` : ""}
@@ -247,7 +259,7 @@ const ListarProyectos = ({ navigation, route }) => {
                     ? proyecto.IdProyecto.toString()
                     : index.toString()
                 }
-                style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+                style={[styles.card, esWeb && webListStyles.card, estaSeleccionado && styles.cardSeleccionada]}
                 onLayout={(event) => {
                   if (proyecto.IdProyecto) {
                     posicionesProyectosRef.current[String(proyecto.IdProyecto)] = event.nativeEvent.layout.y;
@@ -341,20 +353,20 @@ const ListarProyectos = ({ navigation, route }) => {
       </View>
 
       {/* Botón para registrar un nuevo proyecto, disponible solo para usuarios con permisos. */}
-      <View style={[styles.actionFooter, esWeb && { paddingBottom: tabBarHeight + 18 }]}>
+      {!esWeb ? <View style={styles.actionFooter}>
         {rol !== "Cliente" && (
           <TouchableOpacity
             onPress={() =>
               navigation.navigate("Rproyecto", { onRefresh: obtenerProyectos })
             }
-            style={[styles.btnRegistrar, esWeb && styles.btnRegistrarWeb]}
+            style={styles.btnRegistrar}
             activeOpacity={0.86}
           >
             <MaterialIcons name="add-circle-outline" size={20} color="#ffffff" />
             <Text style={styles.btnRegisText}>Nuevo Proyecto</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </View> : null}
     </View>
   );
 };
@@ -452,6 +464,10 @@ const styles = StyleSheet.create({
   },
   scrollContentWeb: {
     paddingBottom: 34,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignContent: "flex-start",
+    gap: 14,
   },
   subtitle: {
     fontSize: 14,
@@ -475,6 +491,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 2,
+  },
+  cardWeb: {
+    width: "32%",
+    minWidth: 320,
+    flexGrow: 1,
+    marginBottom: 0,
+  },
+  fullWidthWeb: {
+    width: "100%",
   },
 
   // ATAMAINE: Resaltado premium pulido para ubicar proyectos abiertos desde reportes o lotes

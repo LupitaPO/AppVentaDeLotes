@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 export default StyleSheet.create({
 	container: {
@@ -39,10 +39,10 @@ export default StyleSheet.create({
 	scrollContent: {
 		flexGrow: 1,
 		paddingTop: 10,
-		paddingHorizontal: 8,
+		paddingHorizontal: Platform.OS === "web" ? 24 : 8,
 		paddingBottom: 22,
 		width: "100%",
-		maxWidth: 980,
+		maxWidth: Platform.OS === "web" ? "100%" : 980,
 		alignSelf: "center",
 		gap: 10,
 	},
@@ -66,14 +66,21 @@ export default StyleSheet.create({
 		marginBottom: 8,
 	},
 	menuButton: {
-		width: 28,
+		width: Platform.OS === "web" ? 104 : 28,
 		height: 28,
-		borderRadius: 14,
+		borderRadius: Platform.OS === "web" ? 10 : 14,
+		flexDirection: "row",
+		gap: 6,
 		backgroundColor: "rgba(255, 255, 255, 0.10)",
 		borderWidth: 1,
 		borderColor: "rgba(255, 255, 255, 0.20)",
 		justifyContent: "center",
 		alignItems: "center",
+	},
+	backButtonText: {
+		fontSize: 10,
+		fontWeight: "900",
+		color: "#ffffff",
 	},
 	liveBadge: {
 		flexDirection: "row",

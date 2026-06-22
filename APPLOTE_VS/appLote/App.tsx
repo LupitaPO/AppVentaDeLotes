@@ -2,7 +2,8 @@ import "react-native-gesture-handler";
 import { createStackNavigator } from "@react-navigation/stack";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import Login from "./screen/login";
 import BottomTabs from "./bottomTabs";
@@ -34,12 +35,68 @@ import ReportePagos from "./screen/ReportePagos";
 import Permisos from "./screen/permisos";
 
 const Stack = createStackNavigator();
+const rutasConCabeceraPropia = new Set([
+  "Login",
+  "MainTabs",
+  "homme",
+  "MenuReportes",
+  "Reportes",
+  "ReporteClientes",
+  "ReporteAsesores",
+  "ReporteProyectos",
+  "ReporteLotes",
+  "ReporteUsuarios",
+  "ReporteCobranzas",
+  "ReportePagos",
+]);
+
+const titulosRuta: Record<string, string> = {
+  DetalleProyecto: "Detalle del proyecto",
+  Rproyecto: "Registrar proyecto",
+  ModificarProyecto: "Modificar proyecto",
+  ModificarCliente: "Modificar cliente",
+  RegistrarCliente: "Registrar cliente",
+  ModificarAsesor: "Modificar asesor",
+  RegistrarAsesor: "Registrar asesor",
+  RegistrarVenta: "Registrar venta",
+  RegistrarLote: "Registrar lote",
+  ModificarUsuario: "Modificar usuario",
+  RegistrarUsuario: "Registrar usuario",
+  DetallePago: "Detalle de pago",
+  permisos: "Permisos",
+};
+
 export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
         initialRouteName="Login"
-        screenOptions={{ headerShown: false }}
+        screenOptions={({ navigation, route }) => {
+          const mostrarCabecera =
+            Platform.OS === "web" && !rutasConCabeceraPropia.has(route.name);
+
+          return {
+            headerShown: mostrarCabecera,
+            headerTitle: titulosRuta[route.name] ?? route.name,
+            headerShadowVisible: false,
+            headerStyle: styles.webHeader,
+            headerTitleStyle: styles.webHeaderTitle,
+            headerLeft: () => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Regresar a la pantalla anterior"
+                onPress={() => {
+                  if (navigation.canGoBack()) navigation.goBack();
+                  else navigation.navigate("MainTabs" as never);
+                }}
+                style={styles.webBackButton}
+              >
+                <MaterialCommunityIcons name="arrow-left" size={20} color="#ffffff" />
+                <Text style={styles.webBackText}>Regresar</Text>
+              </Pressable>
+            ),
+          };
+        }}
       >
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen
@@ -79,6 +136,30 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  webHeader: {
+    backgroundColor: "#087f76",
+  },
+  webHeaderTitle: {
+    color: "#ffffff",
+    fontWeight: "900",
+  },
+  webBackButton: {
+    minHeight: 38,
+    marginLeft: 16,
+    paddingHorizontal: 13,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.30)",
+  },
+  webBackText: {
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: 13,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",

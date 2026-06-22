@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 // ATAMAINE: Export nombrado para que Metro tome este stylesheet real y no una version cacheada vacia.
 export const reporteProyectosStyles = StyleSheet.create({
@@ -43,11 +43,34 @@ export const reporteProyectosStyles = StyleSheet.create({
 	scrollContent: {
 		flexGrow: 1,
 		paddingTop: 14,
-		paddingHorizontal: 12,
+		paddingHorizontal: Platform.OS === "web" ? 24 : 12,
 		paddingBottom: 24,
 		width: "100%",
-		maxWidth: 980,
+		maxWidth: Platform.OS === "web" ? "100%" : 980,
 		alignSelf: "center",
+	},
+	heroToolbar: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		marginBottom: 10,
+	},
+	menuButton: {
+		width: Platform.OS === "web" ? 104 : 32,
+		height: 32,
+		borderRadius: Platform.OS === "web" ? 10 : 16,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: 6,
+		backgroundColor: "rgba(255,255,255,0.14)",
+		borderWidth: 1,
+		borderColor: "rgba(255,255,255,0.24)",
+	},
+	backButtonText: {
+		fontSize: 10,
+		fontWeight: "900",
+		color: "#ffffff",
 	},
 	heroCard: {
 		borderRadius: 24,

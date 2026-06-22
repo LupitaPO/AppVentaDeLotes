@@ -17,7 +17,6 @@ import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
 import styles from "./ReporteClientesStyles";
 import { API_URL } from "../config/apiUrl";
-import i18n from "../i18n";
 
 // ATAMAINE: URL base del backend .NET donde consultamos la lista real de clientes.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
@@ -33,6 +32,7 @@ type ReporteItem = Record<string, unknown>;
 
 // ATAMAINE: Estructura final que la pantalla usa para pintar la tabla y exportar el PDF.
 type ClienteReporteItem = {
+	IdCliente: string;
 	DNI: string;
 	Nombre: string;
 	Apellidos: string;
@@ -202,6 +202,7 @@ const normalizarClientes = (items: ReporteItem[]): ClienteReporteItem[] =>
                 const nombreSeparado = separarNombreCompleto(item);
 
                 return {
+                        IdCliente: String(item.IdCliente ?? item.idCliente ?? item.IDCliente ?? item.Id ?? ""),
                         DNI: String(item.DNI ?? "-"),
                         Nombre: nombreSeparado.nombre,
                         Apellidos: nombreSeparado.apellidos,
@@ -214,15 +215,151 @@ const normalizarClientes = (items: ReporteItem[]): ClienteReporteItem[] =>
 // ATAMAINE: Detectamos estados para pintarlos distinto dentro de la tabla sin cambiar la data real.
 const esEstadoActivo = (estado: string) => estado.trim().toLowerCase() === "activo";
 
-// ATAMAINE: Desde el boton Ver saltamos al tab de clientes y mandamos el DNI para remarcar la tarjeta real.
-const abrirClienteRegistrado = (navigation: any, item: ClienteReporteItem) => {
-	navigation.navigate("MainTabs", {
-		screen: i18n.t("btcliente"),
-		params: {
-			clienteSeleccionadoDNI: item.DNI,
-			clienteSeleccionadoNombre: `${item.Nombre} ${item.Apellidos}`.trim(),
-		},
-	});
+const textoLimpio = (value: unknown) => String(value ?? "").trim();
+const idsIguales = (left: unknown, right: unknown) => textoLimpio(left) === textoLimpio(right);
+
+const obtenerIdClienteRegistro = (item: ReporteItem | ClienteReporteItem) =>
+	textoLimpio((item as any).IdCliente ?? (item as any).idCliente ?? (item as any).IDCliente ?? (item as any).Id);
+
+const obtenerIdLoteRegistro = (item: ReporteItem) =>
+	textoLimpio((item as any).IdLote ?? (item as any).idLote ?? (item as any).IDLote ?? (item as any).Id);
+
+const obtenerIdProyectoRegistro = (item: ReporteItem) =>
+	textoLimpio((item as any).IdProyecto ?? (item as any).idProyecto ?? (item as any).IDProyecto ?? (item as any).ProyectoId);
+
+const obtenerNombreProyectoRegistro = (item: ReporteItem) =>
+	textoLimpio(
+		(item as any).NombreProyecto ??
+		(item as any).nombreProyecto ??
+		(item as any).Nombre ??
+		(item as any).nombre ??
+		(item as any).Proyecto ??
+		(item as any).proyecto,
+	);
+
+const obtenerCodigoLoteRegistro = (item: ReporteItem) =>
+	textoLimpio((item as any).CodigoLote ?? (item as any).CodLote ?? (item as any).Codigo ?? (item as any).codigoLote);
+
+const obtenerUrlPlanoProyecto = (item: ReporteItem) =>
+	textoLimpio(
+		(item as any).ImagenUrl ??
+		(item as any).imagenUrl ??
+		(item as any).UrlCSV ??
+		(item as any).urlCSV ??
+		(item as any).PlanoUrl ??
+		(item as any).planoUrl,
+	);
+
+const ventaVigente = (venta: ReporteItem) => {
+	const estado = textoLimpio(
+		(venta as any).EstadoVenta ??
+		(venta as any).Estadoventa ??
+		(venta as any).estadoVenta ??
+		(venta as any).Estado,
+	).toLowerCase();
+
+	return !["cancelada", "cancelado", "anulada", "anulado", "inactivo", "x"].includes(estado);
+};
+
+const fechaVentaMs = (venta: ReporteItem) => {
+	const fechaRaw = textoLimpio((venta as any).FechaVenta ?? (venta as any).fechaVenta);
+	const fecha = fechaRaw ? new Date(fechaRaw) : null;
+	return fecha && !Number.isNaN(fecha.getTime()) ? fecha.getTime() : 0;
+};
+
+const consultarRegistros = async (url: string) => {
+	const response = await fetch(url);
+	if (!response.ok) throw new Error(`HTTP ${response.status}`);
+	const rawData = await response.text();
+	return parseReporteResponse(rawData);
+};
+
+const resolverIdClientePorDNI = async (item: ClienteReporteItem) => {
+	const idDesdeReporte = obtenerIdClienteRegistro(item);
+	if (idDesdeReporte && idDesdeReporte !== "-") return idDesdeReporte;
+
+	const dni = textoLimpio(item.DNI);
+	if (!dni || dni === "-") return "";
+
+	const clientePorDni = await consultarRegistros(`${API_URL}/Cliente/cliente_ObtenerPorDNI/${encodeURIComponent(dni)}`);
+	const clienteDirecto = clientePorDni.find((cliente) => textoLimpio(cliente.DNI) === dni) ?? clientePorDni[0];
+	const idDirecto = clienteDirecto ? obtenerIdClienteRegistro(clienteDirecto) : "";
+	if (idDirecto) return idDirecto;
+
+	const clientes = await consultarRegistros(`${API_URL}/Cliente/cliente_Listar`);
+	const cliente = clientes.find((registro) => textoLimpio(registro.DNI) === dni);
+	return cliente ? obtenerIdClienteRegistro(cliente) : "";
+};
+
+// ATAMAINE: Desde Ver saltamos al proyecto relacionado por la venta/lote del cliente.
+const abrirProyectoDelCliente = async (navigation: any, item: ClienteReporteItem) => {
+	try {
+		const idCliente = await resolverIdClientePorDNI(item);
+		if (!idCliente) {
+			Alert.alert("Aviso", "No se encontro el identificador del cliente seleccionado.");
+			return;
+		}
+
+		const [ventas, lotes, proyectos] = await Promise.all([
+			consultarRegistros(`${API_URL}/Venta/venta_Listar`),
+			consultarRegistros(`${API_URL}/Lote/lote_Listar`),
+			consultarRegistros(`${API_URL}/Proyecto/proyecto_Listar`),
+		]);
+
+		const ventasCliente = ventas
+			.filter((venta) => idsIguales(obtenerIdClienteRegistro(venta), idCliente) && ventaVigente(venta))
+			.sort((a, b) => fechaVentaMs(b) - fechaVentaMs(a));
+
+		if (!ventasCliente.length) {
+			Alert.alert("Aviso", "Este cliente aun no tiene un lote o proyecto asociado.");
+			return;
+		}
+
+		const lotesCliente = ventasCliente
+			.map((venta) => {
+				const idLote = obtenerIdLoteRegistro(venta);
+				return lotes.find((lote) => idsIguales(obtenerIdLoteRegistro(lote), idLote));
+			})
+			.filter(Boolean) as ReporteItem[];
+
+		if (!lotesCliente.length) {
+			Alert.alert("Aviso", "No se encontro el lote asociado a este cliente.");
+			return;
+		}
+
+		const loteReferencia = lotesCliente[0];
+		const idProyecto = obtenerIdProyectoRegistro(loteReferencia);
+		const proyectoCliente = proyectos.find((proyecto) => idsIguales(obtenerIdProyectoRegistro(proyecto), idProyecto));
+		if (!idProyecto || !proyectoCliente) {
+			Alert.alert("Aviso", "No se encontro el proyecto asociado a este cliente.");
+			return;
+		}
+
+		const nombreProyecto = obtenerNombreProyectoRegistro(proyectoCliente) || idProyecto;
+		const urlCSV = obtenerUrlPlanoProyecto(proyectoCliente);
+		const lotesDelProyecto = lotesCliente.filter((lote) => idsIguales(obtenerIdProyectoRegistro(lote), idProyecto));
+		const lotesClienteIds = lotesDelProyecto.map(obtenerIdLoteRegistro).filter(Boolean);
+		const codigosLotesCliente = lotesDelProyecto.map(obtenerCodigoLoteRegistro).filter(Boolean);
+
+		if (!urlCSV) {
+			Alert.alert("Aviso", "El proyecto asociado no tiene plano registrado para abrir el detalle.");
+			return;
+		}
+
+		navigation.navigate("DetalleProyecto", {
+			idProyecto,
+			urlCSV,
+			info: proyectoCliente,
+			clienteFiltroId: idCliente,
+			clienteFiltroDNI: item.DNI,
+			clienteFiltroNombre: `${item.Nombre} ${item.Apellidos}`.trim(),
+			lotesClienteIds,
+			codigosLotesCliente,
+		});
+	} catch (error) {
+		console.error("Error al abrir proyecto del cliente:", error);
+		Alert.alert("Error", "No se pudo abrir el proyecto de este cliente en este momento.");
+	}
 };
 
 const obtenerLogoPdfUri = () => {
@@ -679,8 +816,10 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 						<TouchableOpacity
 							style={styles.menuButton}
 							onPress={() => navigation.goBack()}
+							accessibilityLabel="Regresar"
 						>
-							<MaterialCommunityIcons name="menu" size={18} color="#dff8ff" />
+							<MaterialCommunityIcons name="arrow-left" size={16} color="#dff8ff" />
+							{Platform.OS === "web" ? <Text style={styles.backButtonText}>Regresar</Text> : null}
 						</TouchableOpacity>
 
 						<View style={styles.liveBadge}>
@@ -943,7 +1082,7 @@ const ReporteClientes = ({ navigation }: ReporteClientesProps) => {
 										<TouchableOpacity
 											style={styles.verButton}
 											activeOpacity={0.8}
-											onPress={() => abrirClienteRegistrado(navigation, item)}
+											onPress={() => abrirProyectoDelCliente(navigation, item)}
 										>
 											<MaterialCommunityIcons name="eye-outline" size={14} color="#0f766e" />
 										</TouchableOpacity>

@@ -17,8 +17,7 @@ import {
 // Librería de íconos utilizada para navegación y apoyo visual en la interfaz.
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import * as Print from 'expo-print'; // AGREGADO
-import * as Sharing from 'expo-sharing'; // AGREGADO
+import { compartirPdf } from '../utils/pdf';
 import { API_URL } from "../config/apiUrl";
 
 
@@ -331,15 +330,10 @@ const DetallePago = ({ route, navigation }) => {
 
 
     try {
-      // 1. Genera el archivo PDF físico temporal en el almacenamiento del celular
-      const { uri } = await Print.printToFileAsync({ html: htmlContent });
-      console.log('PDF creado temporalmente en:', uri);
-
-      // 2. Abre el menú compartir nativo (WhatsApp, guardar en archivos, correo, etc.)
-      await Sharing.shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: `Compartir ${nombreComprobante}`,
-        UTI: 'com.adobe.pdf'
+      // En web abre el diálogo de impresión; en móvil mantiene el menú compartir.
+      await compartirPdf({
+        html: htmlContent,
+        titulo: `Compartir ${nombreComprobante}`,
       });
     } catch (error) {
       console.error("Error generando o compartiendo el archivo PDF:", error);
@@ -414,7 +408,6 @@ const DetallePago = ({ route, navigation }) => {
             onPress: async () => {
               // MODIFICADO: Primero dispara el PDF y luego regresa
               await generarPDFComprobante(documentoParaEnviar);
-              route.params?.onRefresh?.();
               navigation.goBack();
             }
           }

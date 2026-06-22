@@ -2,6 +2,7 @@ import {
 	ActivityIndicator,
 	Alert,
 	Image,
+	Keyboard,
 	Platform,
 	ScrollView,
 	Text,
@@ -9,7 +10,7 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -26,12 +27,20 @@ type CobranzaReporteItem = {
 	Cliente: string;
 	Lote: string;
 	FechaVenta: string;
+	FechaVentaIso: string;
 	TipoVenta: string;
 	TipoPago: string;
 	PrecioVenta: string;
 	MontoInicial: string;
 	SaldoPendiente: string;
 	EstadoVenta: string;
+};
+
+type ClienteDniItem = {
+	IdCliente: string;
+	DNI: string;
+	Nombre: string;
+	Estado: string;
 };
 
 type ReporteCobranzasProps = {
@@ -92,6 +101,189 @@ const textoLimpio = (value: unknown, fallback = "-") => {
 	return texto || fallback;
 };
 
+// ATAMAINE: Los autocompletados ignoran tildes y mayusculas al comparar opciones.
+const normalizarTerminoBusqueda = (value: unknown) =>
+	textoLimpio(value, "")
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase();
+
+const coincideOpcion = (opcion: string, criterio: string) =>
+	normalizarTerminoBusqueda(opcion).includes(normalizarTerminoBusqueda(criterio));
+
+const resolverOpcionFiltro = (criterio: string, opciones: string[]) => {
+	const termino = normalizarTerminoBusqueda(criterio);
+	if (!termino) return "";
+	const exacta = opciones.find((opcion) => normalizarTerminoBusqueda(opcion) === termino);
+	if (exacta) return exacta;
+	const parciales = opciones.filter((opcion) => coincideOpcion(opcion, criterio));
+	return parciales.length === 1 ? parciales[0] : criterio.trim();
+};
+
+const limpiarFecha = (value: string) => {
+	const digitos = value.replace(/[^0-9]/g, "").slice(0, 8);
+	if (digitos.length <= 4) return digitos;
+	if (digitos.length <= 6) return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
+	return `${digitos.slice(0, 4)}-${digitos.slice(4, 6)}-${digitos.slice(6)}`;
+};
+
+const esFechaIsoValida = (value: string) => {
+	if (!value.trim()) return true;
+	const partes = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (!partes) return false;
+	const [, anio, mes, dia] = partes;
+	const fecha = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
+	return fecha.getUTCFullYear() === Number(anio) && fecha.getUTCMonth() === Number(mes) - 1 && fecha.getUTCDate() === Number(dia);
+};
+
+type SelectorBuscableProps = {
+	label: string;
+	value: string;
+	placeholder: string;
+	opciones: string[];
+	visible: boolean;
+	cargando: boolean;
+	enFoco: boolean;
+	icono: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+	onChange: (value: string) => void;
+	onFocus: () => void;
+	onToggle: () => void;
+	onSelect: (value: string) => void;
+	onSubmit: () => void;
+};
+
+// ATAMAINE: Un mismo control garantiza escritura, seleccion y estados vacios coherentes.
+const SelectorBuscable = ({
+	label,
+	value,
+	placeholder,
+	opciones,
+	visible,
+	cargando,
+	enFoco,
+	icono,
+	onChange,
+	onFocus,
+	onToggle,
+	onSelect,
+	onSubmit,
+}: SelectorBuscableProps) => {
+	const opcionesFiltradas = useMemo(
+		() => opciones.filter((opcion) => coincideOpcion(opcion, value)).slice(0, 20),
+		[opciones, value],
+	);
+
+	return (
+		<>
+			<Text style={styles.fieldLabel}>{label}</Text>
+			<View style={styles.selectorWrap}>
+				<View style={[styles.selectorShell, enFoco ? styles.selectorShellFocused : null]}>
+					<MaterialCommunityIcons name={icono} size={17} color={enFoco ? "#0f766e" : "#8aa0b5"} />
+					<TextInput
+						value={value}
+						onChangeText={onChange}
+						onFocus={onFocus}
+						placeholder={cargando ? "Cargando opciones..." : placeholder}
+						placeholderTextColor="#91a3b6"
+						style={styles.selectorInput}
+						returnKeyType="search"
+						autoCorrect={false}
+						autoCapitalize="words"
+						onSubmitEditing={onSubmit}
+						accessibilityLabel={label}
+					/>
+					{value ? (
+						<TouchableOpacity style={styles.selectorClearButton} onPress={() => onChange("")} accessibilityLabel={`Borrar ${label}`}>
+							<MaterialCommunityIcons name="close-circle" size={16} color="#94a3b8" />
+						</TouchableOpacity>
+					) : null}
+					<TouchableOpacity style={styles.selectorIconButton} onPress={onToggle} accessibilityLabel={`Mostrar ${label}`}>
+						{cargando ? <ActivityIndicator size="small" color="#0f766e" /> : <MaterialCommunityIcons name={visible ? "chevron-up" : "chevron-down"} size={19} color="#0f766e" />}
+					</TouchableOpacity>
+				</View>
+
+				{visible ? (
+					<View style={styles.optionsBox}>
+						<View style={styles.optionsHeader}>
+							<Text style={styles.optionsHeaderText}>Opciones disponibles</Text>
+							<Text style={styles.optionsHeaderText}>{opcionesFiltradas.length}</Text>
+						</View>
+						{opcionesFiltradas.length ? (
+							<ScrollView style={styles.optionsScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+								{opcionesFiltradas.map((opcion) => {
+									const seleccionada = normalizarTerminoBusqueda(value) === normalizarTerminoBusqueda(opcion);
+									return (
+										<TouchableOpacity key={opcion} style={[styles.optionItem, seleccionada ? styles.optionItemActive : null]} activeOpacity={0.82} onPress={() => onSelect(opcion)}>
+											<View style={styles.optionIcon}><MaterialCommunityIcons name={icono} size={16} color="#0f766e" /></View>
+											<View style={styles.optionContent}><Text style={styles.optionTitle}>{opcion}</Text><Text style={styles.optionMeta}>Seleccionar filtro</Text></View>
+											{seleccionada ? <MaterialCommunityIcons name="check-circle" size={17} color="#10b981" /> : <MaterialCommunityIcons name="chevron-right" size={16} color="#94a3b8" />}
+										</TouchableOpacity>
+									);
+								})}
+							</ScrollView>
+						) : (
+							<View style={styles.optionEmpty}><MaterialCommunityIcons name="text-search" size={22} color="#94a3b8" /><Text style={styles.optionEmptyText}>No hay coincidencias para "{value}".</Text></View>
+						)}
+					</View>
+				) : null}
+			</View>
+		</>
+	);
+};
+
+type SelectorDniClienteProps = {
+	value: string;
+	clientes: ClienteDniItem[];
+	visible: boolean;
+	cargando: boolean;
+	seleccionado: ClienteDniItem | null;
+	onChange: (value: string) => void;
+	onFocus: () => void;
+	onToggle: () => void;
+	onSelect: (cliente: ClienteDniItem) => void;
+	onSubmit: () => void;
+};
+
+// ATAMAINE: El usuario trabaja con DNI; el IdCliente queda resuelto internamente para la API.
+const SelectorDniCliente = ({ value, clientes, visible, cargando, seleccionado, onChange, onFocus, onToggle, onSelect, onSubmit }: SelectorDniClienteProps) => {
+	const clientesFiltrados = useMemo(() => {
+		const criterio = normalizarTerminoBusqueda(value);
+		return clientes
+			.filter((cliente) => !criterio || cliente.DNI.includes(criterio) || normalizarTerminoBusqueda(cliente.Nombre).includes(criterio))
+			.slice(0, 20);
+	}, [clientes, value]);
+
+	return (
+		<>
+			<Text style={styles.fieldLabel}>Buscar cliente por DNI</Text>
+			<View style={[styles.selectorWrap, styles.dniSelectorWrap]}>
+				<View style={[styles.selectorShell, visible ? styles.selectorShellFocused : null]}>
+					<MaterialCommunityIcons name="card-account-details-outline" size={17} color={visible ? "#0f766e" : "#8aa0b5"} />
+					<TextInput value={value} onChangeText={(texto) => onChange(texto.replace(/[^0-9]/g, "").slice(0, 8))} onFocus={onFocus} placeholder={cargando ? "Cargando clientes..." : "Escribe o selecciona el DNI"} placeholderTextColor="#91a3b6" style={styles.selectorInput} keyboardType="number-pad" returnKeyType="search" maxLength={8} autoCorrect={false} onSubmitEditing={onSubmit} accessibilityLabel="Buscar cliente por DNI" />
+					{value ? <TouchableOpacity style={styles.selectorClearButton} onPress={() => onChange("")} accessibilityLabel="Borrar DNI"><MaterialCommunityIcons name="close-circle" size={16} color="#94a3b8" /></TouchableOpacity> : null}
+					<TouchableOpacity style={styles.selectorIconButton} onPress={onToggle} accessibilityLabel="Mostrar clientes">
+						{cargando ? <ActivityIndicator size="small" color="#0f766e" /> : <MaterialCommunityIcons name={visible ? "chevron-up" : "chevron-down"} size={19} color="#0f766e" />}
+					</TouchableOpacity>
+				</View>
+
+				{visible ? (
+					<View style={styles.optionsBox}>
+						<View style={styles.optionsHeader}><Text style={styles.optionsHeaderText}>Clientes por DNI</Text><Text style={styles.optionsHeaderText}>{clientesFiltrados.length}</Text></View>
+						{clientesFiltrados.length ? (
+							<ScrollView style={styles.optionsScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+								{clientesFiltrados.map((cliente) => {
+									const activo = seleccionado?.IdCliente === cliente.IdCliente;
+									return <TouchableOpacity key={`${cliente.IdCliente}-${cliente.DNI}`} style={[styles.optionItem, activo ? styles.optionItemActive : null]} activeOpacity={0.82} onPress={() => onSelect(cliente)}><View style={styles.optionIcon}><MaterialCommunityIcons name="account-outline" size={16} color="#0f766e" /></View><View style={styles.optionContent}><Text style={styles.optionTitle}>{cliente.DNI}</Text><Text style={styles.optionMeta}>{cliente.Nombre}</Text></View>{activo ? <MaterialCommunityIcons name="check-circle" size={17} color="#10b981" /> : <MaterialCommunityIcons name="chevron-right" size={16} color="#94a3b8" />}</TouchableOpacity>;
+								})}
+							</ScrollView>
+						) : <View style={styles.optionEmpty}><MaterialCommunityIcons name="account-search-outline" size={22} color="#94a3b8" /><Text style={styles.optionEmptyText}>No existe un cliente con el DNI ingresado.</Text></View>}
+					</View>
+				) : null}
+			</View>
+		</>
+	);
+};
+
 const numeroValor = (value: unknown) => {
 	if (value === undefined || value === null || value === "") return null;
 	const limpio = String(value).replace(/[^0-9.-]/g, "");
@@ -119,16 +311,30 @@ const formatoFecha = (value: unknown) => {
 	return texto.split("T")[0] || texto;
 };
 
+const formatoFechaIso = (value: unknown) => {
+	const texto = textoLimpio(value, "");
+	const isoDirecto = texto.match(/^(\d{4}-\d{2}-\d{2})/);
+	if (isoDirecto) return isoDirecto[1];
+
+	const fechaLatina = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+	if (fechaLatina) return `${fechaLatina[3]}-${fechaLatina[2]}-${fechaLatina[1]}`;
+
+	const fecha = new Date(texto);
+	return Number.isNaN(fecha.getTime()) ? "" : fecha.toISOString().slice(0, 10);
+};
+
 const normalizarEstadoVenta = (estado: unknown) => {
 	const estadoTexto = textoLimpio(estado, "").toLowerCase();
-	const estadosAlDia = ["a", "activo", "al dia", "aldia", "pagado", "cancelado", "completado", "1", "true"];
+	const estadosActivos = ["a", "activo", "activa", "1", "true"];
+	const estadosAlDia = ["al dia", "aldia", "pagado"];
+	const estadosFinalizados = ["finalizado", "finalizada", "completado", "completada"];
+	const estadosCancelados = ["cancelado", "cancelada", "anulado", "anulada"];
 	const estadosPendientes = [
 		"i",
 		"x",
 		"0",
 		"false",
 		"inactivo",
-		"anulado",
 		"pendiente",
 		"vencido",
 		"mora",
@@ -136,7 +342,10 @@ const normalizarEstadoVenta = (estado: unknown) => {
 		"en deuda",
 	];
 
+	if (estadosActivos.includes(estadoTexto)) return "Activa";
 	if (estadosAlDia.includes(estadoTexto)) return "Al dia";
+	if (estadosFinalizados.includes(estadoTexto)) return "Finalizada";
+	if (estadosCancelados.includes(estadoTexto)) return "Cancelada";
 	if (estadosPendientes.includes(estadoTexto)) {
 		return estadoTexto ? estadoTexto.charAt(0).toUpperCase() + estadoTexto.slice(1) : "Pendiente";
 	}
@@ -204,6 +413,7 @@ const normalizarCobranzas = (items: ReporteItem[]): CobranzaReporteItem[] =>
 		Cliente: obtenerCliente(item),
 		Lote: obtenerLote(item),
 		FechaVenta: formatoFecha(obtenerValor(item, ["FechaVenta", "fechaVenta", "Fecha", "FechaRegistro"])),
+		FechaVentaIso: formatoFechaIso(obtenerValor(item, ["FechaVenta", "fechaVenta", "Fecha", "FechaRegistro"])),
 		TipoVenta: textoLimpio(obtenerValor(item, ["TipoVenta", "tipoVenta", "ModalidadVenta"]), "-"),
 		TipoPago: textoLimpio(obtenerValor(item, ["TipoPago", "tipoPago", "MetodoPago", "FormaPago"]), "-"),
 		PrecioVenta: formatoMoneda(obtenerValor(item, ["PrecioVenta", "Precio", "MontoVenta", "TotalVenta"])),
@@ -227,7 +437,7 @@ const COLUMNAS_REPORTE: Array<{
 	{ key: "EstadoVenta", label: "Estado", flex: 0.82 },
 ];
 
-const esCobranzaAlDia = (estado: string) => estado.trim().toLowerCase() === "al dia";
+const esCobranzaAlDia = (estado: string) => ["activa", "al dia", "finalizada"].includes(normalizarTerminoBusqueda(estado));
 
 const obtenerLogoPdfUri = () => {
         const resolver = (Image as any).resolveAssetSource;
@@ -296,6 +506,11 @@ const construirUrlsTiposPago = () => [
 	`${API_BASE_URL}/Venta/venta_TipoPago_Listar`,
 ];
 
+const construirUrlsClientesDni = () => [
+	`${API_BASE_URL}/api/Cliente/cliente_Listar`,
+	`${API_BASE_URL}/Cliente/cliente_Listar`,
+];
+
 const consultarPrimerEndpointDisponible = async (urls: string[], signal?: AbortSignal) => {
         let ultimoError = new Error("No se pudo consultar ningun endpoint disponible.");
 
@@ -315,7 +530,31 @@ const consultarPrimerEndpointDisponible = async (urls: string[], signal?: AbortS
                 }
         }
 
-        throw ultimoError;
+	throw ultimoError;
+};
+
+const normalizarClientesDni = (items: ReporteItem[]): ClienteDniItem[] => {
+	const clientes = items
+		.map((item) => ({
+			IdCliente: textoLimpio(obtenerValor(item, ["IdCliente", "idCliente", "IDCliente"]), ""),
+			DNI: textoLimpio(obtenerValor(item, ["DNI", "Dni", "dni", "Documento"]), ""),
+			Nombre: obtenerCliente(item),
+			Estado: textoLimpio(obtenerValor(item, ["Estado", "estado"]), ""),
+		}))
+		.filter((cliente) => Boolean(cliente.IdCliente && cliente.DNI))
+		.sort((a, b) => {
+			const aActivo = ["a", "activo", "activa"].includes(normalizarTerminoBusqueda(a.Estado)) ? 0 : 1;
+			const bActivo = ["a", "activo", "activa"].includes(normalizarTerminoBusqueda(b.Estado)) ? 0 : 1;
+			return a.DNI.localeCompare(b.DNI) || aActivo - bActivo || Number(a.IdCliente) - Number(b.IdCliente);
+		});
+
+	// Si la base contiene DNI duplicados, priorizamos el registro activo sin ocultar DNI unicos inactivos.
+	return clientes.filter((cliente, index) => clientes.findIndex((item) => item.DNI === cliente.DNI) === index);
+};
+
+const consultarClientesDni = async (signal?: AbortSignal) => {
+	const rawData = await consultarPrimerEndpointDisponible(construirUrlsClientesDni(), signal);
+	return normalizarClientesDni(parseReporteResponse(rawData));
 };
 
 const normalizarEstadosVenta = (items: ReporteItem[]) => {
@@ -469,7 +708,7 @@ const fechaATiempo = (value: string) => {
 };
 
 const contieneTexto = (origen: string, filtro: string) =>
-        !filtro.trim() || origen.toLowerCase().includes(filtro.trim().toLowerCase());
+	!filtro.trim() || normalizarTerminoBusqueda(origen).includes(normalizarTerminoBusqueda(filtro));
 
 const filtrarCobranzasLocal = (
         items: CobranzaReporteItem[],
@@ -506,27 +745,43 @@ const consultarCobranzasReporte = async (
         idCliente: string,
         signal?: AbortSignal,
 ) => {
-        try {
-                const rawData = await consultarPrimerEndpointDisponible(
-                        construirUrlsCobranzas(estadoVenta, tipoVenta, tipoPago, fechaDesde, fechaHasta, idCliente),
-                        signal,
-                );
-                return normalizarCobranzas(parseReporteResponse(rawData));
-        } catch (error) {
+	try {
+		const rawData = await consultarPrimerEndpointDisponible(
+			construirUrlsCobranzas(estadoVenta, tipoVenta, tipoPago, fechaDesde, fechaHasta, idCliente),
+			signal,
+		);
+		const cobranzasApi = normalizarCobranzas(parseReporteResponse(rawData));
+		const estadoLocal = estadoVenta.trim() ? normalizarEstadoVenta(estadoVenta) : "";
+		// ATAMAINE: Revalidamos la respuesta porque algunos despliegues devuelven toda la tabla aunque reciban filtros.
+		return filtrarCobranzasLocal(cobranzasApi, estadoLocal, tipoVenta, tipoPago, fechaDesde, fechaHasta, idCliente);
+	} catch (error) {
                 if ((error as Error).name === "AbortError") throw error;
 
                 const rawVentas = await consultarPrimerEndpointDisponible(construirUrlsVentasBase(), signal);
                 const cobranzasBase = normalizarCobranzas(parseReporteResponse(rawVentas));
-                return filtrarCobranzasLocal(cobranzasBase, estadoVenta, tipoVenta, tipoPago, fechaDesde, fechaHasta, idCliente);
-        }
+		const estadoLocal = estadoVenta.trim() ? normalizarEstadoVenta(estadoVenta) : "";
+		return filtrarCobranzasLocal(cobranzasBase, estadoLocal, tipoVenta, tipoPago, fechaDesde, fechaHasta, idCliente);
+	}
 };
 
 const abrirVentaRegistrada = (navigation: any, item: CobranzaReporteItem) => {
+	const rutasStack = navigation.getState?.().routes ?? [];
+	const rutaMainTabs = [...rutasStack].reverse().find((ruta: any) => ruta.name === "MainTabs");
+	const parametrosSesion = rutaMainTabs?.params ?? {};
+
+	// Conservamos la sesión del navegador principal y añadimos el filtro exclusivo del cliente.
 	navigation.navigate("MainTabs", {
+		...parametrosSesion,
 		screen: i18n.t("btVentas"),
 		params: {
+			idUsuario: parametrosSesion.idUsuario,
+			nombre: parametrosSesion.nombre,
+			rol: parametrosSesion.rol,
 			ventaSeleccionadaId: item.IdVenta,
 			clienteSeleccionadoId: item.IdCliente,
+			clienteSeleccionadoNombre: item.Cliente,
+			origenReporteCobranzas: true,
+			origenReportePagos: false,
 		},
 	});
 };
@@ -544,9 +799,15 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 	const [tiposPago, setTiposPago] = useState<string[]>(TIPOS_PAGO_RESPALDO);
 	const [mostrarTiposPago, setMostrarTiposPago] = useState(false);
 	const [cargandoTiposPago, setCargandoTiposPago] = useState(false);
+	const [campoActivo, setCampoActivo] = useState<"estado" | "venta" | "pago" | null>(null);
 	const [fechaDesde, setFechaDesde] = useState("");
 	const [fechaHasta, setFechaHasta] = useState("");
 	const [idCliente, setIdCliente] = useState("");
+	const [dniCliente, setDniCliente] = useState("");
+	const [clientesDni, setClientesDni] = useState<ClienteDniItem[]>([]);
+	const [clienteDniSeleccionado, setClienteDniSeleccionado] = useState<ClienteDniItem | null>(null);
+	const [mostrarClientesDni, setMostrarClientesDni] = useState(false);
+	const [cargandoClientesDni, setCargandoClientesDni] = useState(false);
 	const [todasCobranzas, setTodasCobranzas] = useState<CobranzaReporteItem[]>([]);
 	const [reporte, setReporte] = useState<CobranzaReporteItem[]>([]);
 	const [cargando, setCargando] = useState(false);
@@ -555,6 +816,8 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 	const [ultimoFiltro, setUltimoFiltro] = useState("");
 	const [horaActual, setHoraActual] = useState(new Date());
 	const fetchControllerRef = useRef<AbortController | null>(null);
+	const clienteFiltradoRef = useRef("");
+	const filtrosDniAutomaticosRef = useRef(false);
 
 	useEffect(() => {
 		const timer = setInterval(() => setHoraActual(new Date()), 1000);
@@ -594,6 +857,23 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 		return () => controller.abort();
 	}, []);
 
+	useEffect(() => {
+		const controller = new AbortController();
+		const cargarClientes = async () => {
+			try {
+				setCargandoClientesDni(true);
+				setClientesDni(await consultarClientesDni(controller.signal));
+			} catch (error) {
+				if ((error as Error).name !== "AbortError") setClientesDni([]);
+			} finally {
+				setCargandoClientesDni(false);
+			}
+		};
+
+		void cargarClientes();
+		return () => controller.abort();
+	}, []);
+
 	const refrescarTiposVenta = async () => {
 		try {
 			setCargandoTiposVenta(true);
@@ -605,6 +885,17 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 			}
 		} finally {
 			setCargandoTiposVenta(false);
+		}
+	};
+
+	const refrescarEstadosVenta = async () => {
+		try {
+			setCargandoEstadosVenta(true);
+			setEstadosVenta(await consultarEstadosVenta());
+		} catch (error) {
+			if ((error as Error).name !== "AbortError") setEstadosVenta(ESTADOS_VENTA_RESPALDO);
+		} finally {
+			setCargandoEstadosVenta(false);
 		}
 	};
 
@@ -622,21 +913,41 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 		}
 	};
 
+	const cerrarSelectores = () => {
+		setMostrarEstadosVenta(false);
+		setMostrarTiposVenta(false);
+		setMostrarTiposPago(false);
+		setMostrarClientesDni(false);
+		setCampoActivo(null);
+	};
+
+	const abrirSelector = (campo: "estado" | "venta" | "pago") => {
+		setMostrarClientesDni(false);
+		setCampoActivo(campo);
+		setMostrarEstadosVenta(campo === "estado");
+		setMostrarTiposVenta(campo === "venta");
+		setMostrarTiposPago(campo === "pago");
+	};
+
 	const cargarCobranzasIniciales = async () => {
 		try {
 			setCargando(true);
 			setMensaje("");
 			const cobranzasBase = await consultarCobranzasReporte("", "", "", "", "", "");
 			setTodasCobranzas(cobranzasBase);
-			setReporte(cobranzasBase);
-			setBuscado(false);
-			setUltimoFiltro("");
-			if (!cobranzasBase.length) setMensaje("No existen cobranzas registradas.");
+			if (!clienteFiltradoRef.current) {
+				setReporte(cobranzasBase);
+				setBuscado(false);
+				setUltimoFiltro("");
+				if (!cobranzasBase.length) setMensaje("No existen cobranzas registradas.");
+			}
 		} catch (error) {
 			console.error("Error al cargar cobranzas registradas:", error);
-			setTodasCobranzas([]);
-			setReporte([]);
-			setMensaje("No se pudo cargar el reporte de cobranzas.");
+			if (!clienteFiltradoRef.current) {
+				setTodasCobranzas([]);
+				setReporte([]);
+				setMensaje("No se pudo cargar el reporte de cobranzas.");
+			}
 		} finally {
 			setCargando(false);
 		}
@@ -646,13 +957,123 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 		cargarCobranzasIniciales();
 	}, []);
 
+	const aplicarClientePorDni = async (cliente: ClienteDniItem) => {
+		clienteFiltradoRef.current = cliente.IdCliente;
+		filtrosDniAutomaticosRef.current = true;
+		setClienteDniSeleccionado(cliente);
+		setDniCliente(cliente.DNI);
+		setIdCliente(cliente.IdCliente);
+		setMostrarClientesDni(false);
+		setCampoActivo(null);
+		Keyboard.dismiss();
+
+		try {
+			setCargando(true);
+			setMensaje("");
+			if (fetchControllerRef.current) fetchControllerRef.current.abort();
+			fetchControllerRef.current = new AbortController();
+
+			const base = todasCobranzas.length
+				? todasCobranzas
+				: await consultarCobranzasReporte("", "", "", "", "", "", fetchControllerRef.current.signal);
+			if (!todasCobranzas.length) setTodasCobranzas(base);
+
+			const cobranzasCliente = base
+				.filter((item) => item.IdCliente === cliente.IdCliente)
+				.sort((a, b) => (fechaATiempo(b.FechaVenta) ?? 0) - (fechaATiempo(a.FechaVenta) ?? 0) || Number(b.IdVenta) - Number(a.IdVenta));
+
+			if (!cobranzasCliente.length) {
+				setEstadoVenta("");
+				setTipoVenta("");
+				setTipoPago("");
+				setFechaDesde("");
+				setFechaHasta("");
+				setReporte([]);
+				setBuscado(true);
+				setUltimoFiltro(`DNI: ${cliente.DNI} | ${cliente.Nombre}`);
+				setMensaje("El cliente seleccionado no tiene cobranzas registradas.");
+				return;
+			}
+
+			// Si existen varias compras, los controles reflejan la venta mas reciente.
+			const ultimaVenta = cobranzasCliente[0];
+			const fechaVenta = ultimaVenta.FechaVentaIso || formatoFechaIso(ultimaVenta.FechaVenta);
+			setEstadoVenta(ultimaVenta.EstadoVenta);
+			setTipoVenta(ultimaVenta.TipoVenta);
+			setTipoPago(ultimaVenta.TipoPago);
+			setFechaDesde(fechaVenta);
+			setFechaHasta(fechaVenta);
+
+			// El listado conserva todas las compras del cliente; los campos describen la ultima venta.
+			setReporte(cobranzasCliente);
+			setBuscado(true);
+			setUltimoFiltro(`DNI: ${cliente.DNI} | ${cobranzasCliente.length} compra${cobranzasCliente.length === 1 ? "" : "s"} | Datos de ultima venta: ${ultimaVenta.FechaVenta}`);
+		} catch (error) {
+			if ((error as Error).name === "AbortError") return;
+			console.error("Error al filtrar cobranzas por DNI:", error);
+			setReporte([]);
+			setBuscado(true);
+			setMensaje("No se pudo consultar las cobranzas del DNI seleccionado.");
+		} finally {
+			setCargando(false);
+		}
+	};
+
+	const manejarCambioDni = (texto: string) => {
+		setDniCliente(texto);
+		setMostrarClientesDni(true);
+		setCampoActivo(null);
+
+		if (clienteDniSeleccionado && texto !== clienteDniSeleccionado.DNI) {
+			clienteFiltradoRef.current = "";
+			filtrosDniAutomaticosRef.current = false;
+			setClienteDniSeleccionado(null);
+			setIdCliente("");
+			setEstadoVenta("");
+			setTipoVenta("");
+			setTipoPago("");
+			setFechaDesde("");
+			setFechaHasta("");
+			setReporte(todasCobranzas);
+			setBuscado(false);
+			setUltimoFiltro("");
+			setMensaje("");
+		}
+	};
+
+	const buscarClientePorDni = async () => {
+		const dniExacto = dniCliente.trim();
+		if (!/^\d{8}$/.test(dniExacto)) {
+			setMensaje("Ingresa un DNI valido de 8 digitos.");
+			setMostrarClientesDni(true);
+			return;
+		}
+
+		const cliente = clientesDni.find((item) => item.DNI === dniExacto);
+		if (!cliente) {
+			setMensaje("No existe un cliente registrado con ese DNI.");
+			setMostrarClientesDni(true);
+			return;
+		}
+
+		await aplicarClientePorDni(cliente);
+	};
+
+	useEffect(() => {
+		if (dniCliente.length !== 8 || clienteDniSeleccionado?.DNI === dniCliente) return;
+		const clienteExacto = clientesDni.find((cliente) => cliente.DNI === dniCliente);
+		if (!clienteExacto) return;
+		const timer = setTimeout(() => void aplicarClientePorDni(clienteExacto), 250);
+		return () => clearTimeout(timer);
+	}, [dniCliente, clientesDni, clienteDniSeleccionado?.DNI]);
+
 	const filtrosTexto = [
 		estadoVenta.trim() ? `Estado: ${estadoVenta.trim()}` : "",
 		tipoVenta.trim() ? `Venta: ${tipoVenta.trim()}` : "",
 		tipoPago.trim() ? `Pago: ${tipoPago.trim()}` : "",
 		fechaDesde.trim() ? `Desde: ${fechaDesde.trim()}` : "",
 		fechaHasta.trim() ? `Hasta: ${fechaHasta.trim()}` : "",
-		idCliente.trim() ? `Cliente ID: ${idCliente.trim()}` : "",
+		dniCliente.trim() ? `DNI: ${dniCliente.trim()}` : "",
 	]
 		.filter(Boolean)
 		.join(" | ");
@@ -672,12 +1093,13 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 		const refrescar = async () => {
 			try {
 				const controller = new AbortController();
+				const soloClienteDni = filtrosDniAutomaticosRef.current;
 				const datos = await consultarCobranzasReporte(
-					estadoVenta,
-					tipoVenta,
-					tipoPago,
-					fechaDesde,
-					fechaHasta,
+					soloClienteDni ? "" : estadoVenta,
+					soloClienteDni ? "" : tipoVenta,
+					soloClienteDni ? "" : tipoPago,
+					soloClienteDni ? "" : fechaDesde,
+					soloClienteDni ? "" : fechaHasta,
 					idCliente,
 					controller.signal,
 				);
@@ -687,7 +1109,7 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 				if (hayFiltro) {
 					setReporte(datos);
 					setBuscado(true);
-					setUltimoFiltro(filtrosTexto);
+					setUltimoFiltro(soloClienteDni ? `DNI: ${dniCliente} | Todas las compras del cliente` : filtrosTexto);
 				} else {
 					setTodasCobranzas(datos);
 					setReporte(datos);
@@ -704,24 +1126,50 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 			mounted = false;
 			clearInterval(intervalo);
 		};
-	}, [estadoVenta, tipoVenta, tipoPago, fechaDesde, fechaHasta, idCliente, hayFiltro, filtrosTexto]);
+	}, [estadoVenta, tipoVenta, tipoPago, fechaDesde, fechaHasta, idCliente, dniCliente, hayFiltro, filtrosTexto]);
 
 	const limpiarFiltro = async () => {
+		clienteFiltradoRef.current = "";
+		filtrosDniAutomaticosRef.current = false;
 		setEstadoVenta("");
-		setMostrarEstadosVenta(false);
 		setTipoVenta("");
-		setMostrarTiposVenta(false);
 		setTipoPago("");
-		setMostrarTiposPago(false);
+		cerrarSelectores();
+		Keyboard.dismiss();
 		setFechaDesde("");
 		setFechaHasta("");
 		setIdCliente("");
+		setDniCliente("");
+		setClienteDniSeleccionado(null);
+		setMostrarClientesDni(false);
 		setBuscado(false);
 		setMensaje("");
 		await cargarCobranzasIniciales();
 	};
 
 	const consultarReporte = async () => {
+		cerrarSelectores();
+		Keyboard.dismiss();
+
+		if (dniCliente.trim() && !idCliente.trim()) {
+			await buscarClientePorDni();
+			return;
+		}
+		filtrosDniAutomaticosRef.current = false;
+
+		if (!esFechaIsoValida(fechaDesde)) {
+			setMensaje("La fecha inicial debe tener el formato AAAA-MM-DD y ser valida.");
+			return;
+		}
+		if (!esFechaIsoValida(fechaHasta)) {
+			setMensaje("La fecha final debe tener el formato AAAA-MM-DD y ser valida.");
+			return;
+		}
+		if (fechaDesde && fechaHasta && (fechaATiempo(fechaDesde) ?? 0) > (fechaATiempo(fechaHasta) ?? 0)) {
+			setMensaje("La fecha inicial no puede ser posterior a la fecha final.");
+			return;
+		}
+
 		if (!hayFiltro) {
 			await cargarCobranzasIniciales();
 			return;
@@ -733,11 +1181,14 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 			setUltimoFiltro(filtrosTexto);
 			if (fetchControllerRef.current) fetchControllerRef.current.abort();
 			fetchControllerRef.current = new AbortController();
+			const estadoConsulta = resolverOpcionFiltro(estadoVenta, estadosVenta);
+			const tipoVentaConsulta = resolverOpcionFiltro(tipoVenta, tiposVenta);
+			const tipoPagoConsulta = resolverOpcionFiltro(tipoPago, tiposPago);
 
 			const filtrados = await consultarCobranzasReporte(
-				estadoVenta,
-				tipoVenta,
-				tipoPago,
+				estadoConsulta,
+				tipoVentaConsulta,
+				tipoPagoConsulta,
 				fechaDesde,
 				fechaHasta,
 				idCliente,
@@ -764,13 +1215,27 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 		month: "2-digit",
 		day: "2-digit",
 	});
-	const listadoMostrar = buscado ? reporte : todasCobranzas;
+	const listadoMostrar = useMemo(() => {
+		const origen = buscado ? reporte : todasCobranzas;
+		const nombresPorCliente = new Map(clientesDni.map((cliente) => [cliente.IdCliente, cliente.Nombre]));
+		const filasDelCliente = clienteDniSeleccionado
+			? origen.filter((item) => item.IdCliente === clienteDniSeleccionado.IdCliente)
+			: origen;
+
+		// ATAMAINE: El reporte puede devolver "Cliente 1"; mostramos el nombre real del catalogo por IdCliente.
+		return filasDelCliente.map((item) => ({
+			...item,
+			Cliente: nombresPorCliente.get(item.IdCliente) || item.Cliente,
+		}));
+	}, [buscado, reporte, todasCobranzas, clientesDni, clienteDniSeleccionado]);
 	const cobranzasParaPdf = listadoMostrar;
 	const logoPdfUri = obtenerLogoPdfUri();
 	const saldoTotalPendiente = listadoMostrar.reduce((total, item) => {
 		const saldo = numeroValor(item.SaldoPendiente);
 		return total + (saldo ?? 0);
 	}, 0);
+	const cobranzasAlDia = listadoMostrar.filter((item) => esCobranzaAlDia(item.EstadoVenta)).length;
+	const cobranzasConSaldo = listadoMostrar.filter((item) => (numeroValor(item.SaldoPendiente) ?? 0) > 0).length;
 
 	const construirHtmlReporte = () => {
 		const numeroDocumento = `RPT-COB-${horaActual.toISOString().replace(/[-:TZ.]/g, "").slice(0, 14)}`;
@@ -858,278 +1323,149 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 		<View style={styles.container}>
 			<View style={styles.backgroundGlowTop} />
 			<View style={styles.backgroundGlowBottom} />
-			<ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-				<LinearGradient colors={["#0f766e", "#155e63", "#172554"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-					<View style={styles.headerRow}>
-						<TouchableOpacity style={styles.backButtonTouch} onPress={() => navigation.goBack()}>
-							<LinearGradient colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.12)"]} style={styles.backButton}>
-								<MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
-							</LinearGradient>
-						</TouchableOpacity>
-						<View style={styles.heroContent}>
-							<View style={styles.liveBadge}>
-								<View style={styles.liveDot} />
-								<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
-							</View>
-							<Text style={styles.title}>Gestion Integral</Text>
-							<Text style={styles.title}>de Cobranzas</Text>
-							<Text style={styles.subtitle}>Consulta ventas, pagos y saldos usando el endpoint reporte_Cobranzas.</Text>
+			<ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+				<LinearGradient colors={["#061b2b", "#064e5a", "#0f766e"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+					<View style={styles.heroToolbar}>
+						<TouchableOpacity style={styles.menuButton} onPress={() => navigation.goBack()} accessibilityLabel="Regresar"><MaterialCommunityIcons name="arrow-left" size={16} color="#ffffff" />{Platform.OS === "web" ? <Text style={styles.backButtonText}>Regresar</Text> : null}</TouchableOpacity>
+						<View style={styles.liveBadge}><View style={styles.liveDot} /><Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text></View>
+						<View style={styles.dateCard}>
+							<View style={styles.dateLine}><MaterialCommunityIcons name="calendar-month-outline" size={11} color="#bfdbfe" /><Text style={styles.dateText}>{fechaFormateada}</Text></View>
+							<View style={styles.dateLine}><MaterialCommunityIcons name="clock-outline" size={11} color="#bfdbfe" /><Text style={styles.dateText}>{horaFormateada}</Text></View>
 						</View>
 					</View>
-					<View style={styles.statsRow}>
-						<View style={styles.statCard}>
-							<Text style={styles.statLabel}>Cobranzas</Text>
-							{cargando ? <ActivityIndicator size="small" color="#ffffff" /> : <Text style={styles.statValue}>{listadoMostrar.length}</Text>}
-							<Text style={styles.statCaption}>Registros encontrados</Text>
+
+					<View style={styles.heroMainRow}>
+						<View style={styles.heroContent}><Text style={styles.title}>Gestion Integral</Text><Text style={styles.title}>de Cobranzas</Text><Text style={styles.subtitle}>Consulta ventas, pagos y saldos con el API reporte_Cobranzas.</Text></View>
+						<View style={styles.peopleScene}>
+							<View style={[styles.personBubble, styles.personBubbleBlue]}><MaterialCommunityIcons name="cash-register" size={17} color="#ffffff" /></View>
+							<View style={[styles.personBubble, styles.personBubbleGreen]}><MaterialCommunityIcons name="credit-card-check-outline" size={17} color="#ffffff" /></View>
+							<View style={[styles.personBubble, styles.personBubblePurple]}><MaterialCommunityIcons name="chart-timeline-variant" size={17} color="#ffffff" /></View>
+							<View style={styles.peopleBase} />
 						</View>
-						<View style={styles.statCard}>
-							<Text style={styles.statLabel}>Saldo Pendiente</Text>
-							<Text style={styles.statValueSmall}>{formatoMoneda(saldoTotalPendiente, "S/ 0.00")}</Text>
-							<Text style={styles.statCaption}>{ultimoFiltro || "Todas las cobranzas"}</Text>
-						</View>
+					</View>
+
+					<View style={styles.statsGrid}>
+						<View style={styles.statCard}><View style={[styles.statIconWrap, { backgroundColor: "#dbeafe" }]}><MaterialCommunityIcons name="file-document-multiple-outline" size={13} color="#2563eb" /></View><Text style={styles.statLabel}>Cobranzas</Text>{cargando ? <ActivityIndicator size="small" color="#2563eb" style={styles.statLoader} /> : <Text style={styles.statValue}>{listadoMostrar.length}</Text>}<Text style={styles.statCaption}>Registros</Text><View style={[styles.statAccentLine, { backgroundColor: "#2563eb" }]} /></View>
+						<View style={styles.statCard}><View style={[styles.statIconWrap, { backgroundColor: "#d1fae5" }]}><MaterialCommunityIcons name="check-decagram-outline" size={13} color="#059669" /></View><Text style={styles.statLabel}>Al dia</Text><Text style={styles.statValue}>{cobranzasAlDia}</Text><Text style={styles.statCaption}>Sin atraso</Text><View style={[styles.statAccentLine, { backgroundColor: "#10b981" }]} /></View>
+						<View style={styles.statCard}><View style={[styles.statIconWrap, { backgroundColor: "#ffe4e6" }]}><MaterialCommunityIcons name="clock-alert-outline" size={13} color="#e11d48" /></View><Text style={styles.statLabel}>Por cobrar</Text><Text style={styles.statValue}>{cobranzasConSaldo}</Text><Text style={styles.statCaption}>Con saldo</Text><View style={[styles.statAccentLine, { backgroundColor: "#f43f5e" }]} /></View>
+						<TouchableOpacity style={styles.statCard} activeOpacity={0.82} onPress={cargarCobranzasIniciales}><View style={[styles.statIconWrap, { backgroundColor: "#fef3c7" }]}><MaterialCommunityIcons name="cash-clock" size={13} color="#d97706" /></View><Text style={styles.statLabel}>Saldo pendiente</Text><Text style={[styles.statValue, styles.statValueText]} numberOfLines={2}>{formatoMoneda(saldoTotalPendiente, "S/ 0.00")}</Text><Text style={styles.statCaption}>Toca para actualizar</Text><View style={[styles.statAccentLine, { backgroundColor: "#f59e0b" }]} /></TouchableOpacity>
 					</View>
 				</LinearGradient>
 
-				<View style={styles.searchCard}>
-					<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
-					<Text style={styles.fieldLabel}>Estado venta:</Text>
-					<View style={styles.estadoSelectWrap}>
-						<TouchableOpacity
-							style={[styles.input, styles.estadoSelectInput]}
-							activeOpacity={0.85}
-							onPress={() => {
-								setMostrarTiposVenta(false);
-								setMostrarTiposPago(false);
-								setMostrarEstadosVenta((visible) => !visible);
-							}}
-						>
-							<Text style={estadoVenta ? styles.estadoSelectText : styles.estadoSelectPlaceholder}>
-								{estadoVenta || "Seleccionar estado de venta"}
-							</Text>
-							{cargandoEstadosVenta ? (
-								<ActivityIndicator size="small" color="#069488" />
-							) : (
-								<MaterialCommunityIcons
-									name={mostrarEstadosVenta ? "chevron-up" : "chevron-down"}
-									size={22}
-									color="#64748b"
-								/>
-							)}
-						</TouchableOpacity>
-
-						{mostrarEstadosVenta ? (
-							<View style={styles.estadoOptionsBox}>
-								{estadosVenta.map((estado) => {
-									const estadoActivo = estadoVenta.trim().toLowerCase() === estado.trim().toLowerCase();
-									return (
-										<TouchableOpacity
-											key={estado}
-											style={[styles.estadoOptionItem, estadoActivo && styles.estadoOptionItemActive]}
-											activeOpacity={0.82}
-											onPress={() => {
-												setEstadoVenta(estado);
-												setMostrarEstadosVenta(false);
-											}}
-										>
-											<Text style={[styles.estadoOptionText, estadoActivo && styles.estadoOptionTextActive]}>
-												{estado}
-											</Text>
-											{estadoActivo ? (
-												<MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" />
-											) : null}
-										</TouchableOpacity>
-									);
-								})}
-							</View>
-						) : null}
+			<View style={styles.searchCard}>
+				<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
+				<SelectorDniCliente
+					value={dniCliente}
+					clientes={clientesDni}
+					visible={mostrarClientesDni}
+					cargando={cargandoClientesDni}
+					seleccionado={clienteDniSeleccionado}
+					onChange={manejarCambioDni}
+					onFocus={() => { cerrarSelectores(); setMostrarClientesDni(true); }}
+					onToggle={() => { if (mostrarClientesDni) cerrarSelectores(); else { cerrarSelectores(); setMostrarClientesDni(true); } }}
+					onSelect={(cliente) => void aplicarClientePorDni(cliente)}
+					onSubmit={() => void buscarClientePorDni()}
+				/>
+				{clienteDniSeleccionado ? (
+					<View style={styles.dniSelectedCard}>
+						<View style={styles.dniSelectedIcon}><MaterialCommunityIcons name="account-check-outline" size={18} color="#ffffff" /></View>
+					<View style={styles.dniSelectedCopy}><Text style={styles.dniSelectedLabel}>CLIENTE ENCONTRADO</Text><Text style={styles.dniSelectedName} numberOfLines={1}>{clienteDniSeleccionado.Nombre}</Text><Text style={styles.dniSelectedMeta}>DNI {clienteDniSeleccionado.DNI} · Campos: ultima venta · Listado: todas sus compras</Text></View>
+						<MaterialCommunityIcons name="check-decagram" size={20} color="#10b981" />
 					</View>
-					<Text style={styles.fieldLabel}>Tipo venta:</Text>
-					<View style={styles.estadoSelectWrap}>
-						<TouchableOpacity
-							style={[styles.input, styles.estadoSelectInput]}
-							activeOpacity={0.85}
-							onPress={() => {
-								setMostrarEstadosVenta(false);
-								setMostrarTiposPago(false);
-								if (!mostrarTiposVenta) {
-									refrescarTiposVenta();
-								}
-								setMostrarTiposVenta((visible) => !visible);
-							}}
-						>
-							<Text style={tipoVenta ? styles.estadoSelectText : styles.estadoSelectPlaceholder}>
-								{tipoVenta || "Seleccionar tipo de venta"}
-							</Text>
-							{cargandoTiposVenta ? (
-								<ActivityIndicator size="small" color="#069488" />
-							) : (
-								<MaterialCommunityIcons
-									name={mostrarTiposVenta ? "chevron-up" : "chevron-down"}
-									size={22}
-									color="#64748b"
-								/>
-							)}
-						</TouchableOpacity>
+				) : null}
+				<SelectorBuscable
+						label="Estado de venta"
+						value={estadoVenta}
+						placeholder="Escribe o selecciona un estado"
+						opciones={estadosVenta}
+						visible={mostrarEstadosVenta}
+						cargando={cargandoEstadosVenta}
+						enFoco={campoActivo === "estado"}
+						icono="tag-check-outline"
+					onChange={(texto) => { filtrosDniAutomaticosRef.current = false; setEstadoVenta(texto); abrirSelector("estado"); }}
+						onFocus={() => abrirSelector("estado")}
+						onToggle={() => { if (mostrarEstadosVenta) cerrarSelectores(); else { abrirSelector("estado"); void refrescarEstadosVenta(); } }}
+					onSelect={(valor) => { filtrosDniAutomaticosRef.current = false; setEstadoVenta(valor); cerrarSelectores(); Keyboard.dismiss(); }}
+						onSubmit={consultarReporte}
+					/>
+					<SelectorBuscable
+						label="Tipo de venta"
+						value={tipoVenta}
+						placeholder="Escribe o selecciona el tipo"
+						opciones={tiposVenta}
+						visible={mostrarTiposVenta}
+						cargando={cargandoTiposVenta}
+						enFoco={campoActivo === "venta"}
+						icono="file-sign"
+					onChange={(texto) => { filtrosDniAutomaticosRef.current = false; setTipoVenta(texto); abrirSelector("venta"); }}
+						onFocus={() => abrirSelector("venta")}
+						onToggle={() => { if (mostrarTiposVenta) cerrarSelectores(); else { abrirSelector("venta"); void refrescarTiposVenta(); } }}
+					onSelect={(valor) => { filtrosDniAutomaticosRef.current = false; setTipoVenta(valor); cerrarSelectores(); Keyboard.dismiss(); }}
+						onSubmit={consultarReporte}
+					/>
+					<SelectorBuscable
+						label="Tipo de pago"
+						value={tipoPago}
+						placeholder="Escribe o selecciona el pago"
+						opciones={tiposPago}
+						visible={mostrarTiposPago}
+						cargando={cargandoTiposPago}
+						enFoco={campoActivo === "pago"}
+						icono="credit-card-outline"
+					onChange={(texto) => { filtrosDniAutomaticosRef.current = false; setTipoPago(texto); abrirSelector("pago"); }}
+						onFocus={() => abrirSelector("pago")}
+						onToggle={() => { if (mostrarTiposPago) cerrarSelectores(); else { abrirSelector("pago"); void refrescarTiposPago(); } }}
+					onSelect={(valor) => { filtrosDniAutomaticosRef.current = false; setTipoPago(valor); cerrarSelectores(); Keyboard.dismiss(); }}
+						onSubmit={consultarReporte}
+					/>
 
-						{mostrarTiposVenta ? (
-							<View style={styles.estadoOptionsBox}>
-								{tiposVenta.map((tipo) => {
-									const tipoActivo = tipoVenta.trim().toLowerCase() === tipo.trim().toLowerCase();
-									return (
-										<TouchableOpacity
-											key={tipo}
-											style={[styles.estadoOptionItem, tipoActivo && styles.estadoOptionItemActive]}
-											activeOpacity={0.82}
-											onPress={() => {
-												setTipoVenta(tipo);
-												setMostrarTiposVenta(false);
-											}}
-										>
-											<Text style={[styles.estadoOptionText, tipoActivo && styles.estadoOptionTextActive]}>
-												{tipo}
-											</Text>
-											{tipoActivo ? (
-												<MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" />
-											) : null}
-										</TouchableOpacity>
-									);
-								})}
-							</View>
-						) : null}
-					</View>
-					<Text style={styles.fieldLabel}>Tipo pago:</Text>
-					<View style={styles.estadoSelectWrap}>
-						<TouchableOpacity
-							style={[styles.input, styles.estadoSelectInput]}
-							activeOpacity={0.85}
-							onPress={() => {
-								setMostrarEstadosVenta(false);
-								setMostrarTiposVenta(false);
-								if (!mostrarTiposPago) {
-									refrescarTiposPago();
-								}
-								setMostrarTiposPago((visible) => !visible);
-							}}
-						>
-							<Text style={tipoPago ? styles.estadoSelectText : styles.estadoSelectPlaceholder}>
-								{tipoPago || "Seleccionar tipo de pago"}
-							</Text>
-							{cargandoTiposPago ? (
-								<ActivityIndicator size="small" color="#069488" />
-							) : (
-								<MaterialCommunityIcons
-									name={mostrarTiposPago ? "chevron-up" : "chevron-down"}
-									size={22}
-									color="#64748b"
-								/>
-							)}
-						</TouchableOpacity>
+				<View style={styles.dateRow}>
+					<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Fecha desde</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-start" size={16} color="#8aa0b5" /><TextInput value={fechaDesde} onChangeText={(texto) => { filtrosDniAutomaticosRef.current = false; setFechaDesde(limpiarFecha(texto)); }} onFocus={cerrarSelectores} placeholder="AAAA-MM-DD" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
+					<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Fecha hasta</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-end" size={16} color="#8aa0b5" /><TextInput value={fechaHasta} onChangeText={(texto) => { filtrosDniAutomaticosRef.current = false; setFechaHasta(limpiarFecha(texto)); }} onFocus={cerrarSelectores} placeholder="AAAA-MM-DD" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
+				</View>
 
-						{mostrarTiposPago ? (
-							<View style={styles.estadoOptionsBox}>
-								{tiposPago.map((tipo) => {
-									const tipoActivo = tipoPago.trim().toLowerCase() === tipo.trim().toLowerCase();
-									return (
-										<TouchableOpacity
-											key={tipo}
-											style={[styles.estadoOptionItem, tipoActivo && styles.estadoOptionItemActive]}
-											activeOpacity={0.82}
-											onPress={() => {
-												setTipoPago(tipo);
-												setMostrarTiposPago(false);
-											}}
-										>
-											<Text style={[styles.estadoOptionText, tipoActivo && styles.estadoOptionTextActive]}>
-												{tipo}
-											</Text>
-											{tipoActivo ? (
-												<MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" />
-											) : null}
-										</TouchableOpacity>
-									);
-								})}
-							</View>
-						) : null}
-					</View>
-					<Text style={styles.fieldLabel}>Fecha desde:</Text>
-					<TextInput value={fechaDesde} onChangeText={setFechaDesde} placeholder="YYYY-MM-DD" placeholderTextColor="#8ba8ae" style={styles.input} returnKeyType="search" onSubmitEditing={consultarReporte} />
-					<Text style={styles.fieldLabel}>Fecha hasta:</Text>
-					<TextInput value={fechaHasta} onChangeText={setFechaHasta} placeholder="YYYY-MM-DD" placeholderTextColor="#8ba8ae" style={styles.input} returnKeyType="search" onSubmitEditing={consultarReporte} />
-					<Text style={styles.fieldLabel}>Id cliente:</Text>
-					<TextInput value={idCliente} onChangeText={(texto) => setIdCliente(texto.replace(/[^0-9]/g, ""))} placeholder="Ej. 12" placeholderTextColor="#8ba8ae" style={styles.input} keyboardType="number-pad" returnKeyType="search" onSubmitEditing={consultarReporte} />
-
-					<View style={styles.actionRow}>
-						<TouchableOpacity style={styles.primaryAction} onPress={consultarReporte}>
-							<LinearGradient colors={["#ffffff", "#edf5ff"]} style={[styles.actionSurface, styles.primaryActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.primaryActionBadge]}>
-									<MaterialCommunityIcons name="magnify" size={18} color="#2563eb" />
-								</View>
-								<Text style={styles.primaryActionText}>Buscar</Text>
-							</LinearGradient>
-						</TouchableOpacity>
-						<TouchableOpacity style={styles.newAction} onPress={() => navigation.navigate("RegistrarVenta")}>
-							<LinearGradient colors={["#ffffff", "#e8fff8"]} style={[styles.actionSurface, styles.newActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.newActionBadge]}>
-									<MaterialCommunityIcons name="plus-circle-outline" size={18} color="#0f766e" />
-								</View>
-								<Text style={styles.newActionText}>Nuevo</Text>
-							</LinearGradient>
-						</TouchableOpacity>
-						<TouchableOpacity style={styles.clearAction} onPress={limpiarFiltro}>
-							<LinearGradient colors={["#ffffff", "#f4f7fb"]} style={[styles.actionSurface, styles.clearActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.clearActionBadge]}>
-									<MaterialCommunityIcons name="close-circle-outline" size={18} color="#64748b" />
-								</View>
-								<Text style={styles.clearActionText}>Limpiar</Text>
-							</LinearGradient>
-						</TouchableOpacity>
-					</View>
-					<View style={styles.actionRowSecondary}>
-						<TouchableOpacity style={[styles.secondaryAction, (!cobranzasParaPdf.length || cargando) && styles.buttonDisabled]} onPress={generarPDF} disabled={!cobranzasParaPdf.length || cargando}>
-							<LinearGradient colors={["#ffffff", "#fff7e6"]} style={[styles.actionSurface, styles.secondaryActionSurface]}>
-								<View style={[styles.actionIconBadge, styles.secondaryActionBadge]}>
-									<MaterialCommunityIcons name="file-pdf-box" size={18} color="#f59e0b" />
-								</View>
-								<Text style={styles.secondaryActionText}>PDF</Text>
-							</LinearGradient>
-						</TouchableOpacity>
+				<View style={styles.actionRow}>
+						<TouchableOpacity style={styles.actionButton} onPress={consultarReporte}><LinearGradient colors={["#1f75ff", "#0657d9"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="magnify" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>Buscar</Text></LinearGradient></TouchableOpacity>
+						<TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate("RegistrarVenta")}><LinearGradient colors={["#0f9f73", "#047857"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="plus-circle-outline" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>Nuevo</Text></LinearGradient></TouchableOpacity>
+						<TouchableOpacity style={styles.actionButton} onPress={limpiarFiltro}><LinearGradient colors={["#6b7280", "#475569"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="trash-can-outline" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>Limpiar</Text></LinearGradient></TouchableOpacity>
+						<TouchableOpacity style={[styles.actionButton, (!cobranzasParaPdf.length || cargando) && styles.buttonDisabled]} onPress={generarPDF} disabled={!cobranzasParaPdf.length || cargando}><LinearGradient colors={["#f59e0b", "#f97316"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}><MaterialCommunityIcons name="file-pdf-box" size={13} color="#ffffff" /><Text style={styles.actionTextLight}>PDF</Text></LinearGradient></TouchableOpacity>
 					</View>
 				</View>
 
 				<View style={styles.contentCard}>
-					<Text style={styles.contentTitle}>Listado del Reporte</Text>
-					{cargando ? <ActivityIndicator size="large" color="#069488" style={styles.loader} /> : null}
+					<View style={styles.contentTitleRow}><MaterialCommunityIcons name="view-list-outline" size={18} color="#2563eb" /><Text style={styles.contentTitle}>Listado del Reporte</Text></View>
+					{cargando ? <ActivityIndicator size="large" color="#2563eb" style={styles.loader} /> : null}
 					{!cargando && mensaje ? <View style={styles.messageBox}><Text style={styles.messageText}>{mensaje}</Text></View> : null}
-					{!cargando && buscado && reporte.length > 0 ? <Text style={styles.resultCounter}>Mostrando {reporte.length} resultado{reporte.length === 1 ? "" : "s"} para: {ultimoFiltro}</Text> : null}
+				{!cargando && buscado && listadoMostrar.length > 0 ? <Text selectable style={styles.resultCounter}>Mostrando {listadoMostrar.length} resultado{listadoMostrar.length === 1 ? "" : "s"} para: {ultimoFiltro}</Text> : null}
+				{!cargando && buscado && listadoMostrar.length === 0 && !mensaje ? <View style={styles.emptyState}><View style={styles.emptyIconWrap}><MaterialCommunityIcons name="file-search-outline" size={28} color="#0f766e" /></View><Text style={styles.emptyTitle}>Sin resultados</Text><Text style={styles.emptyText}>No se encontraron cobranzas para los filtros ingresados.</Text></View> : null}
 					{!cargando && listadoMostrar.length > 0 ? (
 						<View style={styles.tableWrapper}>
-							<View style={styles.tableTopAccent} />
-							<View style={styles.tableHeaderRow}>
+							<LinearGradient colors={["#0f2f89", "#184ec8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tableHeaderRow}>
 								{COLUMNAS_REPORTE.map((columna) => (
 									<View key={columna.key} style={[styles.tableHeaderCell, { flex: columna.flex }]}>
 										<Text style={styles.tableHeaderText}>{columna.label}</Text>
 									</View>
 								))}
 								<View style={styles.tableActionHeaderCell}><Text style={styles.tableHeaderText}>Ver</Text></View>
-							</View>
+							</LinearGradient>
 							{listadoMostrar.map((item, index) => (
 								<View key={`${item.IdVenta}-${index}`} style={[styles.tableDataRow, index % 2 === 0 ? styles.tableRowEven : styles.tableRowOdd]}>
 									{COLUMNAS_REPORTE.map((columna) => (
 										<View key={`${index}-${columna.key}`} style={[styles.tableDataCell, { flex: columna.flex }]}>
 											{columna.key === "EstadoVenta" ? (
 												<View style={[styles.estadoBadge, esCobranzaAlDia(String(item.EstadoVenta)) ? styles.estadoBadgeActivo : styles.estadoBadgeInactivo]}>
-													<Text style={[styles.estadoBadgeText, esCobranzaAlDia(String(item.EstadoVenta)) ? styles.estadoBadgeTextActivo : styles.estadoBadgeTextInactivo]}>{String(item[columna.key] ?? "-")}</Text>
+											<Text selectable style={[styles.estadoBadgeText, esCobranzaAlDia(String(item.EstadoVenta)) ? styles.estadoBadgeTextActivo : styles.estadoBadgeTextInactivo]}>{String(item[columna.key] ?? "-")}</Text>
 												</View>
 											) : (
-												<Text style={[styles.tableDataText, esColumnaCorta(columna.key) ? styles.tableDataTextTight : null]} numberOfLines={2} adjustsFontSizeToFit={esColumnaCorta(columna.key)} minimumFontScale={0.78}>
+										<Text selectable style={[styles.tableDataText, esColumnaCorta(columna.key) ? styles.tableDataTextTight : null]} numberOfLines={2} adjustsFontSizeToFit={esColumnaCorta(columna.key)} minimumFontScale={0.78}>
 													{String(item[columna.key] ?? "-")}
 												</Text>
 											)}
 										</View>
 									))}
-									<View style={styles.tableActionCell}>
-										<TouchableOpacity style={styles.verButton} onPress={() => abrirVentaRegistrada(navigation, item)}>
-											<Text style={styles.verButtonText}>Ver</Text>
+								<View style={styles.tableActionCell}>
+									<TouchableOpacity style={styles.verButton} onPress={() => abrirVentaRegistrada(navigation, item)}>
+										<MaterialCommunityIcons name="eye-outline" size={14} color="#0f766e" />
 										</TouchableOpacity>
 									</View>
 								</View>

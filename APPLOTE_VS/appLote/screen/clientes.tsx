@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -17,10 +18,12 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 import { API_URL } from "../config/apiUrl";
+import { WebListHeader, webListStyles } from "../components/web-list-layout";
 
 
 
 const Clientes = ({ navigation, route }) => {
+  const esWeb = Platform.OS === "web";
   // Datos recibidos desde la navegación para personalizar la vista según el usuario.
   const { nombre, rol, clienteSeleccionadoDNI, clienteSeleccionadoNombre } = route.params || {};
 
@@ -134,9 +137,17 @@ const cerrarSesion = () => {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, esWeb && webListStyles.page]}>
       {/* Título principal de la pantalla de gestión de clientes. */}
-      <Text style={styles.title}>Gestion de Clientes:</Text>
+      {esWeb ? (
+        <WebListHeader
+          title="Gestión de Clientes"
+          subtitle="Administra datos de contacto, estado y seguimiento de cada cliente."
+          count={clientes.length}
+          actionLabel="Nuevo Cliente"
+          onAction={() => navigation.navigate("RegistrarCliente", { onRefresh: obtenerClientes })}
+        />
+      ) : <Text style={styles.title}>Gestion de Clientes:</Text>}
        {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
   {/* funcion de boton desplegable patra idioma y exit */}
 
@@ -180,12 +191,12 @@ const cerrarSesion = () => {
       <ScrollView
         ref={scrollClientesRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: tabBarHeight - 50 }}
+        contentContainerStyle={[{ paddingBottom: tabBarHeight - 50 }, esWeb && webListStyles.listContent]}
         showsVerticalScrollIndicator={true}
       >
-        <Text style={styles.subtitle}>Selecciona un Cliente:</Text>
+        {!esWeb ? <Text style={styles.subtitle}>Selecciona un Cliente:</Text> : null}
         {clienteSeleccionadoDNI ? (
-          <View style={styles.selectedNotice}>
+          <View style={[styles.selectedNotice, esWeb && webListStyles.fullWidth]}>
             <Text style={styles.selectedNoticeText}>
               Cliente seleccionado desde reporte: {clienteSeleccionadoNombre || clienteSeleccionadoDNI}
             </Text>
@@ -216,7 +227,7 @@ const cerrarSesion = () => {
             /* Cada tarjeta representa un cliente y abre opciones de gestión. */
             <TouchableOpacity
               key={cliente.IdCliente ? cliente.IdCliente.toString() : index.toString()}
-              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+              style={[styles.card, esWeb && webListStyles.card, estaSeleccionado && styles.cardSeleccionada]}
               onLayout={(event) => {
                 if (cliente.DNI) {
                   posicionesClientesRef.current[String(cliente.DNI)] = event.nativeEvent.layout.y;
@@ -275,14 +286,14 @@ const cerrarSesion = () => {
       </ScrollView>
 
       {/* Botón inferior para navegar al formulario de registro de un nuevo cliente. */}
-      <View style={styles.grid}>
+      {!esWeb ? <View style={styles.grid}>
         <TouchableOpacity
           onPress={() => navigation.navigate("RegistrarCliente", { onRefresh: obtenerClientes })}
           style={styles.btnRegistrar}
         >
           <Text style={styles.btnRegisText}>Nuevo Cliente</Text>
         </TouchableOpacity>
-      </View>
+      </View> : null}
     </View>
   );
 };
