@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,17 +7,18 @@ import {
   Switch,
   ScrollView,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
 
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from "../config/apiUrl";
 
 interface PermisoItem {
-  IdTipo: number;       // o.Id_opcion
-  Item: number;         // o.Id_opcion
-  Descripcion: string;  // o.Opcion_nombre
-  activo: boolean;      // calculado por el CASE (1 o 0)
+  IdTipo: number;       
+  Item: number;         
+  Descripcion: string;  
+  activo: boolean;      
 }
 
 interface PerfilItem {
@@ -36,66 +37,74 @@ export default function PermisosScreen() {
   const [nombrePerfil, setNombrePerfil] = useState<string>('Seleccione...');
   const [mostrarComboOptions, setMostrarComboOptions] = useState<boolean>(false);
 
-  // Mover el Título y la Flecha de Salir a la Cabecera (Header)
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: 'Permisos de Sistema',
-      headerTitleAlign: 'center',
-      headerStyle: { backgroundColor: '#fff' },
-      headerTintColor: '#000',
-      headerLeft: () => (
-        <TouchableOpacity 
-          style={{ marginLeft: 15 }} 
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#28a745' }}>←</Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
-  // 1. Cargar la lista de perfiles/roles al inicializar la pantalla
+  // 1. CARGAR PERFILES: Trae los roles (Gerente, Asesor, etc.) al abrir la pantalla
   useEffect(() => {
     const cargarPerfiles = async () => {
       try {
         const response = await fetch(`${API_URL}/Usuario/usuario_Tipo_Listar`);
+        
+        if (!response.ok) {
+          throw new Error(`Error en el servidor de perfiles. Código: ${response.status}`);
+        }
+
         const datos = await response.json();
-        setPerfiles(datos);
+        
+        if (datos && Array.isArray(datos)) {
+          setPerfiles(datos);
+        } else if (datos && datos.data && Array.isArray(datos.data)) {
+          setPerfiles(datos.data);
+        } else {
+          setPerfiles([]);
+        }
       } catch (error) {
         console.log("Error cargando perfiles:", error);
-        Alert.alert("Error", "No se pudieron cargar los perfiles");
+        Alert.alert("Error", "No se pudieron cargar los perfiles de usuario");
+        setPerfiles([]);
       }
     };
     cargarPerfiles();
   }, []);
 
-  // 2. DETECTOR: Se ejecuta automáticamente cuando seleccionas un Perfil en el Dropdown
+  // 2. CARGAR PERMISOS: Trae los switches con la consulta ?idRol= cuando seleccionas un perfil
   useEffect(() => {
     if (idPerfilSeleccionado === null) return;
 
     const cargarPermisosPorPerfil = async () => {
       setLoading(true);
       try {
-        // Petición apuntando a tu endpoint en C# pasando el ID seleccionado
-        const response = await fetch(`${API_URL}/Usuario/permisos-perfil/${idPerfilSeleccionado}`);
-        const datos = await response.json();
+        // Aquí agregamos el ?idRol= para que tu C# reciba el número del perfil perfectamente
+        const response = await fetch(`${API_URL}/Usuario/permisos-perfil?idRol=${idPerfilSeleccionado}`);
+        
+        if (!response.ok) {
+          throw new Error(`Error en el servidor. Código de estado: ${response.status}`);
+        }
 
-        // Como tu API devuelve { success: true, data: [...] }, entramos a datos.data
+        const textoRespuesta = await response.text();
+        if (!textoRespuesta || textoRespuesta.trim() === "") {
+          throw new Error("El servidor devolvió una respuesta vacía.");
+        }
+
+        const datos = JSON.parse(textoRespuesta);
+
         if (datos.success && datos.data) {
           const formateados = datos.data.map((item: any) => ({
             IdTipo: item.IdTipo || item.Id_opcion, 
             Item: item.Item || item.Id_opcion,
             Descripcion: item.Descripcion || item.Opcion_nombre,
-            // Evalúa el resultado del CASE de tu SP (1 es activo, 0 es inactivo)
-            activo: item.activo === 1 || item.activo === true || item.activo === "1"
+            // Aquí se realiza la conversión: si es 1 pasa a true (encendido), si es 0 a false (apagado)
+            activo: item.activo == 1 || item.activo === true || item.activo === "1"
           }));
           setPermisos(formateados);
         } else {
           setPermisos([]);
+          Alert.alert("Atención", "No se encontraron permisos configurados para este rol.");
         }
       } catch (error) {
-        console.log("Error cargando permisos del perfil:", error);
-        Alert.alert("Atención", "No se encontraron permisos asignados para este rol.");
+        console.log("Error detallado cargando permisos:", error);
+        Alert.alert(
+          "Error de API", 
+          "Ocurrió un inconveniente al procesar los accesos."
+        );
         setPermisos([]);
       } finally {
         setLoading(false);
@@ -105,7 +114,7 @@ export default function PermisosScreen() {
     cargarPermisosPorPerfil();
   }, [idPerfilSeleccionado]);
 
-  // Alternar el switch localmente
+  // Cambiar el switch de forma local en la pantalla
   const toggleSwitch = (id: number) => {
     setPermisos(prev =>
       prev.map(item =>
@@ -114,7 +123,7 @@ export default function PermisosScreen() {
     );
   };
 
-  // Guardar los cambios
+  // Enviar los nuevos cambios guardados al backend
   const handleGuardar = async () => {
     if (!idPerfilSeleccionado) {
       Alert.alert("Atención", "Por favor seleccione un perfil antes de guardar.");
@@ -155,7 +164,19 @@ export default function PermisosScreen() {
   return (
     <View style={styles.container}>
       
-      {/* SECCIÓN PERFIL */}
+      {/* CABECERA CON FLECHA Y TÍTULO */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.mainTitle}>Permisos de Sistema</Text>
+        <View style={{ width: 40 }} /> 
+      </View>
+
+      {/* SECCIÓN DESPLEGABLE DE PERFIL */}
       <View style={styles.perfilContainer}>
         <Text style={styles.label}>Perfil:</Text>
 
@@ -175,11 +196,11 @@ export default function PermisosScreen() {
                   style={styles.dropdownItem}
                   onPress={() => {
                     setNombrePerfil(p.Descripcion);
-                    setIdPerfilSeleccionado(p.IdTipo); // Cambiar el ID dispara el useEffect automáticamente
+                    setIdPerfilSeleccionado(p.IdTipo); 
                     setMostrarComboOptions(false);
                   }}
                 >
-                  <Text>{p.Descripcion}</Text>
+                  <Text style={{ fontSize: 15 }}>{p.Descripcion}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -187,11 +208,11 @@ export default function PermisosScreen() {
         )}
       </View>
 
-      {/* TABLA DE PERMISOS */}
+      {/* CONTENEDOR CENTRAL: CARGANDO / SELECCIONE / TABLA */}
       {loading ? (
         <View style={styles.centerLoading}>
           <ActivityIndicator size="large" color="#28a745" />
-          <Text style={{ marginTop: 10, color: '#666' }}>Buscando permisos del perfil...</Text>
+          <Text style={{ marginTop: 10, color: '#666' }}>Buscando accesos...</Text>
         </View>
       ) : idPerfilSeleccionado === null ? (
         <View style={styles.centerLoading}>
@@ -199,12 +220,14 @@ export default function PermisosScreen() {
         </View>
       ) : (
         <View style={styles.tableWrapper}>
+          {/* Encabezados */}
           <View style={[styles.row, styles.headerRow]}>
             <Text style={[styles.headerCell, { flex: 1.2 }]}>Item</Text>
             <Text style={[styles.headerCell, { flex: 4.5 }]}>Descripción</Text>
             <Text style={[styles.headerCell, { flex: 1.5, textAlign: 'center' }]}>Activo</Text>
           </View>
 
+          {/* Registros */}
           <ScrollView>
             {permisos.length === 0 ? (
               <Text style={styles.noDataText}>No hay registros para mostrar</Text>
@@ -228,8 +251,8 @@ export default function PermisosScreen() {
         </View>
       )}
 
-      {/* BOTÓN INFERIOR DE GUARDAR */}
-      <View style={styles.buttonContainer}>
+      {/* SECCIÓN DEL BOTÓN (MÁS ARRIBA PARA QUE NO CHOQUE CON TU TECLADO O TECLAS DE ANDROID) */}
+      <View style={styles.bottomSection}>
         <TouchableOpacity
           style={[styles.button, styles.btnGuardar, (!idPerfilSeleccionado || loading) && styles.btnDisabled]}
           onPress={handleGuardar}
@@ -245,8 +268,36 @@ export default function PermisosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    paddingHorizontal: 15,
     backgroundColor: "#fff",
+    paddingTop: Platform.OS === 'ios' ? 50 : 20, 
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0'
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#28a745', 
+  },
+  mainTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    color: '#000',
+    flex: 1,
   },
   perfilContainer: {
     flexDirection: "row",
@@ -280,7 +331,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 6,
-    maxHeight: 200,
+    maxHeight: 180,
     zIndex: 999,
     elevation: 5,
   },
@@ -294,7 +345,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eee',
     borderRadius: 6,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    marginBottom: 10
   },
   row: {
     flexDirection: "row",
@@ -323,19 +375,19 @@ const styles = StyleSheet.create({
     marginTop: 20,
     color: '#999'
   },
-  buttonContainer: {
-    flexDirection: "row",
-    marginTop: 15,
-    marginBottom: 5
+  bottomSection: {
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'android' ? 35 : 20, 
+    backgroundColor: '#fff',
   },
   button: {
-    flex: 1,
+    width: '100%',
     padding: 15,
     borderRadius: 6,
     alignItems: "center"
   },
   btnGuardar: {
-    backgroundColor: "#28a745"
+    backgroundColor: "#61926d"
   },
   btnDisabled: {
     backgroundColor: "#a1e4b3"

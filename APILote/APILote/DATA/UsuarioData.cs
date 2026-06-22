@@ -128,25 +128,39 @@ namespace APILote.DATA
         {
             try
             {
-                DataTable dt = SqlHelper.ExecuteDataset(
-                    conexion.cnConexion,
-                    CommandType.StoredProcedure,
-                    "permisos_ListarPerfil",
-                    new SqlParameter("@CodRolUsuario", idRol)
-                ).Tables[0];
-
-                return dt ?? new DataTable();
-            }
-            catch (SqlException sqlEx)
-            {
-                throw new Exception("Error SQL en PermisosPerfil: " + sqlEx.Message);
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "permisos_ListarPerfil", idRol).Tables[0];
+                return Datos;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error general en PermisosPerfil: " + ex.Message);
+                return null;
+            }
+        }
+
+
+        public string Permiso (int codRolUsuario, int codOpcion, bool activo)
+        {
+            try
+            {
+                int estadoActivo = activo ? 1 : 0;
+
+                SqlHelper.ExecuteNonQuery(
+                    conexion.cnConexion,
+                    "permisos_GuardarPerfil",
+                    codRolUsuario,
+                    codOpcion,
+                    estadoActivo
+                );
+
+                return "Permiso guardado exitosamente";
+            }
+            catch (Exception ex)
+            {
+                return null;
             }
         }
     }
+}
 
-    }
 

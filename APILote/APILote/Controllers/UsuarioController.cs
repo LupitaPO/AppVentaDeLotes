@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Net;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 
 namespace APILote.Controllers
 {
@@ -97,6 +98,8 @@ namespace APILote.Controllers
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             return jsoString;
         }
+
+
         [HttpGet]
         [Route("formularios_Listar_pa")]
         public string formularios_Listar_pa()
@@ -109,13 +112,13 @@ namespace APILote.Controllers
             return jsoString;
         }
 
-        [HttpGet("permisos-perfil")]
-        public IActionResult PermisosPerfil([FromQuery] int idRol) // <-- [FromQuery] lee el ?idRol= de React Native
+        [HttpGet]
+        [Route("permisos_ListarPerfil")]
+        public IActionResult Permisos_ListarPerfil([FromQuery] int idRol)
         {
             try
             {
                 UsuarioData data = new UsuarioData();
-                // Se ejecuta tu SP pasándole el idRol que viene desde la app
                 DataTable resultado = data.PermisosPerfil(idRol);
 
                 if (resultado == null || resultado.Rows.Count == 0)
@@ -128,7 +131,6 @@ namespace APILote.Controllers
                     });
                 }
 
-                // Convertimos el DataTable a una lista para enviarlo como JSON
                 var rows = new List<Dictionary<string, object>>();
                 foreach (DataRow row in resultado.Rows)
                 {
@@ -153,9 +155,31 @@ namespace APILote.Controllers
                     success = false,
                     error = ex.Message
                 });
+                
             }
+         }
+
+        [HttpPost]
+        [Route("permisos_GuardarPerfil")]
+        public IActionResult PermisosGuardar([FromBody] Permiso request)
+        {
+            try
+            {
+                UsuarioData data = new UsuarioData();
+                string resultado = data.Permiso(request.CodRolUsuario, request.CodOpcion, request.Activo);
+
+                if (resultado == null)
+                {
+                    return StatusCode(500, new { success = false, mensaje = "Error al guardar el permiso." });
+                }
+
+                return Ok(new { success = true, mensaje = resultado });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = ex.Message });
+            }
+
         }
     }
 }
-
-
