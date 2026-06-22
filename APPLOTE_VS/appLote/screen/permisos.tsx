@@ -65,15 +65,15 @@ export default function PermisosScreen() {
     cargarPerfiles();
   }, []);
 
-  // 2. CARGAR PERMISOS: Trae los switches con la consulta ?idRol= cuando seleccionas un perfil
+  // 2. CARGAR PERMISOS: Trae los switches haciendo match con tu C# [HttpGet("permisos_ListarPerfil")]
   useEffect(() => {
     if (idPerfilSeleccionado === null) return;
 
     const cargarPermisosPorPerfil = async () => {
       setLoading(true);
       try {
-        // Aquí agregamos el ?idRol= para que tu C# reciba el número del perfil perfectamente
-        const response = await fetch(`${API_URL}/Usuario/permisos-perfil?idRol=${idPerfilSeleccionado}`);
+        // Ruta corregida para que coincida exactamente con tu backend de C#
+        const response = await fetch(`${API_URL}/Usuario/permisos_ListarPerfil?idRol=${idPerfilSeleccionado}`);
         
         if (!response.ok) {
           throw new Error(`Error en el servidor. Código de estado: ${response.status}`);
@@ -88,11 +88,11 @@ export default function PermisosScreen() {
 
         if (datos.success && datos.data) {
           const formateados = datos.data.map((item: any) => ({
-            IdTipo: item.IdTipo || item.Id_opcion, 
-            Item: item.Item || item.Id_opcion,
-            Descripcion: item.Descripcion || item.Opcion_nombre,
-            // Aquí se realiza la conversión: si es 1 pasa a true (encendido), si es 0 a false (apagado)
-            activo: item.activo == 1 || item.activo === true || item.activo === "1"
+            IdTipo: item.IdTipo || item.Id_opcion || item.Cod_opcion, 
+            Item: item.Item || item.Id_opcion || item.Cod_opcion,
+            Descripcion: item.Descripcion || item.Opcion_nombre || item.DescripcionOpcion,
+            // Evalúa estados 'A' de tu base de datos, 1 o booleanos true
+            activo: item.Estado === "A" || item.activo == 1 || item.activo === true || item.activo === "1"
           }));
           setPermisos(formateados);
         } else {
@@ -123,7 +123,7 @@ export default function PermisosScreen() {
     );
   };
 
-  // Enviar los nuevos cambios guardados al backend
+  // 3. GUARDAR CAMBIOS: Envía fila por fila al backend usando el DTO "Permiso" ([FromBody])
   const handleGuardar = async () => {
     if (!idPerfilSeleccionado) {
       Alert.alert("Atención", "Por favor seleccione un perfil antes de guardar.");
@@ -133,29 +133,39 @@ export default function PermisosScreen() {
     try {
       setLoading(true);
 
-      const response = await fetch(`${API_URL}/Usuario/permisos_Guardar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          idRolUsuario: idPerfilSeleccionado,
-          permisos: permisos
-        })
+      // Creamos un lote de peticiones HTTP en paralelo para sincronizar la tabla TBpermiso
+      const peticiones = permisos.map(item => {
+        return fetch(`${API_URL}/Usuario/permisos_GuardarPerfil`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            CodRolUsuario: idPerfilSeleccionado, // Llave exacta de tu clase Permiso de C#
+            CodOpcion: item.Item,                // El ID de la opción/formulario
+            Activo: item.activo                  // El booleano (true/false)
+          })
+        });
       });
 
-      if (response.ok) {
+      // Se ejecutan todas las promesas al mismo tiempo de manera eficiente
+      const respuestas = await Promise.all(peticiones);
+      
+      // Validamos si alguno de los registros falló al guardar
+      const algunaFallo = respuestas.some(res => !res.ok);
+
+      if (!algunaFallo) {
         Alert.alert(
           "Éxito",
-          "Cambios guardados correctamente",
+          "Todos los cambios de permisos fueron guardados en la base de datos",
           [{ text: "OK", onPress: () => navigation.goBack() }]
         );
       } else {
-        Alert.alert("Error", "No se pudo guardar la configuración");
+        Alert.alert("Error", "Algunos permisos no pudieron actualizarse correctamente en el servidor.");
       }
     } catch (error) {
-      console.log(error);
-      Alert.alert("Error", "Error de conexión con el servidor");
+      console.log("Error al guardar permisos:", error);
+      Alert.alert("Error", "Error de conexión con el servidor de la API");
     } finally {
       setLoading(false);
     }
@@ -212,7 +222,7 @@ export default function PermisosScreen() {
       {loading ? (
         <View style={styles.centerLoading}>
           <ActivityIndicator size="large" color="#28a745" />
-          <Text style={{ marginTop: 10, color: '#666' }}>Buscando accesos...</Text>
+          <Text style={{ marginTop: 10, color: '#666' }}>Procesando accesos...</Text>
         </View>
       ) : idPerfilSeleccionado === null ? (
         <View style={styles.centerLoading}>
@@ -220,14 +230,14 @@ export default function PermisosScreen() {
         </View>
       ) : (
         <View style={styles.tableWrapper}>
-          {/* Encabezados */}
+          {/* Encabezados de Tabla */}
           <View style={[styles.row, styles.headerRow]}>
             <Text style={[styles.headerCell, { flex: 1.2 }]}>Item</Text>
             <Text style={[styles.headerCell, { flex: 4.5 }]}>Descripción</Text>
             <Text style={[styles.headerCell, { flex: 1.5, textAlign: 'center' }]}>Activo</Text>
           </View>
 
-          {/* Registros */}
+          {/* Registros mapeados */}
           <ScrollView>
             {permisos.length === 0 ? (
               <Text style={styles.noDataText}>No hay registros para mostrar</Text>
@@ -251,7 +261,7 @@ export default function PermisosScreen() {
         </View>
       )}
 
-      {/* SECCIÓN DEL BOTÓN (MÁS ARRIBA PARA QUE NO CHOQUE CON TU TECLADO O TECLAS DE ANDROID) */}
+      {/* SECCIÓN DEL BOTÓN DE ACCIÓN */}
       <View style={styles.bottomSection}>
         <TouchableOpacity
           style={[styles.button, styles.btnGuardar, (!idPerfilSeleccionado || loading) && styles.btnDisabled]}
