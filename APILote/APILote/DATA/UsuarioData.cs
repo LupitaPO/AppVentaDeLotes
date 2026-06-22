@@ -139,17 +139,13 @@ namespace APILote.DATA
         }
 
 
-        public string Permiso (int codRolUsuario, int codOpcion, bool activo)
+        public string Permiso(int codRolUsuario, int codOpcion, bool activo)
         {
             try
             {
                 int estadoActivo = activo ? 1 : 0;
 
-                SqlHelper.ExecuteNonQuery(
-                    conexion.cnConexion,
-                    "permisos_GuardarPerfil",
-                    codRolUsuario,
-                    codOpcion,
+                SqlHelper.ExecuteNonQuery(conexion.cnConexion,"permisos_GuardarPerfil", codRolUsuario,codOpcion,
                     estadoActivo
                 );
 
