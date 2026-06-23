@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -19,11 +20,15 @@ import { Languages } from "../localizacion";
 import RegistrarAsesor from "./Asesor/RegistrarAsesor";
 import RegistrarUsuario from "./Usuarios/RegistrarUsuario";
 import { API_URL } from "../config/apiUrl";
+import { WebListHeader, webListStyles } from "../components/web-list-layout";
 
 // URL base del backend para consultar y administrar usuarios.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
 
-const Usuario = ({ navigation, route }) => {
+type UsuarioScreenProps = { navigation: any; route: any };
+
+const Usuario = ({ navigation, route }: UsuarioScreenProps) => {
+  const esWeb = Platform.OS === "web";
   // Datos recibidos desde navegación para personalizar la pantalla según el contexto del usuario.
   const { nombre, rol, usuarioSeleccionadoId, usuarioSeleccionadoNombre } = route.params || {};
 
@@ -31,7 +36,7 @@ const Usuario = ({ navigation, route }) => {
   const tabBarHeight = useBottomTabBarHeight();
 
   // Lista de usuarios recuperada desde la API.
-  const [usuarios, setUsuarios] = useState([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
   const scrollUsuariosRef = useRef<ScrollView | null>(null);
   const posicionesUsuariosRef = useRef<Record<string, number>>({});
 
@@ -69,7 +74,7 @@ const Usuario = ({ navigation, route }) => {
   };
 
   // Envía la solicitud para anular un usuario según su identificador.
-  const anularUsuario = async (usuario) => {
+  const anularUsuario = async (usuario: any) => {
     // Evaluamos si el estado actual es 'A'. Si no lo es, asumimos que es 'X' (u otro estado inactivo)
     const esActivo = usuario.Estado === "A";
     const accionTexto = esActivo ? "anular" : "restaurar";
@@ -131,10 +136,26 @@ const Usuario = ({ navigation, route }) => {
   };
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  // ATAMAINE: Ver desde ReporteUsuarios muestra exclusivamente la persona
+  // seleccionada; el acceso normal a esta pantalla conserva la lista completa.
+  const usuariosVisibles = usuarioSeleccionadoId
+    ? usuarios.filter(
+      (usuario) => String(usuario.IdUsuario || "") === String(usuarioSeleccionadoId),
+    )
+    : usuarios;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, esWeb && webListStyles.page]}>
       {/* Título principal de la sección de gestión de usuarios. */}
-      <Text style={styles.title}>Gestion de Usuarios:</Text>
+      {esWeb ? (
+        <WebListHeader
+          title="Gestión de Usuarios"
+          subtitle="Controla perfiles, accesos y estado operativo de los usuarios del sistema."
+          count={usuariosVisibles.length}
+          actionLabel="Nuevo Usuario"
+          onAction={() => navigation.navigate("RegistrarUsuario", { onRefresh: obtenerUsuarios })}
+        />
+      ) : <Text style={styles.title}>Gestion de Usuarios:</Text>}
       {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
       {/* funcion de boton desplegable patra idioma y exit */}
 
@@ -178,19 +199,19 @@ const Usuario = ({ navigation, route }) => {
       <ScrollView
         ref={scrollUsuariosRef}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: tabBarHeight + 20 }}
+        contentContainerStyle={[{ paddingBottom: tabBarHeight + 20 }, esWeb && webListStyles.listContent]}
         showsVerticalScrollIndicator={true}
       >
-        <Text style={styles.subtitle}>Selecciona un Usuario:</Text>
+        {!esWeb ? <Text style={styles.subtitle}>Selecciona un Usuario:</Text> : null}
         {usuarioSeleccionadoId ? (
-          <View style={styles.selectedNotice}>
+          <View style={[styles.selectedNotice, esWeb && webListStyles.fullWidth]}>
             <Text style={styles.selectedNoticeText}>
-              Usuario seleccionado desde reporte: {usuarioSeleccionadoNombre || usuarioSeleccionadoId}
+              Mostrando solo el usuario seleccionado: {usuarioSeleccionadoNombre || usuarioSeleccionadoId}
             </Text>
           </View>
         ) : null}
 
-        {usuarios.map((usuario, index) => {
+        {usuariosVisibles.map((usuario, index) => {
           // Construye el nombre mostrado usando los campos disponibles del usuario.
           const nombreCompleto = usuario.Nombre || "Usuario sin nombre";
 
@@ -205,7 +226,7 @@ const Usuario = ({ navigation, route }) => {
             /* Cada tarjeta representa un usuario y abre acciones de administración. */
             <TouchableOpacity
               key={usuario.IdUsuario ? usuario.IdUsuario.toString() : index.toString()}
-              style={[styles.card, estaSeleccionado && styles.cardSeleccionada]}
+              style={[styles.card, esWeb && webListStyles.card, estaSeleccionado && styles.cardSeleccionada]}
               onLayout={(event) => {
                 if (usuario.IdUsuario) {
                   posicionesUsuariosRef.current[String(usuario.IdUsuario)] = event.nativeEvent.layout.y;
@@ -270,7 +291,7 @@ const Usuario = ({ navigation, route }) => {
       </ScrollView>
 
       {/* Botón inferior para navegar al formulario de registro. */}
-      <View style={styles.grid}>
+      {!esWeb ? <View style={styles.grid}>
         <TouchableOpacity
           onPress={() =>
             navigation.navigate("RegistrarUsuario", { onRefresh: obtenerUsuarios })
@@ -279,7 +300,7 @@ const Usuario = ({ navigation, route }) => {
         >
           <Text style={styles.btnRegisText}>Nuevo Usuario</Text>
         </TouchableOpacity>
-      </View>
+      </View> : null}
     </View>
   );
 };

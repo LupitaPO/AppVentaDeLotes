@@ -300,8 +300,9 @@ const MenuReportes = ({ route, navigation }: MenuReportesProps) => {
                                 showsVerticalScrollIndicator={false}
                         >
                                 <View style={styles.topShell}>
-                                        <TouchableOpacity activeOpacity={0.86} style={styles.menuButton} onPress={() => navigation.goBack()}>
-                                                <MaterialCommunityIcons name="menu" size={32} color="#c8fffb" />
+                                        <TouchableOpacity activeOpacity={0.86} style={[styles.menuButton, esPantallaPc && styles.menuButtonWeb]} onPress={() => navigation.goBack()} accessibilityLabel="Regresar">
+                                                <MaterialCommunityIcons name="arrow-left" size={26} color="#c8fffb" />
+                                                {esPantallaPc ? <Text style={styles.menuButtonText}>Regresar</Text> : null}
                                         </TouchableOpacity>
 
                                         <View style={styles.greetingBlock}>
@@ -353,12 +354,12 @@ const MenuReportes = ({ route, navigation }: MenuReportesProps) => {
                                         ))}
                                 </View>
 
-                                <View style={styles.reportCardsContainer}>
+                                <View style={[styles.reportCardsContainer, esPantallaPc && styles.reportCardsContainerDesktop]}>
                                         {REPORTES.map((reporte) => (
                                                 <TouchableOpacity
                                                         key={reporte.tipo}
                                                         activeOpacity={0.92}
-                                                        style={styles.reportCardPressable}
+                                                        style={[styles.reportCardPressable, esPantallaPc && styles.reportCardPressableDesktop]}
                                                         onPress={() => abrirReporte(reporte.tipo, reporte.ruta)}
                                                 >
                                                         <LinearGradient

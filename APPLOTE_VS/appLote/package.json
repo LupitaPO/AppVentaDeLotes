@@ -6,7 +6,9 @@
     "start": "node script/start-with-api-proxy.js start",
     "android": "node script/start-with-api-proxy.js start --android",
     "ios": "node script/start-with-api-proxy.js start --ios",
-    "web": "node script/start-with-api-proxy.js start --web",
+    "web": "expo start --web",
+    "build:web": "expo export --platform web --output-dir dist",
+    "publish:web-api": "node script/publish-web-to-api.js",
     "api-proxy": "node web-api-proxy.js",
     "web:full": "npm run web"
   },

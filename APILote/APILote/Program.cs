@@ -22,7 +22,7 @@ builder.Services.AddControllers();
 
 // ===============================================
 // 3. ACTIVAR SWAGGER
-// Necesario para ver la documentación en navegador
+// Necesario para ver la documentaciÃ³n en navegador
 // ===============================================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -31,7 +31,7 @@ var app = builder.Build();
 
 // ===============================================
 // 4. ACTIVAR SWAGGER SIEMPRE
-// Así funciona en Development y también fuera de Development
+// AsÃ­ funciona en Development y tambiÃ©n fuera de Development
 // ===============================================
 app.UseSwagger();
 
@@ -48,19 +48,20 @@ app.UseSwaggerUI(options =>
 app.UseCors("AllowAll");
 
 // ===============================================
-// 6. ARCHIVOS ESTÁTICOS
-// Si no tienes wwwroot, puedes comentar esta línea
+// 6. APLICACION WEB Y ARCHIVOS ESTATICOS
+// Sirve index.html en / y conserva intactas las rutas de los controladores.
 // ===============================================
-// app.UseStaticFiles();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 // ===============================================
-// 7. AUTORIZACIÓN
+// 7. AUTORIZACIÃ“N
 // ===============================================
 app.UseAuthorization();
 
 // ===============================================
 // 8. MAPEAR CONTROLLERS
-// Aquí se conectan las rutas de tus controllers
+// AquÃ­ se conectan las rutas de tus controllers
 // ===============================================
 app.MapControllers();
 

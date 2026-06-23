@@ -16,11 +16,21 @@ import { API_URL } from "../../config/apiUrl";
 
 const { width } = Dimensions.get("window");
 
+const normalizarFiltroLote = (value) => String(value ?? "").trim().toUpperCase();
+const asegurarArray = (value) => (Array.isArray(value) ? value : []);
 
 const DetalleProyecto = ({ route, navigation }) => {
-  const { urlCSV, info } = route.params;
+  const params = route.params || {};
+  const { urlCSV, info } = params;
   const [proyectoInfo, setProyectoInfo] = useState(info || {});
   const idProyecto = proyectoInfo?.IdProyecto;
+  const lotesClienteIdsParam = asegurarArray(params.lotesClienteIds);
+  const codigosLotesClienteParam = asegurarArray(params.codigosLotesCliente);
+  const lotesClienteIdsSet = new Set(lotesClienteIdsParam.map(normalizarFiltroLote).filter(Boolean));
+  const codigosLotesClienteSet = new Set(codigosLotesClienteParam.map(normalizarFiltroLote).filter(Boolean));
+  const hayFiltroCliente = lotesClienteIdsSet.size > 0 || codigosLotesClienteSet.size > 0;
+  const filtroLotesClienteKey = `${lotesClienteIdsParam.join("|")}::${codigosLotesClienteParam.join("|")}`;
+  const clienteFiltroTexto = params.clienteFiltroNombre || params.clienteFiltroDNI || "";
   const [lotesGeometria, setLotesGeometria] = useState([]);
   const [lotesBD, setLotesBD] = useState([]);
   const [miViewBox, setMiViewBox] = useState("0 0 1000 1000");
@@ -29,7 +39,7 @@ const DetalleProyecto = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
       cargarTodo();
-    }, [idProyecto, urlCSV]),
+    }, [idProyecto, urlCSV, filtroLotesClienteKey]),
   );
 
   useEffect(() => {
@@ -43,6 +53,27 @@ const DetalleProyecto = ({ route, navigation }) => {
     await descargarYProcesarMapa();
     await obtenerLotesDesdeBD();
     setCargando(false);
+  };
+
+  const lotePermitidoPorCliente = (lote) => {
+    if (!hayFiltroCliente) return true;
+
+    const idLote = normalizarFiltroLote(lote?.IdLote ?? lote?.idLote ?? lote?.Id ?? lote?.id);
+    const codigoLote = normalizarFiltroLote(lote?.CodigoLote ?? lote?.codigoLote ?? lote?.Codigo ?? lote?.codigo);
+
+    return lotesClienteIdsSet.has(idLote) || codigosLotesClienteSet.has(codigoLote);
+  };
+
+  const obtenerCodigoMapa = (loteMapa) => {
+    const kVal = Object.keys(loteMapa).find(
+      (k) => k.toLowerCase().includes("valor") || k.toLowerCase().includes("contenido")
+    );
+    return kVal ? loteMapa[kVal] : "";
+  };
+
+  const geometriaPermitidaPorCliente = (codigoMapa) => {
+    if (!hayFiltroCliente) return true;
+    return codigosLotesClienteSet.has(normalizarFiltroLote(codigoMapa));
   };
 
   // 1. Obtener estados desde SQL Server (Limpiando inyecciones de Somee)
@@ -61,7 +92,7 @@ const DetalleProyecto = ({ route, navigation }) => {
         (lote) => lote.IdProyecto?.toString() === idProyecto?.toString(),
       );
 
-      setLotesBD(filtrados);
+      setLotesBD(filtrados.filter(lotePermitidoPorCliente));
     } catch (error) {
       console.error("Error cargando lotes BD:", error);
     }
@@ -70,6 +101,11 @@ const DetalleProyecto = ({ route, navigation }) => {
   // 2. Descargar geometría desde el CSV (Borrando el banner publicitario de Somee)
   const descargarYProcesarMapa = async () => {
   try {
+    if (!urlCSV) {
+      setLotesGeometria([]);
+      return;
+    }
+
     const rutaLimpia = urlCSV.startsWith("http") 
       ? urlCSV 
       : `${API_URL}${urlCSV.startsWith("/") ? "" : "/"}${urlCSV}`;
@@ -108,9 +144,13 @@ const DetalleProyecto = ({ route, navigation }) => {
           return x !== undefined && y !== undefined && x !== "" && y !== "";
         });
 
-        if (datos.length > 0) {
-          const xs = datos.map((l) => parseFloat(l["Posición X"] || l["Posicion X"]));
-          const ys = datos.map((l) => parseFloat(l["Posición Y"] || l["Posicion Y"]));
+        const datosCliente = hayFiltroCliente
+          ? datos.filter((l) => geometriaPermitidaPorCliente(obtenerCodigoMapa(l)))
+          : datos;
+
+        if (datosCliente.length > 0) {
+          const xs = datosCliente.map((l) => parseFloat(l["Posición X"] || l["Posicion X"]));
+          const ys = datosCliente.map((l) => parseFloat(l["Posición Y"] || l["Posicion Y"]));
 
           const minX = Math.min(...xs);
           const minY = Math.min(...ys);
@@ -125,8 +165,11 @@ const DetalleProyecto = ({ route, navigation }) => {
             `${minX - padding} ${minY - padding} ${anchoTotal + padding * 2} ${altoTotal + padding * 2}`
           );
 
-          setLotesGeometria(datos);
+          setLotesGeometria(datosCliente);
+          return;
         }
+
+        setLotesGeometria([]);
       },
     });
   } catch (error) {
@@ -165,6 +208,11 @@ const DetalleProyecto = ({ route, navigation }) => {
         <Text style={styles.label}>
           📏 Hectáreas: <Text style={styles.value}>{proyectoInfo.NumeroHectareas}</Text>
         </Text>
+        {hayFiltroCliente ? (
+          <Text style={styles.label}>
+            Cliente: <Text style={styles.value}>{clienteFiltroTexto || "Cliente seleccionado"}</Text>
+          </Text>
+        ) : null}
       </View>
 
       <ScrollView>
@@ -288,7 +336,7 @@ const DetalleProyecto = ({ route, navigation }) => {
 
         <View style={styles.listaSeccion}>
           <Text style={styles.subtitle}>
-            Información de Lotes ({lotesBD.length}):
+            {hayFiltroCliente ? "Información de Lotes Comprados" : "Información de Lotes"} ({lotesBD.length}):
           </Text>
 
           {lotesBD.map((loteItem, index) => (

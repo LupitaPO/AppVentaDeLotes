@@ -1,6 +1,10 @@
 import { registerRootComponent } from 'expo';
 
 import App from './App';
+import { configurarCompatibilidadWeb } from './config/webCompat';
+
+// Activa únicamente los equivalentes que React Native Web no implementa.
+configurarCompatibilidadWeb();
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,

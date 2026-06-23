@@ -26,7 +26,7 @@ export default StyleSheet.create({
         scrollContent: {
                 flexGrow: 0,
                 width: "100%",
-                maxWidth: 820,
+                maxWidth: "100%",
                 alignSelf: "center",
                 paddingTop: 16,
                 paddingHorizontal: 12,
@@ -35,7 +35,8 @@ export default StyleSheet.create({
         },
 
         scrollContentDesktop: {
-                maxWidth: 900,
+                maxWidth: "100%",
+                paddingHorizontal: 28,
         },
 
         backgroundGlowTop: {
@@ -90,6 +91,17 @@ export default StyleSheet.create({
                 shadowOpacity: 0.48,
                 shadowRadius: 22,
                 elevation: 14,
+        },
+        menuButtonWeb: {
+                width: 116,
+                borderRadius: 16,
+                flexDirection: "row",
+                gap: 8,
+        },
+        menuButtonText: {
+                color: "#c8fffb",
+                fontSize: 12,
+                fontWeight: "900",
         },
 
         greetingBlock: {
@@ -274,9 +286,19 @@ export default StyleSheet.create({
         reportCardsContainer: {
                 gap: 14,
         },
+        reportCardsContainerDesktop: {
+                flexDirection: "row",
+                flexWrap: "wrap",
+                alignItems: "stretch",
+        },
 
         reportCardPressable: {
                 width: "100%",
+        },
+        reportCardPressableDesktop: {
+                width: "49%",
+                flexGrow: 1,
+                minWidth: 420,
         },
 
         reportCard: {

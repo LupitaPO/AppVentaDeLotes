@@ -1,5 +1,3 @@
-import { Platform } from "react-native";
-
 const envApiUrl =
 	typeof process !== "undefined" && process.env ? process.env.EXPO_PUBLIC_API_URL : undefined;
 
@@ -14,8 +12,6 @@ const normalizarUrl = (value?: string) => {
 export const API_REAL_URL = normalizarUrl(envApiUrl) ?? "http://www.tulote.somee.com";
 export const API_WEB_PROXY_URL = normalizarUrl(envWebApiUrl) ?? "http://localhost:3001";
 
-// ATAMAINE: En web usamos proxy local para evitar bloqueo CORS del navegador; en movil va directo a tu API real.
-export const API_URL =
-	Platform.OS === "web"
-		? API_WEB_PROXY_URL
-		: API_REAL_URL;
+// La API publicada ya permite CORS. Usar una única URL evita que la web dependa
+// de localhost:3001 y conserva exactamente el mismo backend usado por móvil.
+export const API_URL = API_REAL_URL;

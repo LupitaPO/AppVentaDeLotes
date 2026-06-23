@@ -22,6 +22,7 @@ import i18n, { changeLanguage } from "../../i18n";
 // Tipo que restringe los idiomas válidos manejados por la aplicación.
 import { Languages } from "../../localizacion";
 import { API_URL } from "../../config/apiUrl";
+import { agregarArchivoFormData } from "../../utils/formData";
 
 
 
@@ -50,7 +51,7 @@ const Rproyecto = ({ navigation, route }) => {
   const [ubicacion, setubicacion] = useState("");
   const [numHectareas, setnumHecatreas] = useState("");
   const [partidaRegistral, setPartidaRegistral] = useState("");
-  const [archivoCSV, setArchivoCSV] = useState(null);
+  const [archivoCSV, setArchivoCSV] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   // Función para seleccionar el archivo CSV
   const seleccionarArchivo = async () => {
     try {
@@ -87,18 +88,13 @@ const Rproyecto = ({ navigation, route }) => {
     formData.append("Estado", "A");
     formData.append("ImagenUrl", "Pendiente");
 
-    // Agregamos el archivo
-    formData.append("ArchivoPlano", JSON.parse(JSON.stringify({
-      uri: archivoCSV.uri,
-      name: archivoCSV.name,
-      type: "text/csv", // O 'application/octet-stream'
-    })));
+    // Adjunta File en web y el descriptor URI esperado por React Native en móvil.
+    agregarArchivoFormData(formData, "ArchivoPlano", archivoCSV);
 
     try {
       const response = await fetch(`${API_URL}/Proyecto/proyecto_Registrar`, {
         method: "POST",
         body: formData,
-        headers: {},
       });
 
       const result = await response.text();

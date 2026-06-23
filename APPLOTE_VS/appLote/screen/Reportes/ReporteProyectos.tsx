@@ -7,16 +7,19 @@ import {
 	Alert,
 	Image,
 	Platform,
+	TextInput,
+	Keyboard,
+	StyleSheet,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRef } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { LinearGradient } from "expo-linear-gradient";
-import { reporteProyectosStyles as styles } from "./ReporteProyectosStyles";
-import { API_URL } from "../config/apiUrl";
-import i18n from "../i18n";
+import reporteBaseStyles from "./ReporteClientesStyles";
+import { API_URL } from "../../config/apiUrl";
+import i18n from "../../i18n";
 
 // ATAMAINE: URL base del backend .NET donde consultamos la lista real de proyectos.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
@@ -47,7 +50,151 @@ type ReporteProyectosProps = {
 type ProyectoSelectItem = {
 	id: string;
 	nombre: string;
+	codigo: string;
+	ubicacion: string;
+	estado: string;
 };
+
+// ATAMAINE: Proyectos reutiliza la base visual compacta de Clientes, pero el buscador
+// avanzado vive aqui para no cambiar el aspecto ni el comportamiento de otros reportes.
+const selectorStyles = StyleSheet.create({
+	fieldLabel: {
+		fontSize: 9,
+		fontWeight: "900",
+		color: "#334155",
+		marginBottom: 6,
+	},
+	selectorWrap: {
+		position: "relative",
+		zIndex: 20,
+		marginBottom: 8,
+	},
+	selectorShell: {
+		minHeight: 42,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 8,
+		paddingLeft: 11,
+		paddingRight: 5,
+		backgroundColor: "#f8fbff",
+		borderRadius: 11,
+		borderWidth: 1,
+		borderColor: "#cfe0ef",
+	},
+	selectorShellFocused: {
+		borderColor: "#14b8a6",
+		backgroundColor: "#f4fffd",
+	},
+	selectorInput: {
+		flex: 1,
+		minWidth: 0,
+		height: 40,
+		paddingVertical: 0,
+		fontSize: 10.5,
+		fontWeight: "800",
+		color: "#0f172a",
+	},
+	selectorIconButton: {
+		width: 31,
+		height: 31,
+		borderRadius: 9,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: "#e8f8f5",
+	},
+	selectorClearButton: {
+		width: 25,
+		height: 31,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	optionsBox: {
+		marginTop: 6,
+		maxHeight: 238,
+		backgroundColor: "#ffffff",
+		borderWidth: 1,
+		borderColor: "#bfe3df",
+		borderRadius: 12,
+		overflow: "hidden",
+		elevation: 12,
+		shadowColor: "#0f766e",
+		shadowOffset: { width: 0, height: 9 },
+		shadowOpacity: 0.18,
+		shadowRadius: 14,
+	},
+	optionsHeader: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		paddingHorizontal: 11,
+		paddingVertical: 7,
+		backgroundColor: "#ecfdf8",
+		borderBottomWidth: 1,
+		borderBottomColor: "#d7f1eb",
+	},
+	optionsHeaderText: {
+		fontSize: 8,
+		fontWeight: "900",
+		color: "#0f766e",
+		textTransform: "uppercase",
+		letterSpacing: 0.35,
+	},
+	optionsScroll: {
+		maxHeight: 200,
+	},
+	optionItem: {
+		minHeight: 52,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 9,
+		paddingHorizontal: 10,
+		paddingVertical: 8,
+		borderBottomWidth: 1,
+		borderBottomColor: "#edf3f7",
+	},
+	optionItemActive: {
+		backgroundColor: "#effcf8",
+	},
+	optionIcon: {
+		width: 30,
+		height: 30,
+		borderRadius: 9,
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: "#e7f8f4",
+	},
+	optionContent: {
+		flex: 1,
+		minWidth: 0,
+	},
+	optionTitle: {
+		fontSize: 10,
+		lineHeight: 13,
+		fontWeight: "900",
+		color: "#102033",
+	},
+	optionMeta: {
+		marginTop: 3,
+		fontSize: 8,
+		lineHeight: 10,
+		fontWeight: "700",
+		color: "#64748b",
+	},
+	optionEmpty: {
+		alignItems: "center",
+		paddingHorizontal: 14,
+		paddingVertical: 18,
+		gap: 5,
+	},
+	optionEmptyText: {
+		fontSize: 9,
+		fontWeight: "800",
+		color: "#64748b",
+		textAlign: "center",
+	},
+});
+
+const styles = { ...reporteBaseStyles, ...selectorStyles };
 
 const API_BASE_URL = API_URL.replace(/\/+$/, "");
 
@@ -125,6 +272,28 @@ const parseReporteResponse = (payload: string): ReporteItem[] => {
 };
 
 const normalizarTexto = (value: unknown) => String(value ?? "").trim();
+
+// ATAMAINE: Quitamos tildes y diferencias de mayusculas para que la busqueda sea tolerante.
+const normalizarTerminoBusqueda = (value: unknown) =>
+	normalizarTexto(value)
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toLowerCase();
+
+const coincideProyecto = (proyecto: ProyectoSelectItem | ProyectoReporteItem, criterio: string) => {
+	const termino = normalizarTerminoBusqueda(criterio);
+	if (!termino) return true;
+
+	const nombre = "nombre" in proyecto ? proyecto.nombre : proyecto.Nombre;
+	const codigo = "codigo" in proyecto ? proyecto.codigo : proyecto.CodProyecto;
+	const ubicacion = "ubicacion" in proyecto ? proyecto.ubicacion : proyecto.Ubicacion;
+	const id = "id" in proyecto ? proyecto.id : proyecto.IdProyecto;
+
+	return [nombre, codigo, ubicacion, id].some((valor) => normalizarTerminoBusqueda(valor).includes(termino));
+};
+
+const filtrarProyectosLocal = (items: ProyectoReporteItem[], criterio: string) =>
+	items.filter((item) => coincideProyecto(item, criterio));
 
 const consultarPrimerEndpointDisponible = async (urls: string[], signal?: AbortSignal) => {
 	let ultimoError: Error | null = null;
@@ -256,6 +425,18 @@ const obtenerIdProyectoSelect = (item: ReporteItem) => {
 	return "";
 };
 
+const obtenerCampoProyectoSelect = (item: ReporteItem, claves: string[]) => {
+	if (!item || typeof item !== "object") return "";
+	const registro = item as Record<string, unknown>;
+
+	for (const clave of claves) {
+		const valor = normalizarTexto(registro[clave]);
+		if (valor) return valor;
+	}
+
+	return "";
+};
+
 const normalizarProyectosSelect = (items: ReporteItem[]): ProyectoSelectItem[] => {
 	const proyectos = new Map<string, ProyectoSelectItem>();
 
@@ -265,7 +446,13 @@ const normalizarProyectosSelect = (items: ReporteItem[]): ProyectoSelectItem[] =
 
 		const id = obtenerIdProyectoSelect(item);
 		const clave = id ? `id:${id}` : `nombre:${nombre.toLowerCase()}`;
-		proyectos.set(clave, { id, nombre });
+		proyectos.set(clave, {
+			id,
+			nombre,
+			codigo: obtenerCampoProyectoSelect(item, ["CodProyecto", "codProyecto", "CodigoProyecto", "Codigo", "codigo"]),
+			ubicacion: obtenerCampoProyectoSelect(item, ["Ubicacion", "ubicacion", "Direccion", "direccion"]),
+			estado: normalizarEstado(obtenerCampoProyectoSelect(item, ["Estado", "estado"])),
+		});
 	});
 
 	return Array.from(proyectos.values());
@@ -285,10 +472,38 @@ const obtenerSelectDesdeProyectos = (items: ProyectoReporteItem[]) => {
 
 		const id = normalizarTexto(item.IdProyecto);
 		const clave = id ? `id:${id}` : `nombre:${nombre.toLowerCase()}`;
-		proyectos.set(clave, { id, nombre });
+		proyectos.set(clave, {
+			id,
+			nombre,
+			codigo: item.CodProyecto === "-" ? "" : normalizarTexto(item.CodProyecto),
+			ubicacion: item.Ubicacion === "-" ? "" : normalizarTexto(item.Ubicacion),
+			estado: item.Estado,
+		});
 	});
 
 	return Array.from(proyectos.values());
+};
+
+// ATAMAINE: El endpoint Select define los proyectos activos y proyecto_Listar completa codigo/ubicacion.
+const combinarProyectosSelect = (selectItems: ProyectoSelectItem[], proyectos: ProyectoReporteItem[]) => {
+	const detalles = obtenerSelectDesdeProyectos(proyectos);
+	const base = selectItems.length
+		? selectItems.filter((item) => esEstadoActivo(item.estado))
+		: detalles.filter((item) => esEstadoActivo(item.estado));
+
+	return base.map((item) => {
+		const detalle = detalles.find((candidato) =>
+			(item.id && candidato.id === item.id) ||
+			normalizarTerminoBusqueda(candidato.nombre) === normalizarTerminoBusqueda(item.nombre),
+		);
+
+		return {
+			...item,
+			codigo: item.codigo || detalle?.codigo || "",
+			ubicacion: item.ubicacion || detalle?.ubicacion || "",
+			estado: item.estado || detalle?.estado || "Activo",
+		};
+	});
 };
 
 // ATAMAINE: Detectamos estados para pintarlos distinto dentro de la tabla sin cambiar la data real.
@@ -312,7 +527,7 @@ const obtenerLogoPdfUri = () => {
 		return "";
 	}
 
-	return resolver(require("../assets/splash-icon.png"))?.uri || "";
+	return resolver(require("../../assets/splash-icon.png"))?.uri || "";
 };
 
 // ATAMAINE: Fuente principal del listado: proyectos registrados directamente desde el modulo Proyecto.
@@ -331,6 +546,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 	const [datoBuscar, setDatoBuscar] = useState("");
 	const [proyectosSelect, setProyectosSelect] = useState<ProyectoSelectItem[]>([]);
 	const [mostrarProyectosSelect, setMostrarProyectosSelect] = useState(false);
+	const [selectorEnFoco, setSelectorEnFoco] = useState(false);
 	const [cargandoProyectosSelect, setCargandoProyectosSelect] = useState(false);
 	const [todosProyectos, setTodosProyectos] = useState<ProyectoReporteItem[]>([]);
 	const [reporte, setReporte] = useState<ProyectoReporteItem[]>([]);
@@ -349,16 +565,15 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 		return () => clearInterval(timer);
 	}, []);
 
-	// Refs para cancelar peticiones y debounce
+	// Refs para cancelar peticiones anteriores y evitar respuestas fuera de orden.
 	const fetchControllerRef = useRef<AbortController | null>(null);
 	const proyectoSelectControllerRef = useRef<AbortController | null>(null);
-	const debounceTimerRef = useRef<any>(null);
 
 	const cargarProyectosSelect = async (signal?: AbortSignal) => {
 		try {
 			setCargandoProyectosSelect(true);
 			const proyectosApi = await consultarProyectosSelect(signal);
-			const proyectosFinal = proyectosApi.length ? proyectosApi : obtenerSelectDesdeProyectos(todosProyectos);
+			const proyectosFinal = combinarProyectosSelect(proyectosApi, todosProyectos);
 			setProyectosSelect(proyectosFinal);
 		} catch (error) {
 			if ((error as Error).name === "AbortError") return;
@@ -383,12 +598,15 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 		}
 
 		setMostrarProyectosSelect(true);
+		setSelectorEnFoco(true);
 		refrescarProyectosSelect();
 	};
 
 	const seleccionarProyectoSelect = (proyecto: ProyectoSelectItem) => {
 		setDatoBuscar(proyecto.nombre);
 		setMostrarProyectosSelect(false);
+		setSelectorEnFoco(false);
+		Keyboard.dismiss();
 		void consultarReporte(proyecto.nombre);
 	};
 
@@ -408,7 +626,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 			setTodosProyectos(proyectosBase);
 			setReporte(proyectosBase);
-			setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectosBase)));
+			setProyectosSelect((actuales) => combinarProyectosSelect(actuales, proyectosBase));
 			setBuscado(false);
 			setUltimoFiltro("");
 
@@ -425,22 +643,6 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 		}
 	};
 
-	// Debounce: cuando el texto de búsqueda cambie, lanzamos la búsqueda en tiempo real después de 600ms
-	useEffect(() => {
-		if (debounceTimerRef.current) {
-			clearTimeout(debounceTimerRef.current);
-		}
-
-		debounceTimerRef.current = setTimeout(() => {
-			// Si el campo está vacío consultamos la lista completa
-			consultarReporte(datoBuscar);
-		}, 600);
-
-		return () => {
-			if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-		};
-	}, [datoBuscar]);
-
 	// Polling periódico para mantener la lista completa en tiempo real (solo actualiza todosClientes y reporte si no hay filtro activo)
 	useEffect(() => {
 		let mounted = true;
@@ -454,7 +656,10 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 					const resp = await fetch(`${API_URL}/Reporte/reporte_Proyectos/${encodeURIComponent(ultimoFiltro)}`, { signal });
 					if (!resp.ok) return;
 					const raw = await resp.text();
-					const filtrados = normalizarProyectos(parseReporteResponse(raw));
+					const respuestaApi = normalizarProyectos(parseReporteResponse(raw));
+					const filtradosApi = filtrarProyectosLocal(respuestaApi, ultimoFiltro);
+					const respaldoLocal = filtrarProyectosLocal(todosProyectos, ultimoFiltro);
+					const filtrados = filtradosApi.length ? filtradosApi : respaldoLocal;
 					if (!mounted) return;
 					setReporte(filtrados);
 					return;
@@ -463,7 +668,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				const proyectos = await consultarProyectosRegistrados(signal);
 				if (!mounted) return;
 				setTodosProyectos(proyectos);
-				setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectos)));
+				setProyectosSelect((actuales) => combinarProyectosSelect(actuales, proyectos));
 				// Si no estamos mostrando resultados filtrados, mantenemos el listado inferior al dia
 				if (!buscado) setReporte(proyectos);
 			} catch (err) {
@@ -485,6 +690,8 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 	const limpiarFiltro = async () => {
 		setDatoBuscar("");
 		setMostrarProyectosSelect(false);
+		setSelectorEnFoco(false);
+		Keyboard.dismiss();
 		setUltimoFiltro("");
 		setMensaje("");
 		setBuscado(false);
@@ -495,7 +702,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 			const proyectosBase = await consultarProyectosRegistrados();
 			setTodosProyectos(proyectosBase);
 			setReporte(proyectosBase);
-			setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectosBase)));
+			setProyectosSelect((actuales) => combinarProyectosSelect(actuales, proyectosBase));
 		} catch (error) {
 			console.error("Error al recargar proyectos al limpiar filtro:", error);
 			setTodosProyectos([]);
@@ -661,8 +868,10 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 	// ATAMAINE: La búsqueda se hace DIRECTAMENTE contra el API EN TIEMPO REAL para obtener datos frescos de la base de datos.
 	const consultarReporte = async (filtroParam?: string) => {
-		const filtro = (filtroParam !== undefined ? filtroParam : datoBuscar) .toString().trim();
+		const filtro = (filtroParam !== undefined ? filtroParam : datoBuscar).toString().trim();
 		setMostrarProyectosSelect(false);
+		setSelectorEnFoco(false);
+		Keyboard.dismiss();
 
 		// Si el filtro está vacío consultamos al API con '*' para obtener la lista completa en tiempo real
 		if (!filtro) {
@@ -673,7 +882,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				const proyectosBase = await consultarProyectosRegistrados();
 				setTodosProyectos(proyectosBase);
 				setReporte(proyectosBase);
-				setProyectosSelect((actuales) => (actuales.length ? actuales : obtenerSelectDesdeProyectos(proyectosBase)));
+				setProyectosSelect((actuales) => combinarProyectosSelect(actuales, proyectosBase));
 				setBuscado(false);
 				return;
 			} catch (error) {
@@ -704,7 +913,11 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 			}
 
 			const rawData = await response.text();
-			const filtrados = normalizarProyectos(parseReporteResponse(rawData));
+			const respuestaApi = normalizarProyectos(parseReporteResponse(rawData));
+			// ATAMAINE: Validacion adicional para nombre, codigo, ubicacion o ID aunque el SP publicado filtre solo un campo.
+			const filtradosApi = filtrarProyectosLocal(respuestaApi, filtro);
+			const respaldoLocal = filtrarProyectosLocal(todosProyectos, filtro);
+			const filtrados = filtradosApi.length ? filtradosApi : respaldoLocal;
 
 			setReporte(filtrados);
 			setBuscado(true);
@@ -717,15 +930,27 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 				return;
 			}
 			console.error("Error al consultar reporte de proyectos:", error);
-			setReporte([]);
+			const respaldoLocal = filtrarProyectosLocal(todosProyectos, filtro);
+			setReporte(respaldoLocal);
 			setBuscado(true);
-			setMensaje("No se pudo consultar el reporte en este momento.");
+			setMensaje(
+				respaldoLocal.length
+					? "Mostrando coincidencias locales mientras se restablece la conexion con el API."
+					: "No se pudo consultar el reporte en este momento.",
+			);
 		} finally {
 			setCargando(false);
 		}
 	};
 
 	const listadoMostrar = buscado ? reporte : todosProyectos;
+	const proyectosFiltradosSelect = useMemo(
+		() => proyectosSelect.filter((proyecto) => coincideProyecto(proyecto, datoBuscar)).slice(0, 20),
+		[proyectosSelect, datoBuscar],
+	);
+	const totalProyectos = todosProyectos.length;
+	const totalActivos = todosProyectos.filter((item) => esEstadoActivo(item.Estado)).length;
+	const totalInactivos = Math.max(totalProyectos - totalActivos, 0);
 	// ATAMAINE: Estas columnas usan ajuste fino para que codigo, hectareas y partida no rompan la fila.
 	const esColumnaProyectoCorta = (key: keyof ProyectoReporteItem) =>
 		key === "Hectareas" || key === "PartidaRegistral" || key === "CodProyecto";
@@ -737,92 +962,178 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 			<ScrollView
 				style={styles.scrollView}
 				contentContainerStyle={styles.scrollContent}
+				contentInsetAdjustmentBehavior="automatic"
+				keyboardShouldPersistTaps="handled"
 				showsVerticalScrollIndicator={false}
 			>
 				<LinearGradient
-					colors={["#0f766e", "#155e63", "#172554"]}
+					colors={["#061b2b", "#064e5a", "#0f766e"]}
 					start={{ x: 0, y: 0 }}
 					end={{ x: 1, y: 1 }}
 					style={styles.heroCard}
 				>
-					<View style={styles.headerRow}>
-						<TouchableOpacity
-							style={styles.backButtonTouch}
-							onPress={() => navigation.goBack()}
-						>
-							{/* ATAMAINE: Boton de retorno con brillo suave para mantener el patron visual de reportes. */}
-							<LinearGradient
-								colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.12)"]}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={styles.backButton}
-							>
-								<MaterialCommunityIcons name="arrow-left" size={24} color="#ffffff" />
-							</LinearGradient>
+					<View style={styles.heroToolbar}>
+						<TouchableOpacity style={styles.menuButton} onPress={() => navigation.goBack()} accessibilityLabel="Regresar">
+							<MaterialCommunityIcons name="arrow-left" size={16} color="#ffffff" />
+							{Platform.OS === "web" ? <Text style={styles.backButtonText}>Regresar</Text> : null}
 						</TouchableOpacity>
-						<View style={styles.heroContent}>
-							<View style={styles.liveBadge}>
-								<View style={styles.liveDot} />
-								<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
+						<View style={styles.liveBadge}>
+							<View style={styles.liveDot} />
+							<Text style={styles.liveBadgeText}>Tiempo real {horaFormateada}</Text>
+						</View>
+						<View style={styles.dateCard}>
+							<View style={styles.dateLine}>
+								<MaterialCommunityIcons name="calendar-month-outline" size={11} color="#bfdbfe" />
+								<Text style={styles.dateText}>{fechaFormateada}</Text>
 							</View>
-							<Text style={styles.title}>Gestion Integral</Text>
-							<Text style={styles.title}>de Proyectos</Text>
-							<Text style={styles.subtitle}>
-								Consulta proyectos por nombre, ubicacion o codigo con datos reales en tiempo real.
-							</Text>
+							<View style={styles.dateLine}>
+								<MaterialCommunityIcons name="clock-outline" size={11} color="#bfdbfe" />
+								<Text style={styles.dateText}>{horaFormateada}</Text>
+							</View>
 						</View>
 					</View>
 
-					<View style={styles.statsRow}>
+					<View style={styles.heroMainRow}>
+						<View style={styles.heroContent}>
+							<Text style={styles.title}>Gestion Integral</Text>
+							<Text style={styles.title}>de Proyectos</Text>
+							<Text style={styles.subtitle}>Busca por nombre, codigo o ubicacion con datos reales del API.</Text>
+						</View>
+						<View style={styles.peopleScene}>
+							<View style={[styles.personBubble, styles.personBubbleBlue]}>
+								<MaterialCommunityIcons name="office-building-outline" size={17} color="#ffffff" />
+							</View>
+							<View style={[styles.personBubble, styles.personBubbleGreen]}>
+								<MaterialCommunityIcons name="map-marker-outline" size={17} color="#ffffff" />
+							</View>
+							<View style={[styles.personBubble, styles.personBubblePurple]}>
+								<MaterialCommunityIcons name="map-search-outline" size={17} color="#ffffff" />
+							</View>
+							<View style={styles.peopleBase} />
+						</View>
+					</View>
+
+					<View style={styles.statsGrid}>
 						<View style={styles.statCard}>
-							<Text style={styles.statLabel}>Proyectos Registrados</Text>
-							{cargando ? (
-								<ActivityIndicator size="small" color="#ffffff" style={{ marginVertical: 6 }} />
-							) : (
-								<Text style={styles.statValue}>{Math.max(todosProyectos.length, reporte.length)}</Text>
-							)}
-							<Text style={styles.statCaption}>Proyectos totales</Text>
-							<TouchableOpacity onPress={cargarProyectosIniciales} style={{ position: "absolute", right: 12, top: 12 }}>
-								<MaterialCommunityIcons name="refresh" size={18} color="#d1fae5" />
-							</TouchableOpacity>
+							<View style={[styles.statIconWrap, { backgroundColor: "#dbeafe" }]}>
+								<MaterialCommunityIcons name="office-building" size={13} color="#2563eb" />
+							</View>
+							<Text style={styles.statLabel}>Registrados</Text>
+							{cargando ? <ActivityIndicator size="small" color="#2563eb" style={styles.statLoader} /> : <Text style={styles.statValue}>{totalProyectos}</Text>}
+							<Text style={styles.statCaption}>Total proyectos</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#2563eb" }]} />
 						</View>
 						<View style={styles.statCard}>
+							<View style={[styles.statIconWrap, { backgroundColor: "#d1fae5" }]}>
+								<MaterialCommunityIcons name="check-decagram-outline" size={13} color="#059669" />
+							</View>
+							<Text style={styles.statLabel}>Activos</Text>
+							<Text style={styles.statValue}>{totalActivos}</Text>
+							<Text style={styles.statCaption}>En operacion</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#10b981" }]} />
+						</View>
+						<View style={styles.statCard}>
+							<View style={[styles.statIconWrap, { backgroundColor: "#ffe4e6" }]}>
+								<MaterialCommunityIcons name="close-circle-outline" size={13} color="#e11d48" />
+							</View>
+							<Text style={styles.statLabel}>Inactivos</Text>
+							<Text style={styles.statValue}>{totalInactivos}</Text>
+							<Text style={styles.statCaption}>No disponibles</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#f43f5e" }]} />
+						</View>
+						<TouchableOpacity style={styles.statCard} activeOpacity={0.82} onPress={cargarProyectosIniciales}>
+							<View style={[styles.statIconWrap, { backgroundColor: "#f3e8ff" }]}>
+								<MaterialCommunityIcons name="refresh" size={13} color="#7c3aed" />
+							</View>
 							<Text style={styles.statLabel}>Ultima Busqueda</Text>
-							<Text style={styles.statValueSmall}>{ultimoFiltro || "Sin filtro"}</Text>
-							<Text style={styles.statCaption}>Dato consultado</Text>
-						</View>
+							<Text style={[styles.statValue, styles.statValueText]} numberOfLines={2}>{ultimoFiltro || "Sin filtro"}</Text>
+							<Text style={styles.statCaption}>Toca para actualizar</Text>
+							<View style={[styles.statAccentLine, { backgroundColor: "#8b5cf6" }]} />
+						</TouchableOpacity>
 					</View>
 				</LinearGradient>
 
 				<View style={styles.searchCard}>
 					<Text style={styles.searchTitle}>Filtros de Busqueda y Acciones</Text>
-					<Text style={styles.fieldLabel}>Proyecto/ubicacion:</Text>
-					<View style={styles.estadoSelectWrap}>
-						<TouchableOpacity activeOpacity={0.84} style={[styles.input, styles.estadoSelectInput]} onPress={alternarProyectosSelect}>
-							<Text style={datoBuscar ? styles.estadoSelectText : styles.estadoSelectPlaceholder} numberOfLines={1}>
-								{datoBuscar || (cargandoProyectosSelect ? "Cargando proyectos..." : "Seleccionar proyecto activo")}
-							</Text>
-							{cargandoProyectosSelect ? (
-								<ActivityIndicator size="small" color="#0f766e" />
-							) : (
-								<MaterialCommunityIcons name={mostrarProyectosSelect ? "chevron-up" : "chevron-down"} size={22} color="#0f766e" />
-							)}
-						</TouchableOpacity>
-						{mostrarProyectosSelect ? (
-							<View style={styles.estadoOptionsBox}>
-								{proyectosSelect.length ? (
-									proyectosSelect.map((proyecto) => {
-										const activo = datoBuscar.trim().toLowerCase() === proyecto.nombre.trim().toLowerCase();
-										return (
-											<TouchableOpacity key={proyecto.id || proyecto.nombre} activeOpacity={0.84} style={[styles.estadoOptionItem, activo ? styles.estadoOptionItemActive : null]} onPress={() => seleccionarProyectoSelect(proyecto)}>
-												<Text style={[styles.estadoOptionText, activo ? styles.estadoOptionTextActive : null]} numberOfLines={2}>{proyecto.nombre}</Text>
-												{activo ? <MaterialCommunityIcons name="check-circle" size={18} color="#0f766e" /> : null}
-											</TouchableOpacity>
-										);
-									})
+					<Text style={styles.fieldLabel}>Proyecto activo</Text>
+					<View style={styles.selectorWrap}>
+						<View style={[styles.selectorShell, selectorEnFoco ? styles.selectorShellFocused : null]}>
+							<MaterialCommunityIcons name="magnify" size={17} color={selectorEnFoco ? "#0f766e" : "#8aa0b5"} />
+							<TextInput
+								value={datoBuscar}
+								onChangeText={(texto) => {
+									setDatoBuscar(texto);
+									setMostrarProyectosSelect(true);
+								}}
+								onFocus={() => {
+									setSelectorEnFoco(true);
+									setMostrarProyectosSelect(true);
+									if (!proyectosSelect.length) refrescarProyectosSelect();
+								}}
+								placeholder={cargandoProyectosSelect ? "Cargando proyectos..." : "Escribe nombre, codigo o ubicacion"}
+								placeholderTextColor="#91a3b6"
+								style={styles.selectorInput}
+								returnKeyType="search"
+								autoCorrect={false}
+								autoCapitalize="words"
+								onSubmitEditing={() => consultarReporte()}
+								accessibilityLabel="Buscar proyecto por nombre, codigo o ubicacion"
+							/>
+							{datoBuscar ? (
+								<TouchableOpacity
+									style={styles.selectorClearButton}
+									onPress={() => {
+										setDatoBuscar("");
+										setMostrarProyectosSelect(true);
+									}}
+									accessibilityLabel="Borrar texto"
+								>
+									<MaterialCommunityIcons name="close-circle" size={16} color="#94a3b8" />
+								</TouchableOpacity>
+							) : null}
+							<TouchableOpacity style={styles.selectorIconButton} onPress={alternarProyectosSelect} accessibilityLabel="Mostrar proyectos activos">
+								{cargandoProyectosSelect ? (
+									<ActivityIndicator size="small" color="#0f766e" />
 								) : (
-									<View style={styles.estadoOptionItem}>
-										<Text style={styles.estadoOptionText}>{cargandoProyectosSelect ? "Cargando proyectos..." : "Sin proyectos disponibles"}</Text>
+									<MaterialCommunityIcons name={mostrarProyectosSelect ? "chevron-up" : "chevron-down"} size={19} color="#0f766e" />
+								)}
+							</TouchableOpacity>
+						</View>
+
+						{mostrarProyectosSelect ? (
+							<View style={styles.optionsBox}>
+								<View style={styles.optionsHeader}>
+									<Text style={styles.optionsHeaderText}>Proyectos activos</Text>
+									<Text style={styles.optionsHeaderText}>{proyectosFiltradosSelect.length} coincidencia{proyectosFiltradosSelect.length === 1 ? "" : "s"}</Text>
+								</View>
+								{proyectosFiltradosSelect.length ? (
+									<ScrollView style={styles.optionsScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+										{proyectosFiltradosSelect.map((proyecto) => {
+											const seleccionado = normalizarTerminoBusqueda(datoBuscar) === normalizarTerminoBusqueda(proyecto.nombre);
+											const detalle = [proyecto.codigo ? `Cod. ${proyecto.codigo}` : "", proyecto.ubicacion].filter(Boolean).join("  |  ");
+											return (
+												<TouchableOpacity
+													key={proyecto.id || `${proyecto.nombre}-${proyecto.codigo}`}
+													style={[styles.optionItem, seleccionado ? styles.optionItemActive : null]}
+													activeOpacity={0.82}
+													onPress={() => seleccionarProyectoSelect(proyecto)}
+												>
+													<View style={styles.optionIcon}>
+														<MaterialCommunityIcons name="office-building-marker-outline" size={16} color="#0f766e" />
+													</View>
+													<View style={styles.optionContent}>
+														<Text style={styles.optionTitle} numberOfLines={1}>{proyecto.nombre}</Text>
+														<Text style={styles.optionMeta} numberOfLines={2}>{detalle || "Proyecto activo"}</Text>
+													</View>
+													{seleccionado ? <MaterialCommunityIcons name="check-circle" size={17} color="#10b981" /> : <MaterialCommunityIcons name="chevron-right" size={16} color="#94a3b8" />}
+												</TouchableOpacity>
+											);
+										})}
+									</ScrollView>
+								) : (
+									<View style={styles.optionEmpty}>
+										<MaterialCommunityIcons name="text-search" size={22} color="#94a3b8" />
+										<Text style={styles.optionEmptyText}>{cargandoProyectosSelect ? "Cargando proyectos..." : `No hay proyectos que coincidan con “${datoBuscar}”.`}</Text>
 									</View>
 								)}
 							</View>
@@ -830,82 +1141,40 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 					</View>
 
 					<View style={styles.actionRow}>
-						<TouchableOpacity style={styles.primaryAction} onPress={() => consultarReporte()}>
-							{/* ATAMAINE: Gradiente interno para destacar la accion principal sin alterar la busqueda real. */}
-							<LinearGradient
-								colors={["#ffffff", "#edf5ff"]}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.primaryActionSurface]}
-							>
-								<View style={[styles.actionIconBadge, styles.primaryActionBadge]}>
-									<MaterialCommunityIcons name="magnify" size={18} color="#2563eb" />
-								</View>
-								<Text style={styles.primaryActionText}>Buscar</Text>
+						<TouchableOpacity style={styles.actionButton} onPress={() => consultarReporte()}>
+							<LinearGradient colors={["#1f75ff", "#0657d9"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}>
+								<MaterialCommunityIcons name="magnify" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>Buscar</Text>
 							</LinearGradient>
 						</TouchableOpacity>
-
-						<TouchableOpacity
-							style={styles.newAction}
-							activeOpacity={0.85}
-							onPress={() => navigation.navigate("Rproyecto", { onRefresh: cargarProyectosIniciales })}
-						>
-							{/* ATAMAINE: Gradiente verde suave para registrar nuevo proyecto desde el reporte. */}
-							<LinearGradient
-								colors={["#ffffff", "#e8fff8"]}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.newActionSurface]}
-							>
-								<View style={[styles.actionIconBadge, styles.newActionBadge]}>
-									<MaterialCommunityIcons name="plus-circle-outline" size={18} color="#0f766e" />
-								</View>
-								<Text style={styles.newActionText}>Nuevo</Text>
+						<TouchableOpacity style={styles.actionButton} activeOpacity={0.85} onPress={() => navigation.navigate("Rproyecto", { onRefresh: cargarProyectosIniciales })}>
+							<LinearGradient colors={["#0f9f73", "#047857"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}>
+								<MaterialCommunityIcons name="plus-circle-outline" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>Nuevo</Text>
 							</LinearGradient>
 						</TouchableOpacity>
-
-						<TouchableOpacity style={styles.clearAction} onPress={limpiarFiltro}>
-							{/* ATAMAINE: Gradiente neutro para limpiar filtros sin romper la jerarquia visual. */}
-							<LinearGradient
-								colors={["#ffffff", "#f4f7fb"]}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.clearActionSurface]}
-							>
-								<View style={[styles.actionIconBadge, styles.clearActionBadge]}>
-									<MaterialCommunityIcons name="close-circle-outline" size={18} color="#64748b" />
-								</View>
-								<Text style={styles.clearActionText}>Limpiar</Text>
+						<TouchableOpacity style={styles.actionButton} onPress={limpiarFiltro}>
+							<LinearGradient colors={["#6b7280", "#475569"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}>
+								<MaterialCommunityIcons name="trash-can-outline" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>Limpiar</Text>
 							</LinearGradient>
 						</TouchableOpacity>
-					</View>
-
-					<View style={styles.actionRowSecondary}>
-						<TouchableOpacity
-							style={[styles.secondaryAction, (!reporte.length || cargando) && styles.buttonDisabled]}
-							onPress={generarPDF}
-							disabled={!reporte.length || cargando}
-						>
-							{/* ATAMAINE: PDF mantiene el acento dorado con una superficie radiante. */}
-							<LinearGradient
-								colors={["#ffffff", "#fff7e6"]}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={[styles.actionSurface, styles.secondaryActionSurface]}
-							>
-								<View style={[styles.actionIconBadge, styles.secondaryActionBadge]}>
-									<MaterialCommunityIcons name="file-pdf-box" size={18} color="#f59e0b" />
-								</View>
-								<Text style={styles.secondaryActionText}>PDF</Text>
+						<TouchableOpacity style={[styles.actionButton, (!proyectoParaPdf.length || cargando) && styles.buttonDisabled]} onPress={generarPDF} disabled={!proyectoParaPdf.length || cargando}>
+							<LinearGradient colors={["#f59e0b", "#f97316"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionFill}>
+								<MaterialCommunityIcons name="file-pdf-box" size={13} color="#ffffff" />
+								<Text style={styles.actionTextLight}>PDF</Text>
 							</LinearGradient>
 						</TouchableOpacity>
 					</View>
 				</View>
 
 				<View style={styles.contentCard}>
-					<Text style={styles.contentTitle}>Listado del Reporte</Text>
+					<View style={styles.contentTitleRow}>
+						<MaterialCommunityIcons name="view-list-outline" size={18} color="#2563eb" />
+						<Text style={styles.contentTitle}>Listado del Reporte</Text>
+					</View>
 					{cargando && (
-						<ActivityIndicator size="large" color="#069488" style={styles.loader} />
+						<ActivityIndicator size="large" color="#2563eb" style={styles.loader} />
 					)}
 
 					{!cargando && mensaje ? (
@@ -915,7 +1184,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 					) : null}
 
 					{!cargando && buscado && reporte.length > 0 ? (
-						<Text style={styles.resultCounter}>
+							<Text selectable style={styles.resultCounter}>
 							Mostrando {reporte.length} resultado{reporte.length === 1 ? "" : "s"} para: {ultimoFiltro}
 						</Text>
 					) : null}
@@ -934,8 +1203,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 
 					{!cargando && listadoMostrar.length > 0 ? (
 						<View style={styles.tableWrapper}>
-							<View style={styles.tableTopAccent} />
-							<View style={styles.tableHeaderRow}>
+							<LinearGradient colors={["#0f2f89", "#184ec8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tableHeaderRow}>
 								{COLUMNAS_REPORTE.map((columna) => (
 									<View key={columna.key} style={[styles.tableHeaderCell, { flex: columna.flex }]}>
 										<Text style={styles.tableHeaderText}>{columna.label}</Text>
@@ -944,7 +1212,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 								<View style={styles.tableActionHeaderCell}>
 									<Text style={styles.tableHeaderText}>Ver</Text>
 								</View>
-							</View>
+							</LinearGradient>
 
 							{listadoMostrar.map((item, index) => (
 								<View
@@ -965,7 +1233,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 														: styles.estadoBadgeInactivo,
 													]}
 												>
-												<Text
+														<Text selectable
 													style={[
 													styles.estadoBadgeText,
 													esEstadoActivo(String(item.Estado ?? ""))
@@ -977,7 +1245,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 												</Text>
 												</View>
 											) : (
-												<Text
+													<Text selectable
 													style={[
 														styles.tableDataText,
 														esColumnaProyectoCorta(columna.key) ? styles.tableDataTextTight : null,
@@ -997,7 +1265,7 @@ const ReporteProyectos = ({ navigation }: ReporteProyectosProps) => {
 											activeOpacity={0.8}
 											onPress={() => abrirProyectoRegistrado(navigation, item)}
 										>
-											<Text style={styles.verButtonText}>Ver</Text>
+											<MaterialCommunityIcons name="eye-outline" size={14} color="#0f766e" />
 										</TouchableOpacity>
 									</View>
 								</View>

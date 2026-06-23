@@ -1,5 +1,4 @@
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +9,6 @@ import {
   Alert,
   Modal,
   Pressable,
-  Dimensions,
   Platform
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -21,15 +19,42 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import i18n, { changeLanguage } from "../i18n";
 import { Languages } from "../localizacion";
 import { API_URL } from "../config/apiUrl";
+import { WebListHeader } from "../components/web-list-layout";
 ///////////////////////////////////////////////////
 
-///import para imprimr reporte de cronograma///////
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+/// Utilidad multiplataforma para imprimir el cronograma. ///////
+import { compartirPdf } from '../utils/pdf';
 //////////////////////////////////////////////////
 
-// Alto disponible de la ventana para calcular tamaños proporcionales en la UI.
-const { height } = Dimensions.get('window');
+const REQUEST_TIMEOUT_MS = 15000;
+
+// Adapta las respuestas de la API, que pueden llegar como arreglo o dentro de Table/data.
+const extraerListaApi = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.Table)) return data.Table;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+};
+
+// Evita que una conexión lenta deje la pantalla cargando indefinidamente.
+const consultarListaApi = async (url) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    const texto = await response.text();
+
+    if (!response.ok) {
+      throw new Error(`La API respondió con estado ${response.status}.`);
+    }
+
+    if (!texto.trim()) return [];
+    return extraerListaApi(JSON.parse(texto));
+  } finally {
+    clearTimeout(timeout);
+  }
+};
 
 
 const Ventas = ({ navigation, route }) => {
@@ -54,25 +79,30 @@ const Ventas = ({ navigation, route }) => {
   // Guarda la venta elegida localmente para mostrar sus datos en el modal y en el PDF.
   const [selectedVentaLocal, setSelectedVentaLocal] = useState(null);
 
-  // Maneja el toque sobre una venta: la guarda, actualiza el cronograma filtrado y abre el modal.
-  const manejarSeleccion = (venta) => {
-    setSelectedVentaLocal(venta);
-    seleccionarVenta(venta);
-    setModalVisible(true);
-  };
-
-
-  // Obtiene la altura de la barra inferior para respetar espacios del layout si fuera necesario.
-  const tabBarHeight = useBottomTabBarHeight();
-
-  // Recibe el id del usuario autenticado desde los parámetros de navegación.
-  const { idUsuario } = route.params || {};
+  // El reporte envía cliente y venta; el acceso normal a la pestaña conserva idUsuario.
+  const {
+    idUsuario,
+    ventaSeleccionadaId,
+    clienteSeleccionadoId,
+    clienteSeleccionadoNombre,
+    origenReporteCobranzas = false,
+    origenReportePagos = false,
+    abrirCronogramaParaPago = false,
+    solicitudNuevoPago = 0,
+  } = route.params || {};
+  const esVistaCobranzasCliente = Boolean(origenReporteCobranzas && clienteSeleccionadoId);
+  const esVistaPagosCliente = Boolean(origenReportePagos && clienteSeleccionadoId);
+  const esVistaReporteCliente = esVistaCobranzasCliente || esVistaPagosCliente;
 
   // Lista de ventas del usuario actual.
   const [ventas, setVentas] = useState([]);
+  const pagoAutoAbiertoRef = useRef("");
 
   // Controla el spinner principal mientras se consultan las ventas.
   const [cargando, setCargando] = useState(true);
+
+  // Mensaje visible cuando la API no responde o devuelve un formato inesperado.
+  const [errorCarga, setErrorCarga] = useState("");
 
   // Venta actualmente seleccionada para filtrar el cronograma.
   const [selectedVenta, setSelectedVenta] = useState(null);
@@ -94,23 +124,28 @@ const Ventas = ({ navigation, route }) => {
     return venta?.IdVenta ?? venta?.idVenta ?? venta?.Id ?? venta?.id;
   };
 
+  const obtenerIdClienteVenta = (venta) => venta?.IdCliente ?? venta?.idCliente;
+  const obtenerIdUsuarioVenta = (venta) => venta?.IdUsuario ?? venta?.idUsuario;
+
   ///////////////////////////////////////////////////////////////////////////////
   //funcion para obtener el nombre del cliente ///////////////////////
   // Consulta la lista de clientes desde la API y la guarda en memoria local.
   const cargarClientes = async () => {
     try {
-      const response = await fetch(`${API_URL}/Cliente/cliente_Listar`);
-      const data = await response.json();
-      setListaClientes(Array.isArray(data) ? data : []);
+      const clientesApi = await consultarListaApi(`${API_URL}/Cliente/cliente_Listar`);
+      setListaClientes(clientesApi);
+      return clientesApi;
     } catch (error) {
       console.error("Error al cargar clientes:", error);
+      setListaClientes([]);
+      return [];
     }
   };
 
   // Busca el nombre completo del cliente usando su identificador.
   const obtenerNombreCliente = (idCliente) => {
-    if (!idCliente) return "Sin ID";
-    if (!idCliente || listaClientes.length === 0) return "Cargando...";
+    if (!idCliente) return "Sin cliente";
+    if (listaClientes.length === 0) return `Cliente ${idCliente}`;
 
     const cliente = listaClientes.find(
       (c) => (c.IdCliente || c.idCliente)?.toString() === idCliente.toString()
@@ -133,76 +168,37 @@ const Ventas = ({ navigation, route }) => {
     return "No encontrado";
   };;
 
-  // 3. EFECTOS (Ahora sí pueden llamar a las funciones de arriba)
-  // Al iniciar la pantalla o cambiar de usuario, carga ventas, cronograma y clientes.
-  useEffect(() => {
-    const inicializar = async () => {
-      await cargarDatosIniciales();
-      await cargarClientes(); // <--- Ahora ya existe y no dará undefined
-    };
-    inicializar();
-  }, [idUsuario]);
   //////////////////////////////////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////////////////////////////////////
-  // Recupera las ventas del sistema y filtra solo las que pertenecen al usuario actual.
+  // Recupera ventas y prioriza el filtro de cliente cuando se llega desde cobranzas.
   const cargarVentas = async () => {
-    try {
-      setCargando(true);
-      const response = await fetch(`${API_URL}/Venta/venta_Listar`);
-      const data = await response.json();
-      const ventasUsuario = Array.isArray(data)
-        ? data.filter(
-          (venta) =>
-            venta.IdUsuario?.toString() === idUsuario?.toString() ||
-            venta.idUsuario?.toString() === idUsuario?.toString(),
-        )
-        : [];
-      setVentas(ventasUsuario);
-      return ventasUsuario;
-    } catch (error) {
-      console.error("Error al cargar ventas:", error);
-      Alert.alert("Error", "No se pudo cargar el listado de ventas.");
-      return [];
-    } finally {
-      setCargando(false);
-    }
+    const ventasApi = await consultarListaApi(`${API_URL}/Venta/venta_Listar`);
+    const ventasFiltradas = clienteSeleccionadoId
+      ? ventasApi.filter(
+        (venta) => obtenerIdClienteVenta(venta)?.toString() === clienteSeleccionadoId.toString(),
+      )
+      : ventasApi.filter(
+        (venta) => obtenerIdUsuarioVenta(venta)?.toString() === idUsuario?.toString(),
+      );
+
+    // La venta pulsada queda primero, seguida por las demás compras del mismo cliente.
+    ventasFiltradas.sort((a, b) => {
+      if (obtenerIdVenta(a)?.toString() === ventaSeleccionadaId?.toString()) return -1;
+      if (obtenerIdVenta(b)?.toString() === ventaSeleccionadaId?.toString()) return 1;
+      return Number(obtenerIdVenta(b) ?? 0) - Number(obtenerIdVenta(a) ?? 0);
+    });
+
+    setVentas(ventasFiltradas);
+    return ventasFiltradas;
   };
 
-  // Carga el cronograma relacionado al usuario y adapta la respuesta si viene en distintos formatos.
-  const cargarCronogramaUsuario = async () => {
-    try {
-      setCargandoCronograma(true);
-
-      const response = await fetch(`${API_URL}/Cronograma/cronograma_ListarPorVenta/${idUsuario}`);
-
-      // Leemos la respuesta como texto primero para evitar errores de parseo
-      const textoRespuesta = await response.text();
-
-      if (response.ok && textoRespuesta) {
-        const data = JSON.parse(textoRespuesta);
-
-        // SI EL PROBLEMA ES EL ARRAY, HACEMOS ESTA DOBLE VERIFICACIÓN:
-        let listaFinal = [];
-        if (Array.isArray(data)) {
-          listaFinal = data;
-        } else if (data && typeof data === 'object' && data.Table) {
-          // A veces los DataTables de C# vienen envueltos en una propiedad "Table"
-          listaFinal = data.Table;
-        }
-
-        setCronogramaTodos(listaFinal);
-        return listaFinal;
-      } else {
-        setCronogramaTodos([]);
-        return [];
-      }
-    } catch (error) {
-      console.error("Error procesando cronograma:", error);
-      setCronogramaTodos([]);
-    } finally {
-      setCargandoCronograma(false);
-    }
+  // La API solicita IdUsuario y devuelve sus cronogramas; luego filtramos por IdVenta.
+  const cargarCronogramaUsuario = async (idUsuarioVenta) => {
+    if (!idUsuarioVenta) return [];
+    const lista = await consultarListaApi(
+      `${API_URL}/Cronograma/cronograma_ListarPorVenta/${idUsuarioVenta}`,
+    );
+    setCronogramaTodos(lista);
+    return lista;
   };
 
 
@@ -219,29 +215,68 @@ const Ventas = ({ navigation, route }) => {
 
   // Carga en paralelo ventas y cronograma, y deja una venta seleccionada por defecto si existe.
   const cargarDatosIniciales = async () => {
-    if (!idUsuario) return;
-    const [ventasUsuario, cronogramaPorUsuario] = await Promise.all([
-      cargarVentas(),
-      cargarCronogramaUsuario(),
-    ]);
+    setCargando(true);
+    setErrorCarga("");
 
-    if (ventasUsuario.length > 0) {
-      const ventaInicial = ventasUsuario[0];
+    try {
+      const [ventasVisibles] = await Promise.all([cargarVentas(), cargarClientes()]);
+      const ventaInicial = ventasVisibles[0] ?? null;
       setSelectedVenta(ventaInicial);
-      setCronograma(filtrarCronogramaPorVenta(ventaInicial, cronogramaPorUsuario));
+      setSelectedVentaLocal(null);
+      setCronograma([]);
+      setCronogramaTodos([]);
+    } catch (error) {
+      console.error("Error al cargar ventas:", error);
+      setVentas([]);
+      setErrorCarga(
+        error?.name === "AbortError"
+          ? "La API tardó demasiado en responder. Intenta nuevamente."
+          : "No se pudo cargar el listado de ventas. Revisa tu conexión e intenta nuevamente.",
+      );
+    } finally {
+      setCargando(false);
     }
   };
 
-  // Vuelve a inicializar los datos cuando cambie el usuario recibido por navegación.
+  // Reacciona también cuando se pulsa otro cliente/venta desde ReporteCobranzas.
   useEffect(() => {
     cargarDatosIniciales();
-  }, [idUsuario]);
+  }, [idUsuario, clienteSeleccionadoId, ventaSeleccionadaId]);
 
-  // Actualiza la venta activa y refresca la lista de cuotas visibles en pantalla.
-  const seleccionarVenta = (venta) => {
+  // Abre la cobranza exacta consultando el cronograma del usuario dueño de esa venta.
+  const manejarSeleccion = async (venta) => {
     setSelectedVenta(venta);
-    setCronograma(filtrarCronogramaPorVenta(venta));
+    setSelectedVentaLocal(venta);
+    setCronograma([]);
+    setModalVisible(true);
+    setCargandoCronograma(true);
+
+    try {
+      const idUsuarioDeVenta = obtenerIdUsuarioVenta(venta) ?? idUsuario;
+      const cronogramasUsuario = await cargarCronogramaUsuario(idUsuarioDeVenta);
+      setCronograma(filtrarCronogramaPorVenta(venta, cronogramasUsuario));
+    } catch (error) {
+      console.error("Error procesando cronograma:", error);
+      setCronogramaTodos([]);
+      Alert.alert("Cronograma no disponible", "No se pudo consultar la cobranza de esta venta.");
+    } finally {
+      setCargandoCronograma(false);
+    }
   };
+
+  useEffect(() => {
+    if (!abrirCronogramaParaPago || cargando || !ventas.length) return;
+    const ventaParaPago = ventas.find(
+      (venta) => obtenerIdVenta(venta)?.toString() === ventaSeleccionadaId?.toString(),
+    ) ?? ventas[0];
+    const claveVenta = obtenerIdVenta(ventaParaPago)?.toString() ?? "";
+    const claveSolicitud = `${claveVenta}:${solicitudNuevoPago}`;
+    if (!claveVenta || pagoAutoAbiertoRef.current === claveSolicitud) return;
+
+    // ATAMAINE: Nuevo Pago abre una sola vez el cronograma de la venta enviada.
+    pagoAutoAbiertoRef.current = claveSolicitud;
+    void manejarSeleccion(ventaParaPago);
+  }, [abrirCronogramaParaPago, solicitudNuevoPago, cargando, ventas, ventaSeleccionadaId]);
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   //Aqui se genera los PDF ///////////////////////////////////////////////////////////////////////////////
@@ -287,8 +322,8 @@ const Ventas = ({ navigation, route }) => {
   `;
 
     try {
-      const { uri } = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      // En web abre el diálogo de impresión; en móvil mantiene el PDF compartible.
+      await compartirPdf({ html, titulo: 'Cronograma de pagos' });
     } catch (error) {
       Alert.alert("Error", "No se pudo generar el PDF.");
     }
@@ -307,16 +342,56 @@ const Ventas = ({ navigation, route }) => {
   };
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  const nombreClienteVista = esVistaReporteCliente
+    ? obtenerNombreCliente(clienteSeleccionadoId) || clienteSeleccionadoNombre || `Cliente ${clienteSeleccionadoId}`
+    : "";
+
+  // Conserva una sola accion de navegacion para el boton superior web y el inferior movil.
+  const abrirAccionPrincipal = () => {
+    if (esVistaReporteCliente) {
+      navigation.getParent()?.navigate(esVistaPagosCliente ? "ReportePagos" : "ReporteCobranzas");
+      return;
+    }
+
+    const idUsuarioLogueado = route.params?.idUsuario || obtenerIdUsuarioVenta(ventas[0]);
+    if (!idUsuarioLogueado) {
+      Alert.alert("Usuario requerido", "No se pudo identificar al usuario que registra la venta.");
+      return;
+    }
+
+    navigation.navigate("RegistrarVenta", {
+      idUsuario: idUsuarioLogueado,
+      onRefresh: cargarDatosIniciales,
+    });
+  };
+
   return (
     <View style={[styles.mainContainer, esWeb && styles.mainContainerWeb]}>
       {/* Contenedor principal de la lista de ventas del usuario. */}
       {/* --- LISTA DE VENTAS (CONTENEDOR FIJO) --- */}
       <View style={[styles.ventasContainer, esWeb && styles.ventasContainerWeb]}>
-        {/* Encabezado visual de la pantalla. */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Mis Ventas</Text>
-          <MaterialCommunityIcons name="sign-real-estate" size={28} color="#069488" />
-        </View>
+        {/* En web unifica el encabezado y la accion; movil conserva su diseño original. */}
+        {esWeb ? (
+          <WebListHeader
+            embedded
+            title={esVistaPagosCliente ? "Pagos del cliente" : esVistaCobranzasCliente ? "Cobranzas del cliente" : "Gestión de Ventas"}
+            subtitle={esVistaReporteCliente ? `Compras y cronogramas de ${nombreClienteVista}` : "Consulta ventas, clientes y cronogramas desde un solo lugar."}
+            count={ventas.length}
+            actionLabel={esVistaPagosCliente ? "Regresar a Pagos" : esVistaCobranzasCliente ? "Regresar a Cobranzas" : "Registrar Venta"}
+            actionIcon={esVistaReporteCliente ? "arrow-left" : "plus-circle-outline"}
+            onAction={abrirAccionPrincipal}
+          />
+        ) : (
+          <View style={styles.header}>
+            <View style={styles.headerCopy}>
+              <Text style={styles.title}>{esVistaPagosCliente ? "Pagos del cliente" : esVistaCobranzasCliente ? "Cobranzas del cliente" : "Mis Ventas"}</Text>
+              <Text style={styles.headerEyebrow}>{esVistaReporteCliente ? "COMPRAS Y CRONOGRAMAS" : "GESTIÓN DE VENTAS"}</Text>
+            </View>
+            <View style={styles.headerIcon}>
+              <MaterialCommunityIcons name={esVistaPagosCliente ? "receipt-text-check-outline" : esVistaCobranzasCliente ? "cash-multiple" : "sign-real-estate"} size={26} color="#069488" />
+            </View>
+          </View>
+        )}
         {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
         {/* funcion de boton desplegable patra idioma y exit */}
 
@@ -355,7 +430,26 @@ const Ventas = ({ navigation, route }) => {
 
         </View>
         {/* ///////////////////////////////////////////////////////////////////////////////////////// */}
-        <Text style={styles.sectionTitle}>Toca una venta para ver el cronograma</Text>
+        {esVistaReporteCliente ? (
+          <View style={styles.clienteFiltroCard}>
+            <View style={styles.clienteFiltroIcon}>
+              <MaterialCommunityIcons name="account-check-outline" size={22} color="#ffffff" />
+            </View>
+            <View style={styles.clienteFiltroCopy}>
+              <Text style={styles.clienteFiltroLabel}>CLIENTE SELECCIONADO</Text>
+              <Text style={styles.clienteFiltroNombre} numberOfLines={1}>{nombreClienteVista}</Text>
+              <Text style={styles.clienteFiltroMeta}>
+                {cargando ? "Consultando compras..." : `${ventas.length} compra${ventas.length === 1 ? "" : "s"} encontrada${ventas.length === 1 ? "" : "s"} · ID ${clienteSeleccionadoId}`}
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="filter-check-outline" size={22} color="#0f766e" />
+          </View>
+        ) : null}
+        <Text style={styles.sectionTitle}>
+          {esVistaReporteCliente
+            ? `Solo se muestran las compras de esta persona. ${esVistaPagosCliente ? "La compra del pago elegido esta resaltada." : "Toca una para ver y cobrar su cronograma."}`
+            : "Toca una venta para ver el cronograma"}
+        </Text>
 
         {/* Lista desplazable con todas las ventas asociadas al usuario. */}
         <ScrollView
@@ -364,35 +458,69 @@ const Ventas = ({ navigation, route }) => {
           showsVerticalScrollIndicator={true}
         >
           {cargando ? (
-            <ActivityIndicator size="large" color="#069488" />
+            <View style={styles.loadingState}>
+              <ActivityIndicator size="large" color="#069488" />
+              <Text style={styles.loadingText}>Cargando ventas y cobranzas...</Text>
+            </View>
+          ) : errorCarga ? (
+            <View style={styles.feedbackState}>
+              <View style={styles.feedbackIconError}>
+                <MaterialCommunityIcons name="cloud-alert-outline" size={30} color="#dc2626" />
+              </View>
+              <Text style={styles.feedbackTitle}>No pudimos cargar los datos</Text>
+              <Text style={styles.feedbackText}>{errorCarga}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={cargarDatosIniciales}>
+                <MaterialCommunityIcons name="refresh" size={17} color="#ffffff" />
+                <Text style={styles.retryButtonText}>Reintentar</Text>
+              </TouchableOpacity>
+            </View>
           ) : ventas.length === 0 ? (
-            <Text style={styles.emptyText}>No hay ventas registradas.</Text>
+            <View style={styles.feedbackState}>
+              <View style={styles.feedbackIconEmpty}>
+                <MaterialCommunityIcons name="file-search-outline" size={30} color="#0f766e" />
+              </View>
+              <Text style={styles.feedbackTitle}>Sin compras registradas</Text>
+              <Text style={styles.feedbackText}>
+                {esVistaReporteCliente
+                  ? "Este cliente no tiene ventas asociadas en la API."
+                  : "No hay ventas registradas para este usuario."}
+              </Text>
+            </View>
           ) : (
             ventas.map((venta, index) => (
               /* Cada tarjeta representa una venta y al tocarla se abre su cronograma. */
               <TouchableOpacity
-                key={index}
-                style={styles.card}
+                key={obtenerIdVenta(venta) ?? index}
+                style={[
+                  styles.card,
+                  esWeb && styles.cardWeb,
+                  obtenerIdVenta(venta)?.toString() === ventaSeleccionadaId?.toString() && styles.cardDestacada,
+                ]}
                 onPress={() => manejarSeleccion(venta)}
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.loteInfo}>
                     <MaterialCommunityIcons name="map-marker-radius" size={20} color="#069488" />
                     <View style={{ marginLeft: 8 }}>
-                      <Text style={styles.cardLabel}>LOTE</Text>
-                      <Text style={styles.cardValue}>{venta.Manzana}{venta.NumeroLote}</Text>
+                      <Text style={styles.cardLabel}>{venta.Proyecto || "LOTE"}</Text>
+                      <Text style={styles.cardValue}>{venta.CodigoLote || `${venta.Manzana || ""}${venta.NumeroLote || ""}`}</Text>
                     </View>
                   </View>
-                  <MaterialCommunityIcons name="chevron-right" size={24} color="#ccc" />
+                  <View style={styles.cardHeaderRight}>
+                    {obtenerIdVenta(venta)?.toString() === ventaSeleccionadaId?.toString() ? (
+                      <View style={styles.selectedPill}><Text style={styles.selectedPillText}>SELECCIONADA</Text></View>
+                    ) : null}
+                    <MaterialCommunityIcons name="chevron-right" size={24} color="#94a3b8" />
+                  </View>
                 </View>
 
                 <View style={styles.cardFooter}>
                   <View style={styles.priceContainer}>
-                    <Text style={styles.priceText}>${venta.PrecioVenta ?? "0.00"}</Text>
-                    <Text style={styles.subtext}>Cliente       : {obtenerNombreCliente(venta.IdCliente)}</Text>
-                    <Text style={styles.subtext}>Tipo Venta: {venta.TipoVenta}</Text>
-                    <Text style={styles.subtext}>Tipo pago : {venta.TipoPago}</Text>
-                    <Text style={styles.subtext}>Inicial        : {venta.MontoInicial}</Text>
+                    <Text style={styles.priceText}>S/ {Number(venta.PrecioVenta ?? 0).toFixed(2)}</Text>
+                    <Text style={styles.subtext}>Cliente: {obtenerNombreCliente(obtenerIdClienteVenta(venta))}</Text>
+                    <Text style={styles.subtext}>Venta #{obtenerIdVenta(venta)} · {venta.TipoVenta || "Sin tipo"}</Text>
+                    <Text style={styles.subtext}>Pago: {venta.TipoPago || "Sin tipo"}</Text>
+                    <Text style={styles.subtext}>Inicial: S/ {Number(venta.MontoInicial ?? 0).toFixed(2)}</Text>
                   </View>
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{venta.Estadoventa ?? "Activo"}</Text>
@@ -406,33 +534,16 @@ const Ventas = ({ navigation, route }) => {
       </View>
 
 
-      {/* Indicador visual inferior para invitar a deslizar la lista. */}
-      {/* PIE DE PÁGINA (OPCIONAL) */}
-      <View style={[styles.footerHint, esWeb && styles.footerHintWeb]}>
-        <MaterialCommunityIcons name="gesture-swipe-up" size={20} color="#999" />
-        <Text style={styles.footerText}>Desliza para ver más lotes</Text>
-      </View>
-
-
-
-      <View style={[styles.ctnbtn, esWeb && styles.ctnbtnWeb]}>
+      {!esWeb ? <View style={styles.ctnbtn}>
         <TouchableOpacity
-          onPress={() => {
-            const idUsuarioLogueado = route.params?.idUsuario || usuarioGlobal?.id || 1;
-
-            navigation.navigate("RegistrarVenta", {
-              idUsuario: idUsuarioLogueado,
-              
-              onRefresh: cargarVentas 
-            });
-          }}
-          style={[styles.btnregistrar, esWeb && styles.btnregistrarWeb]}
+          onPress={abrirAccionPrincipal}
+          style={[styles.btnregistrar, esVistaReporteCliente && styles.btnVolverReporte]}
           activeOpacity={0.86}
         >
-          <MaterialCommunityIcons name="plus-circle-outline" size={20} color="#ffffff" />
-          <Text style={styles.btnregistrarText}>REGISTRAR VENTA</Text>
+          <MaterialCommunityIcons name={esVistaReporteCliente ? "arrow-left" : "plus-circle-outline"} size={20} color="#ffffff" />
+          <Text style={styles.btnregistrarText}>{esVistaPagosCliente ? "VOLVER A REPORTE PAGOS" : esVistaCobranzasCliente ? "VOLVER A REPORTE COBRANZAS" : "REGISTRAR VENTA"}</Text>
         </TouchableOpacity>
-      </View>
+      </View> : null}
 
       {/* Modal inferior donde se muestran las cuotas de la venta seleccionada. */}
       {/* --- MODAL DEL CRONOGRAMA --- */}
@@ -446,8 +557,8 @@ const Ventas = ({ navigation, route }) => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Cronograma de Pagos</Text>
-                <Text style={styles.modalSubtitle}>Lote: {selectedVentaLocal?.IdLote}</Text>
+                <Text style={styles.modalTitle}>{esVistaPagosCliente ? "Detalle de Pagos" : esVistaCobranzasCliente ? "Detalle de Cobranza" : "Cronograma de Pagos"}</Text>
+                <Text style={styles.modalSubtitle}>Venta #{obtenerIdVenta(selectedVentaLocal)} · Lote {selectedVentaLocal?.CodigoLote || selectedVentaLocal?.IdLote}</Text>
               </View>
               <TouchableOpacity onPress={generarPDF}>
                 <MaterialIcons name="print" size={28} color="#069488" />
@@ -464,7 +575,13 @@ const Ventas = ({ navigation, route }) => {
             ) : (
               /* Grilla de cuotas del cronograma; cada cuota puede abrir el detalle de pago. */
               <ScrollView contentContainerStyle={styles.modalScroll}>
-                <View style={styles.grid}>
+                {cronograma.length === 0 ? (
+                  <View style={styles.cronogramaVacio}>
+                    <MaterialCommunityIcons name="calendar-remove-outline" size={38} color="#0f766e" />
+                    <Text style={styles.feedbackTitle}>Sin cuotas para esta venta</Text>
+                    <Text style={styles.feedbackText}>La API no devolvió un cronograma asociado.</Text>
+                  </View>
+                ) : <View style={styles.grid}>
                   {cronograma.map((item, i) => (
                     <TouchableOpacity
                       key={i}
@@ -477,7 +594,8 @@ const Ventas = ({ navigation, route }) => {
                         if (item.EstadoCuota === "Pagado") {
                           alert("Esta cuota ya esta pagada.")
                         } else {
-                          navigation.navigate("DetallePago", { cuota: item, onRefresh: () => cargarDatosIniciales() }); // Te lleva a la nueva pantalla
+                          // La cuota es serializable; la pantalla se actualiza al volver a abrir la venta.
+                          navigation.navigate("DetallePago", { cuota: item });
                         }
                       }}
                     >
@@ -493,7 +611,7 @@ const Ventas = ({ navigation, route }) => {
                       <Text style={styles.cuotaFecha}>{item.FechaVencimiento}</Text>
                     </TouchableOpacity>
                   ))}
-                </View>
+                </View>}
               </ScrollView>
             )}
           </View>
@@ -503,7 +621,6 @@ const Ventas = ({ navigation, route }) => {
   );
 };
 
-const { height: screenHeight } = Dimensions.get("window");
 const styles = StyleSheet.create({
   // Contenedor del menú flotante superior derecho
   containerFlotante: {
@@ -569,11 +686,12 @@ const styles = StyleSheet.create({
   mainContainerWeb: {
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 24,
-    gap: 14,
+    paddingBottom: 0,
   },
   ventasContainer: {
-    height: screenHeight * 0.8, // Usa screenHeight de forma segura
+    // La lista ocupa automaticamente el espacio libre en web y movil.
+    flex: 1,
+    minHeight: 0,
     backgroundColor: '#ffffff',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -593,8 +711,8 @@ const styles = StyleSheet.create({
     minHeight: 0,
     borderRadius: 24,
     paddingTop: 34,
-    paddingBottom: 12,
-    maxWidth: 1120,
+    paddingBottom: 0,
+    maxWidth: "100%",
     width: "100%",
     alignSelf: "center",
   },
@@ -604,10 +722,71 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10
   },
+  headerCopy: {
+    flex: 1,
+    paddingRight: 72,
+  },
+  headerEyebrow: {
+    color: '#0f766e',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.1,
+    marginTop: 4,
+  },
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e8fff8',
+    marginRight: 62,
+  },
   title: {
     fontSize: 28,
     fontWeight: '900', // Tipografía robusta idéntica al login y home
     color: '#111827'
+  },
+  clienteFiltroCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ecfdf8',
+    borderWidth: 1,
+    borderColor: '#99e6d8',
+    borderRadius: 18,
+    padding: 12,
+    marginBottom: 12,
+  },
+  clienteFiltroIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0f9f8f',
+  },
+  clienteFiltroCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  clienteFiltroLabel: {
+    color: '#0f766e',
+    fontSize: 9.5,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  clienteFiltroNombre: {
+    color: '#0f172a',
+    fontSize: 16,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+  clienteFiltroMeta: {
+    color: '#52716d',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
   },
   sectionTitle: {
     fontSize: 13.5,
@@ -619,10 +798,81 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
-    paddingBottom: 20
+    paddingBottom: 0
   },
   scrollContentWeb: {
-    paddingBottom: 28,
+    paddingBottom: 0,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignContent: "flex-start",
+    gap: 14,
+  },
+  loadingState: {
+    width: "100%",
+    minHeight: 190,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  feedbackState: {
+    width: "100%",
+    minHeight: 210,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  feedbackIconError: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fef2f2',
+    marginBottom: 12,
+  },
+  feedbackIconEmpty: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ecfdf8',
+    marginBottom: 12,
+  },
+  feedbackTitle: {
+    color: '#0f172a',
+    fontSize: 17,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  feedbackText: {
+    color: '#64748b',
+    fontSize: 12.5,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 5,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: '#0f766e',
+    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    marginTop: 16,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 12.5,
+    fontWeight: '900',
   },
 
   // Tarjetas del listado estilizadas como el loginPanel/cards
@@ -641,11 +891,40 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
+  cardWeb: {
+    width: "32%",
+    minWidth: 320,
+    flexGrow: 1,
+    marginBottom: 0,
+  },
+  cardDestacada: {
+    borderColor: '#2dd4bf',
+    backgroundColor: '#f6fffd',
+    shadowOpacity: 0.12,
+    elevation: 4,
+  },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12
+  },
+  cardHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  selectedPill: {
+    backgroundColor: '#ccfbf1',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  selectedPillText: {
+    color: '#0f766e',
+    fontSize: 8.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   loteInfo: {
     flexDirection: 'row',
@@ -668,6 +947,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end'
   },
+  priceContainer: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 10,
+  },
   priceText: {
     fontSize: 18,
     fontWeight: '900',
@@ -688,22 +972,6 @@ const styles = StyleSheet.create({
     color: '#069488',
     fontSize: 12,
     fontWeight: '800'
-  },
-
-  // Texto guía inferior
-  footerHint: {
-    alignItems: 'center',
-    marginTop: 20,
-    opacity: 0.5
-  },
-  footerHintWeb: {
-    marginTop: 0,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '600',
-    marginTop: 4
   },
 
   // Modal y Cronograma premium
@@ -794,6 +1062,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
+  cronogramaVacio: {
+    minHeight: 230,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
   label: {
     color: "#ffffff",
     fontWeight: "900",
@@ -816,10 +1090,8 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 4,
   },
-  btnregistrarWeb: {
-    width: "100%",
-    maxWidth: 420,
-    height: 54,
+  btnVolverReporte: {
+    backgroundColor: '#0f766e',
   },
   btnregistrarText: {
     color: "#ffffff",
@@ -828,13 +1100,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   ctnbtn: {
-    marginTop: 24, // Cambiado top por un margen relativo limpio para evitar desbordes
+    marginTop: 8,
+    paddingBottom: 0,
     alignItems: "center",
     width: "100%"
-  },
-  ctnbtnWeb: {
-    marginTop: 0,
-    paddingBottom: 82,
   }
 });
 
