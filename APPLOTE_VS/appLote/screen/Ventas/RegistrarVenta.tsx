@@ -25,7 +25,8 @@ const RegistrarVenta = ({ route, navigation }) => {
     onRefresh,
   } = route.params || {};
   const idUsuario = route.params?.idUsuario || route.params?.IdUsuario || route.params?.id || null;
-
+  const { nombre, rol } = route.params || {};
+  console.log("Tipo de usuario o rol:", rol);
   console.log("📊 Todos los parámetros recibidos:", route.params);
   console.log("👤 ID de Usuario unificado y detectado:", idUsuario);
 
@@ -479,6 +480,9 @@ const RegistrarVenta = ({ route, navigation }) => {
         {/* Sección de Lote */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Información del Lote</Text>
+          <Text style={{marginBottom:10, marginTop:-5, color:"#555"}}>
+            Busca el lote que quieres según el proyecto aqui:
+          </Text>
           <TouchableOpacity
             style={styles.selectorContainer}
             onPress={async () => {
@@ -499,10 +503,10 @@ const RegistrarVenta = ({ route, navigation }) => {
           </TouchableOpacity>
 
           <View style={styles.infoContainer}>
-            <View style={styles.infoItem}>
+            {/* <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>ID Lote:</Text>
               <Text style={styles.infoValue}>{idLote || "No Disponible"}</Text>
-            </View>
+            </View> */}
             <View style={[styles.infoItem, { marginTop: 10 }]}>
               <Text style={styles.infoLabel}>Proyecto:</Text>
               <Text style={styles.infoValue}>{proyectoNombre || "No disponible"}</Text>
@@ -781,17 +785,19 @@ const RegistrarVenta = ({ route, navigation }) => {
             numberOfLines={4}
           />
         </View>
-
-        {/* Botón Registrar */}
-        <TouchableOpacity
-          style={[styles.button, cargando && styles.buttonDisabled]}
-          onPress={registrarVenta}
-          disabled={cargando}
-        >
+        
+        {rol === "40" && (
+          // Botón Registrar 
+          <TouchableOpacity
+            style={[styles.button, cargando && styles.buttonDisabled]}
+            onPress={registrarVenta}
+            disabled={cargando}
+          >
           <Text style={styles.buttonText}>
             {cargando ? "Guardando..." : "Registrar Venta"}
           </Text>
         </TouchableOpacity>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -814,7 +820,7 @@ const RegistrarVenta = ({ route, navigation }) => {
 
             <TextInput
               style={styles.searchInput}
-              placeholder="Buscar por código, ubicación o proyecto..."
+              placeholder="Buscar por , ubicación o proyecto..."
               value={busquedaLotes}
               onChangeText={setBusquedaLotes}
             />

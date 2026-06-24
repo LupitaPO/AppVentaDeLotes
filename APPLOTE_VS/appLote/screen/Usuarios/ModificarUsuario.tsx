@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { API_URL } from "../../config/apiUrl";
+import { AntDesign } from "@expo/vector-icons";
 
 const ModificarUsuario = ({ route, navigation }) => {
   const { usuario } = route.params || {};
@@ -24,6 +25,8 @@ const ModificarUsuario = ({ route, navigation }) => {
   const [listaTipos, setListaTipos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [cargando, setCargando] = useState(false);
+
+  const [mostrarPassword, setMostrarPassword] = useState(false);
 
   useEffect(() => {
     listarTiposUsuario();
@@ -136,15 +139,27 @@ const ModificarUsuario = ({ route, navigation }) => {
           <View style={styles.row}>
             <View style={styles.column}>
               <Text style={styles.label}>Contraseña</Text>
-              <TextInput
-                style={styles.input}
-                value={contrasena}
-                onChangeText={setContrasena}
-                placeholder="Nueva clave"
-                placeholderTextColor="#94a3b8"
-                secureTextEntry
-                autoCapitalize="none"
-              />
+
+              {/* Contenedor horizontal para el input y el botón */}
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.inputField} // Nuevo estilo para que no aplaste al botón
+                  value={contrasena}
+                  onChangeText={setContrasena}
+                  placeholder="Nueva clave"
+                  placeholderTextColor="#94a3b8"
+                  secureTextEntry={!mostrarPassword} // Si mostrarPassword es false, oculta el texto
+                  autoCapitalize="none"
+                />
+
+                <TouchableOpacity
+                  onPress={() => setMostrarPassword(!mostrarPassword)}
+                  style={styles.eyeButton}
+                >
+                  {/* Puedes usar un texto simple o un componente de iconos como Lucide o Vector Icons */}
+                  <AntDesign name={mostrarPassword ? "eye" : "eye-invisible"} size={20} color="#94a3b8" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.column}>
@@ -236,6 +251,43 @@ const ModificarUsuario = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // ... tus otros estilos (row, column, label)
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    height: 48,
+    backgroundColor: "#fbfffe",
+    borderWidth: 1,
+    borderColor: "#d5e7e3",
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#111827",
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 1,
+    marginBottom: 6,
+  },
+  inputField: {
+    flex: 1,                 // Hace que el input tome todo el espacio disponible
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    // Elimina el borderWidth y borderColor del input original aquí
+  },
+  eyeButton: {
+    padding: 10,             // Zona de toque cómoda para el usuario
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeText: {
+    fontSize: 18,
+  },
+
+  // ///////////////////////////////////////////
   container: {
     flex: 1,
     backgroundColor: "#f4fcfb",
@@ -398,7 +450,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 3,
-    
+
   },
 });
 

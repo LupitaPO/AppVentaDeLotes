@@ -66,7 +66,7 @@ const Ventas = ({ navigation, route }) => {
   const tabBarHeight = useBottomTabBarHeight();
 
   // Recibe el id del usuario autenticado desde los parámetros de navegación.
-  const { idUsuario } = route.params || {};
+  const { idUsuario,rol } = route.params || {};
 
   // Lista de ventas del usuario actual.
   const [ventas, setVentas] = useState([]);
@@ -422,6 +422,7 @@ const Ventas = ({ navigation, route }) => {
 
             navigation.navigate("RegistrarVenta", {
               idUsuario: idUsuarioLogueado,
+              rol:rol,
               
               onRefresh: cargarVentas 
             });

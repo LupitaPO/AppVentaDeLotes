@@ -159,6 +159,7 @@ const Login = ({ navigation }: { navigation: any }) => {
           nombre: usuario.Nombre,
           idUsuario,
         });
+        console.log("Usuario autenticado:", { nombre: usuario.Nombre, rol: usuario.TipoUsuario, idUsuario });
       } else {
         alert("Usuario o contraseña incorrectos");
       }

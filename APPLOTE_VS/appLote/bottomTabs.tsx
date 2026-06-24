@@ -17,6 +17,7 @@ const Tab = createBottomTabNavigator();
 
 const BottomTabs = ({ route }) => {
   const { nombre, rol, idUsuario } = route.params || {};
+  console.log("datos de usuario en bottomTabs:", { nombre, rol, idUsuario });
   const esWeb = Platform.OS === "web";
 
   return (
@@ -30,7 +31,7 @@ const BottomTabs = ({ route }) => {
         tabBarItemStyle: esWeb ? styles.tabBarItemWeb : undefined,
       }}
     >
-      {rol !== "Cliente" && (
+      {rol === "5" && (
         <Tab.Screen
           name={i18n.t("btDashboard")}
           component={Home}
@@ -60,7 +61,7 @@ const BottomTabs = ({ route }) => {
           ),
         }}
       />
-      {rol !== "Cliente" && (
+      {rol === "5" && (
         <Tab.Screen
          name={i18n.t("btusuario")}
          component={Usuario}
@@ -77,7 +78,7 @@ const BottomTabs = ({ route }) => {
        />
 
       )}
-      {rol !== "Cliente" && (
+      {rol === "5" && (
         <Tab.Screen
          name={i18n.t("btAsesor")}
          component={Asesor}
@@ -94,7 +95,7 @@ const BottomTabs = ({ route }) => {
        />
 
       )}
-      {rol !== "Cliente" && (
+      {rol === 3 && (
         <Tab.Screen
           name={i18n.t("btcliente")}
           component={Clientes}
