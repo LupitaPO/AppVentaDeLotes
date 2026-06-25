@@ -139,7 +139,7 @@ namespace APILote.DATA
         }
 
 
-        public string Permiso(int codRolUsuario, int codOpcion, bool activo)
+        public string PermisosGuardarPerfil(int codRolUsuario, int codOpcion, bool activo)
         {
             try
             {
@@ -156,7 +156,21 @@ namespace APILote.DATA
                 return null;
             }
         }
+
+        public DataTable listar_manzanas() 
+        {
+            try
+            {
+                DataTable Datos = new DataTable();
+                Datos = SqlHelper.ExecuteDataset(conexion.cnConexion, "listar_manzana_pa").Tables[0];
+                return Datos;
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
     }
+}
 }
 
 

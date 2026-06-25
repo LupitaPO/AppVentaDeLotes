@@ -1,4 +1,5 @@
-﻿using APILote.DATA;
+﻿using System;
+using APILote.DATA;
 using APILote.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
@@ -112,21 +113,101 @@ namespace APILote.Controllers
             return jsoString;
         }
 
+
+
+
+      
+            [HttpGet]
+            [Route("permisos_ListarPerfil")]
+            public IActionResult Permiso_ListarPerfil([FromQuery] int idRol)
+            {
+                try
+                {
+                    UsuarioData data = new UsuarioData();
+                    DataTable resultado = data.PermisosPerfil(idRol);
+
+                    if (resultado == null || resultado.Rows.Count == 0)
+                    {
+                        return NotFound(new
+                        {
+                            success = false,
+                            mensaje = "No se encontraron permisos para este rol",
+                            data = new object[] { }
+                        });
+                    }
+
+                    var rows = new List<Dictionary<string, object>>();
+                    foreach (DataRow row in resultado.Rows)
+                    {
+                        var dict = new Dictionary<string, object>();
+                        foreach (DataColumn col in resultado.Columns)
+                        {
+                            dict[col.ColumnName] = row[col];
+                        }
+                        rows.Add(dict);
+                    }
+
+                    return Ok(new
+                    {
+                        success = true,
+                        data = rows
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        error = ex.Message
+                    });
+                }
+            }
+
+
+
+            [HttpPost]
+            [Route("permisos_GuardarPerfil")]
+            public IActionResult PermisosGuardarPerfil([FromBody] Permiso request)
+            {
+                try
+                {
+                    if (request == null)
+                    {
+                        return BadRequest(new { success = false, mensaje = "Los datos enviados son nulos." });
+                    }
+
+                    UsuarioData data = new UsuarioData();
+
+                    string resultado = data.PermisosGuardarPerfil(request.CodRolUsuario, request.CodOpcion, request.Activo);
+
+                    if (resultado == null)
+                    {
+                        return StatusCode(500, new { success = false, mensaje = "Error al guardar el permiso." });
+                    }
+
+                    return Ok(new { success = true, mensaje = resultado });
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { success = false, error = ex.Message });
+                }
+            }
+            
         [HttpGet]
-        [Route("permisos_ListarPerfil")]
-        public IActionResult Permisos_ListarPerfil([FromQuery] int idRol)
+        [Route("listar_manzana_pa")]
+        public IActionResult ListarManzanas()
         {
             try
             {
                 UsuarioData data = new UsuarioData();
-                DataTable resultado = data.PermisosPerfil(idRol);
+                DataTable resultado = data.listar_manzanas();
 
                 if (resultado == null || resultado.Rows.Count == 0)
                 {
                     return NotFound(new
                     {
                         success = false,
-                        mensaje = "No se encontraron permisos para este rol",
+                        mensaje = "No se encontraron manzanas",
                         data = new object[] { }
                     });
                 }
@@ -155,31 +236,8 @@ namespace APILote.Controllers
                     success = false,
                     error = ex.Message
                 });
-                
             }
-         }
-
-        [HttpPost]
-        [Route("permisos_GuardarPerfil")]
-        public IActionResult PermisosGuardar([FromBody] Permiso request)
-        {
-            try
-            {
-                UsuarioData data = new UsuarioData();
-                string resultado = data.Permiso(request.CodRolUsuario, request.CodOpcion, request.Activo);
-
-                if (resultado == null)
-                {
-                    return StatusCode(500, new { success = false, mensaje = "Error al guardar el permiso." });
-                }
-
-                return Ok(new { success = true, mensaje = resultado });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, error = ex.Message });
-            }
-
         }
     }
 }
+
