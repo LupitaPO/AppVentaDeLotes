@@ -8,13 +8,17 @@ import {
   Modal, //agrgado para el despegable
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  useWindowDimensions,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { API_URL } from "../../config/apiUrl";
 
 
 const RegistrarUsuario = ({ navigation, route }) => {
+  const esWeb = Platform.OS === "web";
+  const { height: altoPantalla } = useWindowDimensions();
+  const altoFormularioWeb = Math.max(420, altoPantalla - 86);
 
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
@@ -125,17 +129,19 @@ const RegistrarUsuario = ({ navigation, route }) => {
 
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, esWeb && { height: altoFormularioWeb, maxHeight: altoFormularioWeb }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.keyboardAvoiding}
       >
         <Text style={styles.title}>Registrar Nuevo Usuario</Text>
 
         <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
+          style={[styles.scrollView, esWeb && ({ height: altoFormularioWeb, maxHeight: altoFormularioWeb, overflowY: "auto", overflowX: "hidden" } as any)]}
+          contentContainerStyle={[styles.scrollContent, esWeb && styles.scrollContentWeb]}
+          showsVerticalScrollIndicator
           keyboardShouldPersistTaps="handled"
+          contentInsetAdjustmentBehavior="automatic"
         >
           <Text style={styles.label}>Nombre Usuario:</Text>
           <TextInput
@@ -295,6 +301,18 @@ const styles = StyleSheet.create({
 
   scrollView: {
     flex: 1,
+  },
+
+  keyboardAvoiding: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    paddingBottom: 24,
+  },
+
+  scrollContentWeb: {
+    paddingBottom: 140,
   },
 
   // Etiquetas de los campos adaptadas al diseño móvil unificado

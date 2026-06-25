@@ -17,6 +17,7 @@ import { Languages } from "../localizacion";
 import i18n, { changeLanguage } from "../i18n";
 import { API_URL } from "../config/apiUrl";
 import { WebListHeader, webListStyles } from "../components/web-list-layout";
+import { ActionOptionsModal } from "../components/action-options-modal";
 
 //Revisión
 type AsesorScreenProps = { navigation: any; route: any };
@@ -27,6 +28,7 @@ const Asesor = ({ navigation, route }: AsesorScreenProps) => {
   const tabBarHeight = useBottomTabBarHeight();
   const [asesores, setAsesores] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [opcionesAsesor, setOpcionesAsesor] = useState<any | null>(null);
   const scrollAsesoresRef = useRef<ScrollView | null>(null);
   const posicionesAsesoresRef = useRef<Record<string, number>>({});
 
@@ -117,6 +119,39 @@ const Asesor = ({ navigation, route }: AsesorScreenProps) => {
       index: 0,
       routes: [{ name: "Login" }], // Cambia 'Login' por el nombre exacto de tu pantalla inicial
     });
+  };
+
+  const modificarAsesor = (asesorItem: any) => {
+    navigation.navigate("ModificarAsesor", {
+      asesor: asesorItem,
+      onRefresh: obtenerAsesores,
+    });
+  };
+
+  const abrirOpcionesAsesor = (asesorItem: any, nombreCompleto: string, textoBotonEstado: string) => {
+    if (esWeb) {
+      setOpcionesAsesor({ asesorItem, nombreCompleto, textoBotonEstado });
+      return;
+    }
+
+    Alert.alert(
+      "Opciones para Asesor",
+      `¿Qué deseas hacer con ${nombreCompleto}?`,
+      [
+        {
+          text: textoBotonEstado,
+          onPress: () => anularAsesor(asesorItem),
+        },
+        {
+          text: "Modificar",
+          onPress: () => modificarAsesor(asesorItem),
+        },
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+      ],
+    );
   };
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -217,30 +252,7 @@ const Asesor = ({ navigation, route }: AsesorScreenProps) => {
                   posicionesAsesoresRef.current[String(asesorItem.DNI)] = event.nativeEvent.layout.y;
                 }
               }}
-              onPress={() =>
-                Alert.alert(
-                  "Opciones para Asesor",
-                  `¿Qué deseas hacer con ${nombreCompleto}?`,
-                  [
-                    {
-                      text: textoBotonEstado,
-                      onPress: () => anularAsesor(asesorItem),
-                    },
-                    {
-                      text: "Modificar",
-                      onPress: () =>
-                        navigation.navigate("ModificarAsesor", {
-                          asesor: asesorItem,
-                          onRefresh: obtenerAsesores,
-                        }),
-                    },
-                    {
-                      text: "Cancelar",
-                      style: "cancel",
-                    },
-                  ]
-                )
-              }
+              onPress={() => abrirOpcionesAsesor(asesorItem, nombreCompleto, textoBotonEstado)}
             >
               {estaSeleccionado ? (
                 <View style={styles.selectedBadge}>
@@ -270,6 +282,16 @@ const Asesor = ({ navigation, route }: AsesorScreenProps) => {
           );
         })}
       </ScrollView>
+
+      <ActionOptionsModal
+        visible={!!opcionesAsesor}
+        title="Opciones para Asesor"
+        message={`¿Qué deseas hacer con ${opcionesAsesor?.nombreCompleto || ""}?`}
+        statusLabel={opcionesAsesor?.textoBotonEstado || "Anular"}
+        onStatusPress={() => opcionesAsesor?.asesorItem && anularAsesor(opcionesAsesor.asesorItem)}
+        onModifyPress={() => opcionesAsesor?.asesorItem && modificarAsesor(opcionesAsesor.asesorItem)}
+        onClose={() => setOpcionesAsesor(null)}
+      />
 
       {!esWeb ? <View style={styles.grid}>
         <TouchableOpacity

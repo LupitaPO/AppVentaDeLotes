@@ -19,6 +19,7 @@ import i18n, {changeLanguage} from "../i18n";
 import { Languages } from "../localizacion";
 import { API_URL } from "../config/apiUrl";
 import { WebListHeader, webListStyles } from "../components/web-list-layout";
+import { ActionOptionsModal } from "../components/action-options-modal";
 
 
 
@@ -37,6 +38,7 @@ const Clientes = ({ navigation, route }) => {
 
   // Controla el indicador de carga mientras se consultan los datos.
   const [cargando, setCargando] = useState(true);
+  const [opcionesCliente, setOpcionesCliente] = useState<any | null>(null);
 
 // funcion de idiomas //////////////////////////////////////////////
 
@@ -96,6 +98,36 @@ const Clientes = ({ navigation, route }) => {
       console.error("Error al cambiar estado del cliente:", error);
       Alert.alert("Error", "Error de conexión con el servidor");
     }
+  };
+
+  const modificarCliente = (cliente) => {
+    navigation.navigate("ModificarCliente", { cliente, onRefresh: obtenerClientes });
+  };
+
+  const abrirOpcionesCliente = (cliente, nombreCompleto: string, textoBotonEstado: string) => {
+    if (esWeb) {
+      setOpcionesCliente({ cliente, nombreCompleto, textoBotonEstado });
+      return;
+    }
+
+    Alert.alert(
+      "Opciones para Cliente",
+      `¿Qué deseas hacer con ${nombreCompleto}?`,
+      [
+        {
+          text: textoBotonEstado,
+          onPress: () => anularCliente(cliente),
+        },
+        {
+          text: "Modificar",
+          onPress: () => modificarCliente(cliente),
+        },
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+      ],
+    );
   };
 
   // Recarga la lista de clientes cada vez que esta pantalla entra en foco.
@@ -233,26 +265,7 @@ const cerrarSesion = () => {
                   posicionesClientesRef.current[String(cliente.DNI)] = event.nativeEvent.layout.y;
                 }
               }}
-              onPress={() =>
-                Alert.alert(
-                  "Opciones para Cliente",
-                  `¿Qué deseas hacer con ${nombreCompleto}?`,
-                  [
-                    {
-                      text: textoBotonEstado,
-                      onPress: () => anularCliente(cliente),
-                    },
-                    {
-                      text: "Modificar",
-                      onPress: () => navigation.navigate("ModificarCliente", { cliente, onRefresh: obtenerClientes }),
-                    },
-                    {
-                      text: "Cancelar",
-                      style: "cancel",
-                    },
-                  ]
-                )
-              }
+              onPress={() => abrirOpcionesCliente(cliente, nombreCompleto, textoBotonEstado)}
             >
               {estaSeleccionado ? (
                 <View style={styles.selectedBadge}>
@@ -284,6 +297,16 @@ const cerrarSesion = () => {
 
         <View style={{ height: tabBarHeight - 80 }}></View>
       </ScrollView>
+
+      <ActionOptionsModal
+        visible={!!opcionesCliente}
+        title="Opciones para Cliente"
+        message={`¿Qué deseas hacer con ${opcionesCliente?.nombreCompleto || ""}?`}
+        statusLabel={opcionesCliente?.textoBotonEstado || "Anular"}
+        onStatusPress={() => opcionesCliente?.cliente && anularCliente(opcionesCliente.cliente)}
+        onModifyPress={() => opcionesCliente?.cliente && modificarCliente(opcionesCliente.cliente)}
+        onClose={() => setOpcionesCliente(null)}
+      />
 
       {/* Botón inferior para navegar al formulario de registro de un nuevo cliente. */}
       {!esWeb ? <View style={styles.grid}>

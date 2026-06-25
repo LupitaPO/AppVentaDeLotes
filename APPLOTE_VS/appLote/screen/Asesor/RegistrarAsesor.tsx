@@ -6,12 +6,18 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
+  useWindowDimensions,
 } from "react-native";
 import React, { useState } from "react";
 import { API_URL } from "../../config/apiUrl";
 
 
 const RegistrarAsesor = ({ navigation, route }) => {
+  const esWeb = Platform.OS === "web";
+  const { height: altoPantalla } = useWindowDimensions();
+  const altoFormularioWeb = Math.max(420, altoPantalla - 86);
+
   const [dni, setDni] = useState("");
   const [nombre1, setNombre1] = useState("");
   const [nombre2, setNombre2] = useState("");
@@ -67,9 +73,15 @@ const RegistrarAsesor = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, esWeb && { height: altoFormularioWeb, maxHeight: altoFormularioWeb }]}>
       <Text style={styles.title}>Registrar Nuevo Asesor</Text>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={[styles.scrollView, esWeb && ({ height: altoFormularioWeb, maxHeight: altoFormularioWeb, overflowY: "auto", overflowX: "hidden" } as any)]}
+        contentContainerStyle={[styles.scrollContent, esWeb && styles.scrollContentWeb]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator
+        contentInsetAdjustmentBehavior="automatic"
+      >
         <Text style={styles.label}>DNI:</Text>
         <TextInput
           style={styles.input}
@@ -179,6 +191,14 @@ const styles = StyleSheet.create({
   
   scrollView: {
     flex: 1,
+  },
+
+  scrollContent: {
+    paddingBottom: 24,
+  },
+
+  scrollContentWeb: {
+    paddingBottom: 140,
   },
   
   // Etiquetas de los campos adaptadas al diseño móvil unificado

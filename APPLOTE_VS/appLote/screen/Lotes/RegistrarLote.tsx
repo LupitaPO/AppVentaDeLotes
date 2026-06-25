@@ -202,61 +202,60 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
       />
 
       <Text style={styles.label}>Manzana de lotes</Text>
-      {esWeb ? (
-        <View style={styles.selectorWrapper}>
-          <View style={styles.selectorInputRow}>
-            <TextInput
-              style={[styles.input, styles.selectorInput]}
-              placeholder="Manzana de lotes"
-              value={manzana}
-              onChangeText={(value) => {
-                setManzana(value);
-                if (!value.trim()) setSelectorManzanaAbierto(false);
-              }}
-            />
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Seleccionar manzana de lotes"
-              style={styles.selectorButton}
-              onPress={() => setSelectorManzanaAbierto((abierto) => !abierto)}
-            >
-              <MaterialIcons
-                name={selectorManzanaAbierto ? "keyboard-arrow-up" : "keyboard-arrow-down"}
-                size={26}
-                color="#0f766e"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <Modal
-            animationType="fade"
-            transparent
-            visible={selectorManzanaAbierto}
-            onRequestClose={() => setSelectorManzanaAbierto(false)}
+      <View style={styles.selectorWrapper}>
+        <View style={styles.selectorInputRow}>
+          <TextInput
+            style={[styles.input, styles.selectorInput]}
+            placeholder="Manzana de lotes"
+            value={manzana}
+            onChangeText={(value) => {
+              setManzana(value);
+              if (!value.trim()) setSelectorManzanaAbierto(false);
+            }}
+          />
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Seleccionar manzana de lotes"
+            style={styles.selectorButton}
+            onPress={() => setSelectorManzanaAbierto((abierto) => !abierto)}
           >
-            <View style={styles.selectorModalBackdrop}>
-              <View style={styles.selectorModalCard}>
-                <View style={styles.selectorModalHeader}>
-                  <View>
-                    <Text style={styles.selectorModalEyebrow}>Manzana de lotes</Text>
-                    <Text style={styles.selectorModalTitle}>Selecciona una letra</Text>
-                  </View>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Cerrar selector de manzana"
-                    style={styles.selectorCloseButton}
-                    onPress={() => setSelectorManzanaAbierto(false)}
-                  >
-                    <MaterialIcons name="close" size={22} color="#0f766e" />
-                  </TouchableOpacity>
-                </View>
+            <MaterialIcons
+              name={selectorManzanaAbierto ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+              size={26}
+              color="#0f766e"
+            />
+          </TouchableOpacity>
+        </View>
 
-                <ScrollView
-                  style={styles.selectorOptionsScroll}
-                  contentContainerStyle={styles.selectorOptionsContent}
-                  showsVerticalScrollIndicator
+        <Modal
+          animationType="fade"
+          transparent
+          visible={selectorManzanaAbierto}
+          onRequestClose={() => setSelectorManzanaAbierto(false)}
+        >
+          <View style={styles.selectorModalBackdrop}>
+            <View style={styles.selectorModalCard}>
+              <View style={styles.selectorModalHeader}>
+                <View>
+                  <Text style={styles.selectorModalEyebrow}>Manzana de lotes</Text>
+                  <Text style={styles.selectorModalTitle}>Selecciona una letra</Text>
+                </View>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar selector de manzana"
+                  style={styles.selectorCloseButton}
+                  onPress={() => setSelectorManzanaAbierto(false)}
                 >
-                  {OPCIONES_MANZANA.map((item) => (
+                  <MaterialIcons name="close" size={22} color="#0f766e" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={styles.selectorOptionsScroll}
+                contentContainerStyle={styles.selectorOptionsContent}
+                showsVerticalScrollIndicator
+              >
+                {OPCIONES_MANZANA.map((item) => (
                   <TouchableOpacity
                     key={item}
                     style={[
@@ -273,20 +272,20 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
                       <MaterialIcons name="check" size={18} color="#0f766e" />
                     ) : null}
                   </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+                ))}
+              </ScrollView>
             </View>
-          </Modal>
-        </View>
-      ) : (
-        <TextInput
-          style={styles.input}
-          placeholder="Manzana de lotes"
-          value={manzana}
-          onChangeText={setManzana}
-        />
-      )}
+          </View>
+        </Modal>
+      </View>
+
+      <Text style={styles.label}>Número de lote</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Número de lote"
+        value={numLote}
+        onChangeText={setNumLote}
+      />
 
       <Text style={styles.label}>Direccion</Text>
       <TextInput
@@ -349,14 +348,6 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
         placeholder="Se calcula automáticamente"
         value={tamañosM2}
         editable={false}
-      />
-
-      <Text style={styles.label}>Número de lote</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Número de lote"
-        value={numLote}
-        onChangeText={setNumLote}
       />
 
       <Text style={styles.label}>Precio</Text>

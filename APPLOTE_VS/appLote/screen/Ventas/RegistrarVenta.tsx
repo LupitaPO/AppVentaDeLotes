@@ -10,11 +10,16 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  Platform,
+  useWindowDimensions,
 } from "react-native";
 import { API_URL } from "../../config/apiUrl";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 const RegistrarVenta = ({ route, navigation }) => {
+  const esWeb = Platform.OS === "web";
+  const { height: altoPantalla } = useWindowDimensions();
+  const altoFormularioWeb = Math.max(420, altoPantalla - 86);
   const {
     idLote: idLoteInicial,
     idUsuario:idusuarioMin_Omitir,
@@ -472,8 +477,21 @@ const RegistrarVenta = ({ route, navigation }) => {
   };
 
   return (
-    <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={[styles.screen, esWeb && { height: altoFormularioWeb, maxHeight: altoFormularioWeb }]}>
+      <ScrollView
+        style={[
+          styles.container,
+          esWeb && ({
+            height: altoFormularioWeb,
+            maxHeight: altoFormularioWeb,
+            overflowY: "auto",
+            overflowX: "hidden",
+          } as any),
+        ]}
+        contentContainerStyle={[styles.content, esWeb && styles.contentWeb]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator
+      >
         <Text style={styles.title}>Registrar Venta</Text>
 
         {/* Sección de Lote */}
@@ -1021,11 +1039,15 @@ const RegistrarVenta = ({ route, navigation }) => {
           </View>
         </View>
       </Modal>
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#f4fcfb",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f4fcfb",
@@ -1033,6 +1055,9 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingTop: 20,
+  },
+  contentWeb: {
+    paddingBottom: 140,
   },
   title: {
     fontSize: 28,

@@ -21,6 +21,7 @@ import RegistrarAsesor from "./Asesor/RegistrarAsesor";
 import RegistrarUsuario from "./Usuarios/RegistrarUsuario";
 import { API_URL } from "../config/apiUrl";
 import { WebListHeader, webListStyles } from "../components/web-list-layout";
+import { ActionOptionsModal } from "../components/action-options-modal";
 
 // URL base del backend para consultar y administrar usuarios.
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
@@ -42,6 +43,7 @@ const Usuario = ({ navigation, route }: UsuarioScreenProps) => {
 
   // Estado que controla el indicador de carga mientras llegan los datos.
   const [cargando, setCargando] = useState(true);
+  const [opcionesUsuario, setOpcionesUsuario] = useState<any | null>(null);
 
   // funcion de idiomas //////////////////////////////////////////////
 
@@ -133,6 +135,39 @@ const Usuario = ({ navigation, route }: UsuarioScreenProps) => {
       index: 0,
       routes: [{ name: "Login" }], // Cambia 'Login' por el nombre exacto de tu pantalla inicial
     });
+  };
+
+  const modificarUsuario = (usuario: any) => {
+    navigation.navigate("ModificarUsuario", {
+      usuario: usuario,
+      onRefresh: obtenerUsuarios,
+    });
+  };
+
+  const abrirOpcionesUsuario = (usuario: any, nombreCompleto: string, textoBotonEstado: string) => {
+    if (esWeb) {
+      setOpcionesUsuario({ usuario, nombreCompleto, textoBotonEstado });
+      return;
+    }
+
+    Alert.alert(
+      "Opciones para Usuarios",
+      `¿Qué deseas hacer con ${nombreCompleto}?`,
+      [
+        {
+          text: textoBotonEstado,
+          onPress: () => anularUsuario(usuario),
+        },
+        {
+          text: "Modificar",
+          onPress: () => modificarUsuario(usuario),
+        },
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+      ],
+    );
   };
   /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -232,31 +267,7 @@ const Usuario = ({ navigation, route }: UsuarioScreenProps) => {
                   posicionesUsuariosRef.current[String(usuario.IdUsuario)] = event.nativeEvent.layout.y;
                 }
               }}
-              onPress={() =>
-                Alert.alert(
-                  "Opciones para Usuarios",
-                  `¿Qué deseas hacer con ${nombreCompleto}?`,
-                  [
-                    {
-                      // Este botón cambia dinámicamente según el estado actual
-                      text: textoBotonEstado,
-                      onPress: () => anularUsuario(usuario), // Se envía el usuario completo para evaluar .Estado
-                    },
-                    {
-                      text: "Modificar",
-                      onPress: () =>
-                        navigation.navigate("ModificarUsuario", {
-                          usuario: usuario,
-                          onRefresh: obtenerUsuarios,
-                        }),
-                    },
-                    {
-                      text: "Cancelar",
-                      style: "cancel",
-                    },
-                  ]
-                )
-              }
+              onPress={() => abrirOpcionesUsuario(usuario, nombreCompleto, textoBotonEstado)}
             >
               {estaSeleccionado ? (
                 <View style={styles.selectedBadge}>
@@ -289,6 +300,16 @@ const Usuario = ({ navigation, route }: UsuarioScreenProps) => {
           );
         })}
       </ScrollView>
+
+      <ActionOptionsModal
+        visible={!!opcionesUsuario}
+        title="Opciones para Usuarios"
+        message={`¿Qué deseas hacer con ${opcionesUsuario?.nombreCompleto || ""}?`}
+        statusLabel={opcionesUsuario?.textoBotonEstado || "Anular"}
+        onStatusPress={() => opcionesUsuario?.usuario && anularUsuario(opcionesUsuario.usuario)}
+        onModifyPress={() => opcionesUsuario?.usuario && modificarUsuario(opcionesUsuario.usuario)}
+        onClose={() => setOpcionesUsuario(null)}
+      />
 
       {/* Botón inferior para navegar al formulario de registro. */}
       {!esWeb ? <View style={styles.grid}>
