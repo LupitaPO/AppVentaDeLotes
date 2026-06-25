@@ -122,14 +122,33 @@ const resolverOpcionFiltro = (criterio: string, opciones: string[]) => {
 
 const limpiarFecha = (value: string) => {
 	const digitos = value.replace(/[^0-9]/g, "").slice(0, 8);
-	if (digitos.length <= 4) return digitos;
-	if (digitos.length <= 6) return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
-	return `${digitos.slice(0, 4)}-${digitos.slice(4, 6)}-${digitos.slice(6)}`;
+	if (digitos.length <= 2) return digitos;
+	if (digitos.length <= 4) return `${digitos.slice(0, 2)}-${digitos.slice(2)}`;
+	return `${digitos.slice(0, 2)}-${digitos.slice(2, 4)}-${digitos.slice(4)}`;
 };
 
-const esFechaIsoValida = (value: string) => {
+const convertirFechaFiltroAIso = (value: string) => {
+	const texto = value.trim();
+	if (!texto) return "";
+	const fechaLatina = texto.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+	if (fechaLatina) {
+		const [, dia, mes, anio] = fechaLatina;
+		return `${anio}-${mes}-${dia}`;
+	}
+	const isoDirecto = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	return isoDirecto ? isoDirecto[0] : texto;
+};
+
+const convertirFechaIsoAInput = (value: string) => {
+	const iso = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+	if (!iso) return limpiarFecha(value);
+	const [, anio, mes, dia] = iso;
+	return `${dia}-${mes}-${anio}`;
+};
+
+const esFechaFiltroValida = (value: string) => {
 	if (!value.trim()) return true;
-	const partes = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	const partes = convertirFechaFiltroAIso(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
 	if (!partes) return false;
 	const [, anio, mes, dia] = partes;
 	const fecha = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
@@ -316,7 +335,7 @@ const formatoFechaIso = (value: unknown) => {
 	const isoDirecto = texto.match(/^(\d{4}-\d{2}-\d{2})/);
 	if (isoDirecto) return isoDirecto[1];
 
-	const fechaLatina = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+	const fechaLatina = texto.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
 	if (fechaLatina) return `${fechaLatina[3]}-${fechaLatina[2]}-${fechaLatina[1]}`;
 
 	const fecha = new Date(texto);
@@ -456,11 +475,13 @@ const construirQueryCobranzas = (
 	idCliente: string,
 ) => {
 	const params = new URLSearchParams();
+	const fechaDesdeIso = convertirFechaFiltroAIso(fechaDesde);
+	const fechaHastaIso = convertirFechaFiltroAIso(fechaHasta);
 	if (estadoVenta.trim()) params.append("estadoVenta", estadoVenta.trim());
 	if (tipoVenta.trim()) params.append("tipoVenta", tipoVenta.trim());
 	if (tipoPago.trim()) params.append("tipoPago", tipoPago.trim());
-	if (fechaDesde.trim()) params.append("fechaDesde", fechaDesde.trim());
-        if (fechaHasta.trim()) params.append("fechaHasta", fechaHasta.trim());
+	if (fechaDesdeIso) params.append("fechaDesde", fechaDesdeIso);
+        if (fechaHastaIso) params.append("fechaHasta", fechaHastaIso);
         if (idCliente.trim()) params.append("idCliente", idCliente.trim());
 
         return params.toString();
@@ -696,7 +717,7 @@ const fechaATiempo = (value: string) => {
         const texto = value.trim();
         if (!texto) return null;
 
-        const fechaLatina = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        const fechaLatina = texto.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
         if (fechaLatina) {
                 const [, dia, mes, anio] = fechaLatina;
                 const fecha = new Date(Number(anio), Number(mes) - 1, Number(dia));
@@ -1001,8 +1022,8 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 			setEstadoVenta(ultimaVenta.EstadoVenta);
 			setTipoVenta(ultimaVenta.TipoVenta);
 			setTipoPago(ultimaVenta.TipoPago);
-			setFechaDesde(fechaVenta);
-			setFechaHasta(fechaVenta);
+			setFechaDesde(convertirFechaIsoAInput(fechaVenta));
+			setFechaHasta(convertirFechaIsoAInput(fechaVenta));
 
 			// El listado conserva todas las compras del cliente; los campos describen la ultima venta.
 			setReporte(cobranzasCliente);
@@ -1157,12 +1178,12 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 		}
 		filtrosDniAutomaticosRef.current = false;
 
-		if (!esFechaIsoValida(fechaDesde)) {
-			setMensaje("La fecha inicial debe tener el formato AAAA-MM-DD y ser valida.");
+		if (!esFechaFiltroValida(fechaDesde)) {
+			setMensaje("La fecha inicial debe tener el formato DD-MM-AAAA y ser valida.");
 			return;
 		}
-		if (!esFechaIsoValida(fechaHasta)) {
-			setMensaje("La fecha final debe tener el formato AAAA-MM-DD y ser valida.");
+		if (!esFechaFiltroValida(fechaHasta)) {
+			setMensaje("La fecha final debe tener el formato DD-MM-AAAA y ser valida.");
 			return;
 		}
 		if (fechaDesde && fechaHasta && (fechaATiempo(fechaDesde) ?? 0) > (fechaATiempo(fechaHasta) ?? 0)) {
@@ -1420,8 +1441,8 @@ const ReporteCobranzas = ({ navigation }: ReporteCobranzasProps) => {
 					/>
 
 				<View style={styles.dateRow}>
-					<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Fecha desde</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-start" size={16} color="#8aa0b5" /><TextInput value={fechaDesde} onChangeText={(texto) => { filtrosDniAutomaticosRef.current = false; setFechaDesde(limpiarFecha(texto)); }} onFocus={cerrarSelectores} placeholder="AAAA-MM-DD" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
-					<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Fecha hasta</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-end" size={16} color="#8aa0b5" /><TextInput value={fechaHasta} onChangeText={(texto) => { filtrosDniAutomaticosRef.current = false; setFechaHasta(limpiarFecha(texto)); }} onFocus={cerrarSelectores} placeholder="AAAA-MM-DD" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
+					<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Filtrar desde</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-start" size={16} color="#8aa0b5" /><TextInput value={fechaDesde} onChangeText={(texto) => { filtrosDniAutomaticosRef.current = false; setFechaDesde(limpiarFecha(texto)); }} onFocus={cerrarSelectores} placeholder="DD-MM-AAAA" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
+					<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Filtrar hasta</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-end" size={16} color="#8aa0b5" /><TextInput value={fechaHasta} onChangeText={(texto) => { filtrosDniAutomaticosRef.current = false; setFechaHasta(limpiarFecha(texto)); }} onFocus={cerrarSelectores} placeholder="DD-MM-AAAA" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
 				</View>
 
 				<View style={styles.actionRow}>

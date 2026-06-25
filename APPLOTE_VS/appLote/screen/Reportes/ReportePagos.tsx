@@ -84,14 +84,33 @@ const resolverOpcionFiltro = (criterio: string, opciones: string[]) => {
 
 const limpiarFecha = (value: string) => {
 	const digitos = value.replace(/[^0-9]/g, "").slice(0, 8);
-	if (digitos.length <= 4) return digitos;
-	if (digitos.length <= 6) return `${digitos.slice(0, 4)}-${digitos.slice(4)}`;
-	return `${digitos.slice(0, 4)}-${digitos.slice(4, 6)}-${digitos.slice(6)}`;
+	if (digitos.length <= 2) return digitos;
+	if (digitos.length <= 4) return `${digitos.slice(0, 2)}-${digitos.slice(2)}`;
+	return `${digitos.slice(0, 2)}-${digitos.slice(2, 4)}-${digitos.slice(4)}`;
 };
 
-const esFechaIsoValida = (value: string) => {
+const convertirFechaFiltroAIso = (value: string) => {
+	const texto = value.trim();
+	if (!texto) return "";
+	const fechaLatina = texto.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+	if (fechaLatina) {
+		const [, dia, mes, anio] = fechaLatina;
+		return `${anio}-${mes}-${dia}`;
+	}
+	const isoDirecto = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	return isoDirecto ? isoDirecto[0] : texto;
+};
+
+const convertirFechaIsoAInput = (value: string) => {
+	const iso = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+	if (!iso) return limpiarFecha(value);
+	const [, anio, mes, dia] = iso;
+	return `${dia}-${mes}-${anio}`;
+};
+
+const esFechaFiltroValida = (value: string) => {
 	if (!value.trim()) return true;
-	const partes = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	const partes = convertirFechaFiltroAIso(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
 	if (!partes) return false;
 	const [, anio, mes, dia] = partes;
 	const fecha = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia)));
@@ -152,17 +171,19 @@ const consultarPrimerEndpointDisponible = async (endpoints: EndpointPagos[], sig
 
 const construirQueryPagos = (estadoPago: string, idVenta: string, fechaDesde: string, fechaHasta: string) => {
 	const params = new URLSearchParams();
+	const fechaDesdeIso = convertirFechaFiltroAIso(fechaDesde);
+	const fechaHastaIso = convertirFechaFiltroAIso(fechaHasta);
 	if (estadoPago.trim()) params.append("estadoPago", estadoPago.trim());
 	if (idVenta.trim()) params.append("idVenta", idVenta.trim());
-	if (fechaDesde.trim()) params.append("fechaDesde", fechaDesde.trim());
-	if (fechaHasta.trim()) params.append("fechaHasta", fechaHasta.trim());
+	if (fechaDesdeIso) params.append("fechaDesde", fechaDesdeIso);
+	if (fechaHastaIso) params.append("fechaHasta", fechaHastaIso);
 	return params.toString();
 };
 
 const construirUrlsPagos = (estadoPago: string, idVenta: string, fechaDesde: string, fechaHasta: string): EndpointPagos[] => {
 	const query = construirQueryPagos(estadoPago, idVenta, fechaDesde, fechaHasta);
-	const fechaDesdeRespaldo = fechaDesde.trim() || "1900-01-01";
-	const fechaHastaRespaldo = fechaHasta.trim() || new Date().toISOString().slice(0, 10);
+	const fechaDesdeRespaldo = convertirFechaFiltroAIso(fechaDesde) || "1900-01-01";
+	const fechaHastaRespaldo = convertirFechaFiltroAIso(fechaHasta) || new Date().toISOString().slice(0, 10);
 	return [
 		...(idVenta.trim()
 			? [
@@ -243,6 +264,8 @@ const formatoFechaIso = (value: unknown) => {
 	const texto = textoLimpio(value, "");
 	const directa = texto.match(/^(\d{4}-\d{2}-\d{2})/);
 	if (directa) return directa[1];
+	const fechaLatina = texto.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+	if (fechaLatina) return `${fechaLatina[3]}-${fechaLatina[2]}-${fechaLatina[1]}`;
 	const fecha = new Date(texto);
 	return Number.isNaN(fecha.getTime()) ? "" : fecha.toISOString().slice(0, 10);
 };
@@ -338,9 +361,11 @@ const contieneTexto = (value: string, filtro: string) =>
 const estaEnRangoFecha = (fechaTexto: string, fechaDesde: string, fechaHasta: string) => {
 	if (!fechaDesde.trim() && !fechaHasta.trim()) return true;
 	const fecha = new Date(fechaTexto.split("/").reverse().join("-"));
+	const desde = convertirFechaFiltroAIso(fechaDesde);
+	const hasta = convertirFechaFiltroAIso(fechaHasta);
 	if (Number.isNaN(fecha.getTime())) return true;
-	if (fechaDesde.trim() && fecha < new Date(fechaDesde.trim())) return false;
-	if (fechaHasta.trim() && fecha > new Date(fechaHasta.trim())) return false;
+	if (desde && fecha < new Date(desde)) return false;
+	if (hasta && fecha > new Date(hasta)) return false;
 	return true;
 };
 
@@ -636,15 +661,15 @@ const ReportePagos = ({ navigation }: ReportePagosProps) => {
 		const filtroVenta = filtros?.idVenta ?? idVenta;
 		const filtroDesde = filtros?.fechaDesde ?? fechaDesde;
 		const filtroHasta = filtros?.fechaHasta ?? fechaHasta;
-		if (!esFechaIsoValida(filtroDesde)) {
-			setMensaje("La fecha inicial debe tener el formato AAAA-MM-DD y ser valida.");
+		if (!esFechaFiltroValida(filtroDesde)) {
+			setMensaje("La fecha inicial debe tener el formato DD-MM-AAAA y ser valida.");
 			return;
 		}
-		if (!esFechaIsoValida(filtroHasta)) {
-			setMensaje("La fecha final debe tener el formato AAAA-MM-DD y ser valida.");
+		if (!esFechaFiltroValida(filtroHasta)) {
+			setMensaje("La fecha final debe tener el formato DD-MM-AAAA y ser valida.");
 			return;
 		}
-		if (filtroDesde && filtroHasta && new Date(filtroDesde).getTime() > new Date(filtroHasta).getTime()) {
+		if (filtroDesde && filtroHasta && new Date(convertirFechaFiltroAIso(filtroDesde)).getTime() > new Date(convertirFechaFiltroAIso(filtroHasta)).getTime()) {
 			setMensaje("La fecha inicial no puede ser posterior a la fecha final.");
 			return;
 		}
@@ -772,8 +797,8 @@ const ReportePagos = ({ navigation }: ReportePagosProps) => {
 			const ultimoPago = pagosCliente[0];
 			setEstadoPago(ultimoPago.EstadoPago);
 			setIdVenta(ultimoPago.IdVenta);
-			setFechaDesde(ultimoPago.FechaPagoIso);
-			setFechaHasta(ultimoPago.FechaPagoIso);
+			setFechaDesde(convertirFechaIsoAInput(ultimoPago.FechaPagoIso));
+			setFechaHasta(convertirFechaIsoAInput(ultimoPago.FechaPagoIso));
 			setReporte(pagosCliente);
 			setBuscado(true);
 			setUltimoFiltro(`Cliente: ${cliente.DNI || "Sin DNI"} | ${pagosCliente.length} pago${pagosCliente.length === 1 ? "" : "s"} | Ultimo: ${ultimoPago.FechaPago}`);
@@ -1018,8 +1043,8 @@ const ReportePagos = ({ navigation }: ReportePagosProps) => {
 					{ventaSeleccionada ? <View style={styles.ventaSelectedCard}><View style={styles.ventaSelectedIcon}><MaterialCommunityIcons name="file-check-outline" size={18} color="#ffffff" /></View><View style={styles.ventaSelectedCopy}><Text style={styles.ventaSelectedLabel}>VENTA SELECCIONADA</Text><Text selectable style={styles.ventaSelectedName}>Venta #{ventaSeleccionada.IdVenta} · Lote {ventaSeleccionada.Lote}</Text><Text selectable style={styles.ventaSelectedMeta}>{ventaSeleccionada.Cliente} · {ventaSeleccionada.Proyecto}</Text></View><MaterialCommunityIcons name="check-decagram" size={20} color="#10b981" /></View> : null}
 
 					<View style={styles.dateRow}>
-						<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Fecha desde</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-start" size={16} color="#8aa0b5" /><TextInput value={fechaDesde} onChangeText={(texto) => { filtrosClienteAutomaticosRef.current = false; setFechaDesde(limpiarFecha(texto)); }} onFocus={() => { setMostrarEstadosPago(false); setMostrarVentas(false); setMostrarClientes(false); }} placeholder="AAAA-MM-DD" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
-						<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Fecha hasta</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-end" size={16} color="#8aa0b5" /><TextInput value={fechaHasta} onChangeText={(texto) => { filtrosClienteAutomaticosRef.current = false; setFechaHasta(limpiarFecha(texto)); }} onFocus={() => { setMostrarEstadosPago(false); setMostrarVentas(false); setMostrarClientes(false); }} placeholder="AAAA-MM-DD" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="search" onSubmitEditing={buscarPagosManualmente} /></View></View>
+						<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Filtrar desde</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-start" size={16} color="#8aa0b5" /><TextInput value={fechaDesde} onChangeText={(texto) => { filtrosClienteAutomaticosRef.current = false; setFechaDesde(limpiarFecha(texto)); }} onFocus={() => { setMostrarEstadosPago(false); setMostrarVentas(false); setMostrarClientes(false); }} placeholder="DD-MM-AAAA" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="next" /></View></View>
+						<View style={styles.dateColumn}><Text style={styles.fieldLabel}>Filtrar hasta</Text><View style={[styles.inputShell, styles.filterInputShell]}><MaterialCommunityIcons name="calendar-end" size={16} color="#8aa0b5" /><TextInput value={fechaHasta} onChangeText={(texto) => { filtrosClienteAutomaticosRef.current = false; setFechaHasta(limpiarFecha(texto)); }} onFocus={() => { setMostrarEstadosPago(false); setMostrarVentas(false); setMostrarClientes(false); }} placeholder="DD-MM-AAAA" placeholderTextColor="#9aa9ba" style={styles.input} keyboardType="number-pad" returnKeyType="search" onSubmitEditing={buscarPagosManualmente} /></View></View>
 					</View>
 
 					<View style={styles.actionRow}>

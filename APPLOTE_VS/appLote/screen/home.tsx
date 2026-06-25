@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ScrollView,
   TouchableOpacity,
+  Modal,
   useWindowDimensions,
   Dimensions,
   Platform,
@@ -42,6 +43,38 @@ import { Languages } from "../localizacion";
 import { API_URL } from "../config/apiUrl";
 
 // ATAMAINE: API_URL viene de config/apiUrl para que web use proxy CORS y movil use API real.
+
+const TODO_FILTRO = "__TODOS__";
+
+const textoFiltro = (valor: any) => String(valor ?? "").trim();
+const textoComparacion = (valor: any) => textoFiltro(valor).toLowerCase();
+
+const obtenerIdProyecto = (item: any) =>
+  textoFiltro(item?.IdProyecto ?? item?.idProyecto ?? item?.IDProyecto ?? item?.ProyectoId);
+
+const obtenerNombreProyecto = (item: any) =>
+  textoFiltro(item?.Nombre ?? item?.NombreProyecto ?? item?.nombreProyecto ?? item?.Proyecto ?? item?.nombre) ||
+  "Proyecto sin nombre";
+
+const obtenerManzanaLote = (item: any) =>
+  textoFiltro(item?.Manzana ?? item?.manzana ?? item?.Mz ?? item?.Mza).toUpperCase();
+
+const esLoteVendido = (item: any) => {
+  const estado = textoComparacion(item?.EstadoLote ?? item?.estadoLote ?? item?.Estado ?? item?.estado);
+  return estado.includes("vendido") || estado.includes("ocupado");
+};
+
+const consultarJsonSeguro = async (url: string) => {
+  try {
+    const response = await fetch(url);
+    const texto = await response.text();
+    if (!texto || !texto.trim()) return [];
+    return JSON.parse(texto);
+  } catch (error) {
+    console.error("Error cargando datos del dashboard:", error);
+    return [];
+  }
+};
 
 
 const Home = ({ route, navigation }: any) => {
@@ -79,6 +112,11 @@ const Home = ({ route, navigation }: any) => {
 
   // Objeto con los datos resumidos que devuelve el dashboard desde la API.
   const [datos, setDatos] = useState<any>(null);
+  const [proyectosFiltro, setProyectosFiltro] = useState<any[]>([]);
+  const [lotesFiltro, setLotesFiltro] = useState<any[]>([]);
+  const [proyectoFiltro, setProyectoFiltro] = useState(TODO_FILTRO);
+  const [manzanaFiltro, setManzanaFiltro] = useState(TODO_FILTRO);
+  const [modalFiltro, setModalFiltro] = useState<"proyecto" | "manzana" | null>(null);
 
   // Controla el spinner inicial mientras se carga la información.
   const [loading, setLoading] = useState(true);
@@ -88,28 +126,33 @@ const Home = ({ route, navigation }: any) => {
 
   // --- 2. LÓGICA DE COMUNICACIÓN CON EL PA ---
   // Consulta el resumen general del dashboard y guarda la primera fila devuelta por la API.
-  const cargarDashboard = async () => {
+  const cargarDashboard = React.useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/Dashboard/dashboard_ResumenGeneral`,
-      );
-      const data = await response.json();
+      const [data, proyectosData, lotesData] = await Promise.all([
+        consultarJsonSeguro(`${API_URL}/Dashboard/dashboard_ResumenGeneral`),
+        consultarJsonSeguro(`${API_URL}/Proyecto/proyecto_Listar`),
+        consultarJsonSeguro(`${API_URL}/Lote/lote_Listar`),
+      ]);
 
       if (data && data.length > 0) {
         setDatos(data[0]); // Guardamos la primera fila del PA
       }
+      setProyectosFiltro(Array.isArray(proyectosData) ? proyectosData : []);
+      setLotesFiltro(Array.isArray(lotesData) ? lotesData : []);
     } catch (error) {
       console.error("Error:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   // Recarga el dashboard cada vez que esta pantalla vuelve a tener foco.
-  useFocusEffect(() => {
-    cargarDashboard();
-  });
+  useFocusEffect(
+    React.useCallback(() => {
+      cargarDashboard();
+    }, [cargarDashboard])
+  );
 
   // ATAMAINE: Formatea importes del dashboard sin tocar la consulta real de tu API.
   const formatearMoneda = (valor: any) => `S/ ${Number(valor || 0).toFixed(2)}`;
@@ -138,8 +181,36 @@ const Home = ({ route, navigation }: any) => {
     );
 
   // ATAMAINE: Porcentajes calculados en pantalla con los valores en tiempo real del dashboard.
-  const totalLotes = Number(datos?.TotalLotes || 0);
-  const vendidos = Number(datos?.TotalVendidos || 0);
+  const proyectosOrdenados = [...proyectosFiltro].sort((a, b) =>
+    obtenerNombreProyecto(a).localeCompare(obtenerNombreProyecto(b), "es", { numeric: true })
+  );
+  const lotesDelProyecto =
+    proyectoFiltro === TODO_FILTRO
+      ? lotesFiltro
+      : lotesFiltro.filter((lote) => {
+          const idLoteProyecto = obtenerIdProyecto(lote);
+          const nombreLoteProyecto = textoComparacion(
+            lote?.NombreProyecto ?? lote?.nombreProyecto ?? lote?.Proyecto ?? lote?.proyecto
+          );
+          return idLoteProyecto === proyectoFiltro || nombreLoteProyecto === textoComparacion(proyectoFiltro);
+        });
+  const manzanasDisponibles = Array.from(
+    new Set(lotesDelProyecto.map(obtenerManzanaLote).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+  const lotesFiltrados =
+    manzanaFiltro === TODO_FILTRO
+      ? lotesDelProyecto
+      : lotesDelProyecto.filter((lote) => obtenerManzanaLote(lote) === manzanaFiltro);
+  const filtrosActivos = proyectoFiltro !== TODO_FILTRO || manzanaFiltro !== TODO_FILTRO;
+  const proyectoActual = proyectosOrdenados.find(
+    (proyecto) => (obtenerIdProyecto(proyecto) || obtenerNombreProyecto(proyecto)) === proyectoFiltro
+  );
+  const proyectoFiltroTexto =
+    proyectoFiltro === TODO_FILTRO ? "Todos los proyectos" : obtenerNombreProyecto(proyectoActual);
+  const manzanaFiltroTexto =
+    manzanaFiltro === TODO_FILTRO ? "Todas las manzanas" : `Manzana ${manzanaFiltro}`;
+  const totalLotes = filtrosActivos ? lotesFiltrados.length : Number(datos?.TotalLotes || 0);
+  const vendidos = filtrosActivos ? lotesFiltrados.filter(esLoteVendido).length : Number(datos?.TotalVendidos || 0);
   const libres = Math.max(totalLotes - vendidos, 0);
   const porcentajeVendidoNumero = totalLotes > 0 ? vendidos / totalLotes : 0;
   const porcentajeVendidos = totalLotes > 0 ? ((vendidos / totalLotes) * 100).toFixed(1) : "0.0";
@@ -263,7 +334,39 @@ const Home = ({ route, navigation }: any) => {
             {/* ATAMAINE: Seccion visual de ocupacion conectada a los datos reales del dashboard. */}
             <View style={styles.chartBox}>
               <View style={styles.chartHeaderRow}>
-                <View>
+                <View style={[styles.dashboardFilters, !esPantallaPc && styles.dashboardFiltersMobile]}>
+                  <TouchableOpacity
+                    style={[styles.filterSelect, esPantallaPc && styles.filterSelectDesktop, !esPantallaPc && styles.filterSelectMobile]}
+                    onPress={() => setModalFiltro("proyecto")}
+                    activeOpacity={0.84}
+                  >
+                    <View style={styles.filterIconBox}>
+                      <MaterialCommunityIcons name="map-search-outline" size={18} color="#08786f" />
+                    </View>
+                    <View style={styles.filterTextBox}>
+                      <Text style={styles.filterLabel}>Proyecto</Text>
+                      <Text style={styles.filterValue} numberOfLines={1}>{proyectoFiltroTexto}</Text>
+                    </View>
+                    <MaterialIcons name="keyboard-arrow-down" size={24} color="#08786f" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.filterSelect, esPantallaPc && styles.filterSelectDesktop, !esPantallaPc && styles.filterSelectMobile]}
+                    onPress={() => setModalFiltro("manzana")}
+                    activeOpacity={0.84}
+                  >
+                    <View style={styles.filterIconBox}>
+                      <MaterialCommunityIcons name="view-grid-outline" size={18} color="#08786f" />
+                    </View>
+                    <View style={styles.filterTextBox}>
+                      <Text style={styles.filterLabel}>Manzana</Text>
+                      <Text style={styles.filterValue} numberOfLines={1}>{manzanaFiltroTexto}</Text>
+                    </View>
+                    <MaterialIcons name="keyboard-arrow-down" size={24} color="#08786f" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.chartTitleBlock}>
                   <Text style={styles.chartTitle}>{i18n.t("Dmsj3")}</Text>
                   <View style={styles.chartTitleLine}>
                     <View style={styles.chartTitleLineMain} />
@@ -390,7 +493,7 @@ const Home = ({ route, navigation }: any) => {
 
               <DashCard
                 titulo={i18n.t("card3")}
-                valor={`${datos?.TotalVendidos} / ${datos?.TotalLotes}`}
+                valor={`${vendidos} / ${totalLotes}`}
                 detalle={`${porcentajeVendidos}% ocupados`}
                 icono="home-city"
                 color="#0a84ff"
@@ -434,6 +537,132 @@ const Home = ({ route, navigation }: any) => {
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={modalFiltro !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalFiltro(null)}
+      >
+        <View style={styles.filterModalBackdrop}>
+          <View style={styles.filterModalCard}>
+            <View style={styles.filterModalHeader}>
+              <Text style={styles.filterModalTitle}>
+                {modalFiltro === "proyecto" ? "Filtrar por proyecto" : "Filtrar por manzana"}
+              </Text>
+              <TouchableOpacity style={styles.filterModalClose} onPress={() => setModalFiltro(null)}>
+                <MaterialIcons name="close" size={22} color="#08786f" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.filterModalList} showsVerticalScrollIndicator>
+              {modalFiltro === "proyecto" ? (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterModalOption,
+                      proyectoFiltro === TODO_FILTRO && styles.filterModalOptionActive,
+                    ]}
+                    onPress={() => {
+                      setProyectoFiltro(TODO_FILTRO);
+                      setManzanaFiltro(TODO_FILTRO);
+                      setModalFiltro(null);
+                    }}
+                    activeOpacity={0.82}
+                  >
+                    <Text style={styles.filterModalOptionText}>Todos los proyectos</Text>
+                    {proyectoFiltro === TODO_FILTRO && (
+                      <MaterialCommunityIcons name="check-circle" size={18} color="#08786f" />
+                    )}
+                  </TouchableOpacity>
+
+                  {proyectosOrdenados.map((proyecto, index) => {
+                    const valor = obtenerIdProyecto(proyecto) || obtenerNombreProyecto(proyecto);
+                    const seleccionado = proyectoFiltro === valor;
+                    return (
+                      <TouchableOpacity
+                        key={`${valor}-${index}`}
+                        style={[
+                          styles.filterModalOption,
+                          seleccionado && styles.filterModalOptionActive,
+                        ]}
+                        onPress={() => {
+                          setProyectoFiltro(valor);
+                          setManzanaFiltro(TODO_FILTRO);
+                          setModalFiltro(null);
+                        }}
+                        activeOpacity={0.82}
+                      >
+                        <View style={styles.filterModalOptionCopy}>
+                          <Text style={styles.filterModalOptionText} numberOfLines={1}>
+                            {obtenerNombreProyecto(proyecto)}
+                          </Text>
+                          <Text style={styles.filterModalOptionMeta} numberOfLines={1}>
+                            ID: {obtenerIdProyecto(proyecto) || "-"}
+                          </Text>
+                        </View>
+                        {seleccionado && (
+                          <MaterialCommunityIcons name="check-circle" size={18} color="#08786f" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+
+                  {proyectosOrdenados.length === 0 && (
+                    <Text style={styles.filterEmptyText}>No hay proyectos cargados.</Text>
+                  )}
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterModalOption,
+                      manzanaFiltro === TODO_FILTRO && styles.filterModalOptionActive,
+                    ]}
+                    onPress={() => {
+                      setManzanaFiltro(TODO_FILTRO);
+                      setModalFiltro(null);
+                    }}
+                    activeOpacity={0.82}
+                  >
+                    <Text style={styles.filterModalOptionText}>Todas las manzanas</Text>
+                    {manzanaFiltro === TODO_FILTRO && (
+                      <MaterialCommunityIcons name="check-circle" size={18} color="#08786f" />
+                    )}
+                  </TouchableOpacity>
+
+                  {manzanasDisponibles.map((manzana) => {
+                    const seleccionado = manzanaFiltro === manzana;
+                    return (
+                      <TouchableOpacity
+                        key={manzana}
+                        style={[
+                          styles.filterModalOption,
+                          seleccionado && styles.filterModalOptionActive,
+                        ]}
+                        onPress={() => {
+                          setManzanaFiltro(manzana);
+                          setModalFiltro(null);
+                        }}
+                        activeOpacity={0.82}
+                      >
+                        <Text style={styles.filterModalOptionText}>Manzana {manzana}</Text>
+                        {seleccionado && (
+                          <MaterialCommunityIcons name="check-circle" size={18} color="#08786f" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+
+                  {manzanasDisponibles.length === 0 && (
+                    <Text style={styles.filterEmptyText}>No hay manzanas para este proyecto.</Text>
+                  )}
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -874,9 +1103,87 @@ const styles = StyleSheet.create({
   // ATAMAINE: Cabecera de grafica con botones visuales.
   chartHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    flexWrap: "wrap",
+    width: "100%",
+    gap: 12,
     marginBottom: 8,
+  },
+
+  chartTitleBlock: {
+    flex: 1,
+    minWidth: 180,
+    alignItems: "center",
+    paddingTop: 4,
+  },
+
+  dashboardFilters: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 8,
+    maxWidth: 430,
+  },
+
+  dashboardFiltersMobile: {
+    width: "100%",
+    maxWidth: "100%",
+  },
+
+  filterSelect: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: "#f8fffd",
+    borderWidth: 1,
+    borderColor: "#cdeee8",
+    shadowColor: "#08786f",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    elevation: 3,
+  },
+
+  filterSelectDesktop: {
+    width: 202,
+  },
+
+  filterSelectMobile: {
+    width: "100%",
+  },
+
+  filterIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ddfbf5",
+  },
+
+  filterTextBox: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  filterLabel: {
+    fontSize: 10,
+    fontWeight: "900",
+    color: "#08786f",
+    textTransform: "uppercase",
+    letterSpacing: 0,
+  },
+
+  filterValue: {
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#111827",
   },
 
   // ATAMAINE: Titulo descriptivo de ocupacion.
@@ -934,11 +1241,114 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 
+  filterModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.38)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 18,
+  },
+
+  filterModalCard: {
+    width: "100%",
+    maxWidth: 430,
+    maxHeight: "78%",
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#d9f4ef",
+    shadowColor: "#064e4a",
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 18 },
+    shadowRadius: 26,
+    elevation: 12,
+  },
+
+  filterModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 12,
+  },
+
+  filterModalTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#111827",
+  },
+
+  filterModalClose: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e6fffb",
+    borderWidth: 1,
+    borderColor: "#b9eee4",
+  },
+
+  filterModalList: {
+    width: "100%",
+    maxHeight: 390,
+  },
+
+  filterModalOption: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: "#fbfffe",
+    borderWidth: 1,
+    borderColor: "#e1ecea",
+    marginBottom: 8,
+  },
+
+  filterModalOptionActive: {
+    backgroundColor: "#e6fffb",
+    borderColor: "#35caba",
+  },
+
+  filterModalOptionCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  filterModalOptionText: {
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#111827",
+  },
+
+  filterModalOptionMeta: {
+    marginTop: 3,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#64748b",
+  },
+
+  filterEmptyText: {
+    paddingVertical: 18,
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#64748b",
+  },
+
   // ATAMAINE: Layout responsive del grafico y leyenda.
   chartContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    width: "100%",
     gap: 10,
   },
 
