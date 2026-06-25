@@ -213,9 +213,12 @@ const Home = ({ route, navigation }: any) => {
 
       {/* Contenedor desplazable del dashboard con soporte para refresco manual. */}
       <ScrollView
-        style={{ flexGrow: 1 }}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        style={styles.scrollArea}
+        contentContainerStyle={[
+          styles.scrollContent,
+          Platform.OS === "web" && styles.scrollContentWeb,
+        ]}
+        showsVerticalScrollIndicator={Platform.OS === "web"}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={cargarDashboard} />
         }
@@ -524,9 +527,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#ef4444", // Rojo plano moderno y estilizado
   },
   // ATAMAINE: Scroll real para movil y web, dejando respirar la barra inferior existente.
+  scrollArea: {
+    flex: 1,
+    backgroundColor: "#f4fbfa",
+  },
   scrollContent: {
     flexGrow: 1,
     backgroundColor: "#f4fbfa",
+    paddingBottom: 110,
+  },
+  scrollContentWeb: {
+    minHeight: "100%",
+    paddingBottom: 140,
   },
 
   // ATAMAINE: Menu superior flotante con forma circular premium.
@@ -679,16 +691,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#f4fbfa",
     paddingTop: 16,
     paddingHorizontal: 15,
-    paddingBottom: 50,
+    paddingBottom: 32,
   },
 
   // ATAMAINE: En laptop se mantiene como dashboard movil premium sin estirarse demasiado.
 
   containerDesktop: {
-    maxWidth: "100%",
+    maxWidth: 1180,
     alignSelf: "center",
     width: "100%",
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
   },
 
 

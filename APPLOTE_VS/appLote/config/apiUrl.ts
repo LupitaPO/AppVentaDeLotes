@@ -9,9 +9,20 @@ const normalizarUrl = (value?: string) => {
 	return limpia && limpia.length > 0 ? limpia : undefined;
 };
 
+const obtenerOrigenWeb = () => {
+	if (typeof window === "undefined" || !window.location?.origin) return undefined;
+
+	const { hostname, port, origin } = window.location;
+	const esExpoDev =
+		(hostname === "localhost" || hostname === "127.0.0.1") &&
+		(port === "8081" || port === "19006");
+
+	return esExpoDev ? undefined : normalizarUrl(origin);
+};
+
 export const API_REAL_URL = normalizarUrl(envApiUrl) ?? "http://www.tulote.somee.com";
 export const API_WEB_PROXY_URL = normalizarUrl(envWebApiUrl) ?? "http://localhost:3001";
 
-// La API publicada ya permite CORS. Usar una única URL evita que la web dependa
-// de localhost:3001 y conserva exactamente el mismo backend usado por móvil.
-export const API_URL = API_REAL_URL;
+// En web publicada usamos el mismo host que sirve la app; en Expo dev se usa
+// la API configurada para conservar el flujo móvil/remoto.
+export const API_URL = obtenerOrigenWeb() ?? API_REAL_URL;

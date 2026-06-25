@@ -18,6 +18,74 @@ namespace APILote.Controllers
             _env = env;
         }
 
+        private IEnumerable<string> ObtenerCarpetasPlanos()
+        {
+            var carpetas = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(_env.WebRootPath))
+            {
+                carpetas.Add(Path.Combine(_env.WebRootPath, "uploads", "planos"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(_env.ContentRootPath))
+            {
+                carpetas.Add(Path.Combine(_env.ContentRootPath, "uploads", "planos"));
+            }
+
+            var baseDir = AppContext.BaseDirectory;
+            carpetas.Add(Path.Combine(baseDir, "wwwroot", "uploads", "planos"));
+            carpetas.Add(Path.Combine(baseDir, "uploads", "planos"));
+
+            return carpetas.Distinct(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private async Task<string> GuardarPlanoAsync(IFormFile archivoPlano)
+        {
+            string nombreArchivo = Guid.NewGuid().ToString() + ".csv";
+            var carpetas = ObtenerCarpetasPlanos().ToList();
+            var carpetaPrincipal = carpetas.First();
+
+            Directory.CreateDirectory(carpetaPrincipal);
+            string rutaPrincipal = Path.Combine(carpetaPrincipal, nombreArchivo);
+
+            using (var stream = new FileStream(rutaPrincipal, FileMode.Create))
+            {
+                await archivoPlano.CopyToAsync(stream);
+            }
+
+            foreach (var carpeta in carpetas.Skip(1))
+            {
+                Directory.CreateDirectory(carpeta);
+                string rutaCopia = Path.Combine(carpeta, nombreArchivo);
+                if (!string.Equals(rutaPrincipal, rutaCopia, StringComparison.OrdinalIgnoreCase))
+                {
+                    System.IO.File.Copy(rutaPrincipal, rutaCopia, true);
+                }
+            }
+
+            return "/uploads/planos/" + nombreArchivo;
+        }
+
+        private string? BuscarPlano(string nombreArchivo)
+        {
+            var nombreSeguro = Path.GetFileName(nombreArchivo ?? "");
+            if (string.IsNullOrWhiteSpace(nombreSeguro) || !nombreSeguro.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            foreach (var carpeta in ObtenerCarpetasPlanos())
+            {
+                var ruta = Path.Combine(carpeta, nombreSeguro);
+                if (System.IO.File.Exists(ruta))
+                {
+                    return ruta;
+                }
+            }
+
+            return null;
+        }
+
         [HttpPost]
         [Route("proyecto_Actualizar")]
         // Hacemos lo mismo para el método de actualizar
@@ -27,19 +95,7 @@ namespace APILote.Controllers
             {
                 if (objproyecto.ArchivoPlano != null)
                 {
-                    string carpeta = Path.Combine(_env.WebRootPath, "uploads", "planos");
-
-                    if (!Directory.Exists(carpeta)) Directory.CreateDirectory(carpeta);
-
-                    string nombreArchivo = Guid.NewGuid().ToString() + ".csv";
-                    string rutaCompleta = Path.Combine(carpeta, nombreArchivo);
-
-                    using (var stream = new FileStream(rutaCompleta, FileMode.Create))
-                    {
-                        await objproyecto.ArchivoPlano.CopyToAsync(stream);
-                    }
-
-                    objproyecto.ImagenUrl = "/uploads/planos/" + nombreArchivo;
+                    objproyecto.ImagenUrl = await GuardarPlanoAsync(objproyecto.ArchivoPlano);
                 }
 
                 ProyectoData objproyectoData = new ProyectoData();
@@ -85,20 +141,7 @@ namespace APILote.Controllers
             {
                 if (objproyecto.ArchivoPlano != null)
                 {
-                    string carpeta = Path.Combine(_env.WebRootPath, "uploads", "planos");
-
-                    if (!Directory.Exists(carpeta)) Directory.CreateDirectory(carpeta);
-
-                    string nombreArchivo = Guid.NewGuid().ToString() + ".csv";
-                    string rutaCompleta = Path.Combine(carpeta, nombreArchivo);
-
-                    // 2. Usamos "await" y "CopyToAsync" para garantizar que el CSV se reciba COMPLETO
-                    using (var stream = new FileStream(rutaCompleta, FileMode.Create))
-                    {
-                        await objproyecto.ArchivoPlano.CopyToAsync(stream);
-                    }
-
-                    objproyecto.ImagenUrl = "/uploads/planos/" + nombreArchivo;
+                    objproyecto.ImagenUrl = await GuardarPlanoAsync(objproyecto.ArchivoPlano);
                 }
 
                 ProyectoData objproyectodata = new ProyectoData();
@@ -147,6 +190,20 @@ namespace APILote.Controllers
             jsoString = Newtonsoft.Json.JsonConvert.SerializeObject(Datos);
             // Retornamos el JSON para Swagger, navegador o frontend
             return jsoString;
+        }
+
+        [HttpGet]
+        [Route("plano_Obtener/{nombreArchivo}")]
+        public IActionResult plano_Obtener(string nombreArchivo)
+        {
+            var ruta = BuscarPlano(nombreArchivo);
+            if (ruta == null)
+            {
+                return NotFound("No se encontró el archivo del plano.");
+            }
+
+            Response.Headers["Access-Control-Allow-Origin"] = "*";
+            return PhysicalFile(ruta, "text/csv; charset=utf-8", Path.GetFileName(ruta));
         }
     }
 }

@@ -133,6 +133,10 @@ const BottomTabs = ({ route }) => {
 
 const styles = StyleSheet.create({
   tabBarWeb: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
     height: 72,
     paddingTop: 8,
     paddingBottom: 10,
@@ -144,6 +148,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 18,
     elevation: 12,
+    zIndex: 1000,
   },
   tabBarLabelWeb: {
     fontSize: 12,

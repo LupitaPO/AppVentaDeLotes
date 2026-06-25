@@ -7,17 +7,132 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
-  TouchableOpacity
+  TouchableOpacity,
+  Platform
 } from "react-native";
 import Svg, { Rect, G, Text as SvgText } from "react-native-svg";
 import Papa from "papaparse";
 import { useFocusEffect } from "@react-navigation/native";
 import { API_URL } from "../../config/apiUrl";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
+const esWeb = Platform.OS === "web";
 
 const normalizarFiltroLote = (value) => String(value ?? "").trim().toUpperCase();
 const asegurarArray = (value) => (Array.isArray(value) ? value : []);
+const limpiarRespuestaServidor = (texto = "") => {
+  let limpio = String(texto ?? "");
+  ["<!--", "<script"].forEach((marca) => {
+    const indice = limpio.indexOf(marca);
+    if (indice >= 0) limpio = limpio.slice(0, indice);
+  });
+  return limpio.replace(/^\uFEFF/, "").trim();
+};
+const normalizarClaveCSV = (value) =>
+  String(value ?? "")
+    .replace(/^\uFEFF/, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+const obtenerValorCSV = (registro, claves) => {
+  const clavesNormalizadas = claves.map(normalizarClaveCSV);
+  const claveReal = Object.keys(registro ?? {}).find((clave) =>
+    clavesNormalizadas.includes(normalizarClaveCSV(clave)),
+  );
+
+  return claveReal ? registro[claveReal] : "";
+};
+const obtenerNumeroCSV = (registro, claves) => {
+  const valor = obtenerValorCSV(registro, claves);
+  const numero = parseFloat(String(valor ?? "").replace(",", "."));
+  return Number.isFinite(numero) ? numero : null;
+};
+const limpiarRutaPlano = (ruta) => String(ruta ?? "").replace(/[\r\n\t]/g, "").trim();
+const obtenerNombrePlano = (ruta) => {
+  const rutaLimpia = limpiarRutaPlano(ruta).split("?")[0].split("#")[0].replace(/\\/g, "/");
+  return rutaLimpia.split("/").pop() || "";
+};
+const construirUrlApi = (ruta) => `${API_URL}${ruta.startsWith("/") ? "" : "/"}${ruta}`;
+const obtenerRutasPlano = (ruta) => {
+  const rutaLimpia = limpiarRutaPlano(ruta);
+  if (!rutaLimpia) return [];
+
+  const nombrePlano = obtenerNombrePlano(rutaLimpia);
+  const rutas = [];
+
+  if (nombrePlano) {
+    rutas.push(`${API_URL}/Proyecto/plano_Obtener/${encodeURIComponent(nombrePlano)}`);
+  }
+
+  rutas.push(/^https?:\/\//i.test(rutaLimpia) ? rutaLimpia : construirUrlApi(rutaLimpia));
+
+  return [...new Set(rutas)];
+};
+const descargarTextoPlano = async (rutas) => {
+  let ultimoError = null;
+
+  for (const ruta of rutas) {
+    try {
+      const response = await fetch(ruta);
+      if (!response.ok) {
+        ultimoError = new Error(`HTTP ${response.status} al cargar ${ruta}`);
+        continue;
+      }
+
+      const texto = limpiarRespuestaServidor(await response.text());
+      if (!texto || /^</.test(texto)) {
+        ultimoError = new Error(`Respuesta inválida al cargar ${ruta}`);
+        continue;
+      }
+
+      return texto;
+    } catch (error) {
+      ultimoError = error;
+    }
+  }
+
+  throw ultimoError ?? new Error("No se pudo cargar el plano.");
+};
+const generarGeometriaDesdeLotes = (lotes) => {
+  const columnas = Math.max(1, Math.ceil(Math.sqrt(lotes.length)));
+  const separacionX = 24;
+  const separacionY = 18;
+
+  return lotes.map((lote, index) => ({
+    Valor: lote.CodigoLote || lote.NumeroLote || `L${index + 1}`,
+    "Posicion X": (index % columnas) * separacionX,
+    "Posicion Y": Math.floor(index / columnas) * separacionY,
+    generadoDesdeBD: true,
+  }));
+};
+const obtenerViewBoxGeometria = (geometria) => {
+  const xs = geometria
+    .map((l) => obtenerNumeroCSV(l, ["posicionx"]))
+    .filter((numero) => numero !== null);
+  const ys = geometria
+    .map((l) => obtenerNumeroCSV(l, ["posiciony"]))
+    .filter((numero) => numero !== null);
+
+  if (xs.length === 0 || ys.length === 0) return "0 0 100 100";
+
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const maxX = Math.max(...xs);
+  const maxY = Math.max(...ys);
+  const padding = 20;
+  const anchoTotal = Math.max(maxX - minX, 24);
+  const altoTotal = Math.max(maxY - minY, 18);
+
+  return `${minX - padding} ${minY - padding} ${anchoTotal + padding * 2} ${altoTotal + padding * 2}`;
+};
+const extraerManzanaCodigo = (codigo) => {
+  const texto = String(codigo ?? "").trim();
+  const match = texto.match(/^[A-Za-z]+/);
+  return match ? match[0].toUpperCase() : "";
+};
+const valoresUnicos = (values) =>
+  [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))];
 
 const DetalleProyecto = ({ route, navigation }) => {
   const params = route.params || {};
@@ -50,9 +165,18 @@ const DetalleProyecto = ({ route, navigation }) => {
 
   const cargarTodo = async () => {
     setCargando(true);
-    await descargarYProcesarMapa();
-    await obtenerLotesDesdeBD();
-    setCargando(false);
+    try {
+      const planoCargado = await descargarYProcesarMapa();
+      const lotesCargados = await obtenerLotesDesdeBD();
+
+      if (!planoCargado && lotesCargados.length > 0) {
+        const geometriaBD = generarGeometriaDesdeLotes(lotesCargados);
+        setMiViewBox(obtenerViewBoxGeometria(geometriaBD));
+        setLotesGeometria(geometriaBD);
+      }
+    } finally {
+      setCargando(false);
+    }
   };
 
   const lotePermitidoPorCliente = (lote) => {
@@ -65,10 +189,7 @@ const DetalleProyecto = ({ route, navigation }) => {
   };
 
   const obtenerCodigoMapa = (loteMapa) => {
-    const kVal = Object.keys(loteMapa).find(
-      (k) => k.toLowerCase().includes("valor") || k.toLowerCase().includes("contenido")
-    );
-    return kVal ? loteMapa[kVal] : "";
+    return obtenerValorCSV(loteMapa, ["valor", "contenido", "codigo"]);
   };
 
   const geometriaPermitidaPorCliente = (codigoMapa) => {
@@ -80,21 +201,24 @@ const DetalleProyecto = ({ route, navigation }) => {
   const obtenerLotesDesdeBD = async () => {
     try {
       const response = await fetch(`${API_URL}/Lote/lote_Listar`);
-      let textoLotes = await response.text();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
 
-      // CORRECCIÓN SOMEE: Limpiar código publicitario al final del JSON si existiera
-      if (textoLotes.includes("<!--")) textoLotes = textoLotes.split("<!--")[0];
-      if (textoLotes.includes("<script")) textoLotes = textoLotes.split("<script")[0];
-
-      const todosLosLotes = JSON.parse(textoLotes.trim());
+      const textoLotes = limpiarRespuestaServidor(await response.text());
+      const todosLosLotes = JSON.parse(textoLotes);
 
       const filtrados = todosLosLotes.filter(
         (lote) => lote.IdProyecto?.toString() === idProyecto?.toString(),
       );
 
-      setLotesBD(filtrados.filter(lotePermitidoPorCliente));
+      const lotesFiltrados = filtrados.filter(lotePermitidoPorCliente);
+      setLotesBD(lotesFiltrados);
+      return lotesFiltrados;
     } catch (error) {
       console.error("Error cargando lotes BD:", error);
+      setLotesBD([]);
+      return [];
     }
   };
 
@@ -103,78 +227,51 @@ const DetalleProyecto = ({ route, navigation }) => {
   try {
     if (!urlCSV) {
       setLotesGeometria([]);
+      return false;
+    }
+
+    const csvLimpio = await descargarTextoPlano(obtenerRutasPlano(urlCSV));
+
+    if (!csvLimpio || /^</.test(csvLimpio)) {
+      setLotesGeometria([]);
       return;
     }
 
-    const rutaLimpia = urlCSV.startsWith("http") 
-      ? urlCSV 
-      : `${API_URL}${urlCSV.startsWith("/") ? "" : "/"}${urlCSV}`;
+    return await new Promise((resolve) => {
+      Papa.parse(csvLimpio, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.replace(/^\uFEFF/, "").trim(),
+        complete: (result) => {
+          const datos = result.data.filter((l) => {
+            const x = obtenerNumeroCSV(l, ["posicionx"]);
+            const y = obtenerNumeroCSV(l, ["posiciony"]);
+            return x !== null && y !== null;
+          });
 
-    const response = await fetch(rutaLimpia);
-    let csvTexto = await response.text();
-    // ============================================================
-    // AGREGA ESTOS DOS LOGS DEBAJO DE "await response.text()"
-    // ============================================================
-    console.log("1. ¿Qué tamaño tiene el texto devuelto?:", csvTexto.length);
-    console.log("2. CONTENIDO CRUDO QUE LLEGA DE SOMEE:", csvTexto.substring(0, 300));
-    // ============================================================
+          const datosCliente = hayFiltroCliente
+            ? datos.filter((l) => geometriaPermitidaPorCliente(obtenerCodigoMapa(l)))
+            : datos;
 
-    // ============================================================
-    // CORRECCIÓN CLAVE: Extraer la posición [0] tras cortar la publicidad
-    // ============================================================
-    if (csvTexto.includes("<!--")) {
-      csvTexto = csvTexto.split("<!--")[0]; // <--- Agregado [0] al final
-    }
-    if (csvTexto.includes("<script")) {
-      csvTexto = csvTexto.split("<script")[0]; // <--- Agregado [0] al final
-    }
+          if (datosCliente.length > 0) {
+            setMiViewBox(obtenerViewBoxGeometria(datosCliente));
+            setLotesGeometria(datosCliente);
+            resolve(true);
+            return;
+          }
 
-    const csvLimpio = csvTexto.trim();
-
-    Papa.parse(csvLimpio, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (result) => {
-        console.log("Columnas ahora detectadas:", result.meta?.fields);
-        console.log("Total filas leídas:", result.data?.length);
-
-        const datos = result.data.filter((l) => {
-          const x = l["Posición X"] || l["Posicion X"];
-          const y = l["Posición Y"] || l["Posicion Y"];
-          return x !== undefined && y !== undefined && x !== "" && y !== "";
-        });
-
-        const datosCliente = hayFiltroCliente
-          ? datos.filter((l) => geometriaPermitidaPorCliente(obtenerCodigoMapa(l)))
-          : datos;
-
-        if (datosCliente.length > 0) {
-          const xs = datosCliente.map((l) => parseFloat(l["Posición X"] || l["Posicion X"]));
-          const ys = datosCliente.map((l) => parseFloat(l["Posición Y"] || l["Posicion Y"]));
-
-          const minX = Math.min(...xs);
-          const minY = Math.min(...ys);
-          const maxX = Math.max(...xs);
-          const maxY = Math.max(...ys);
-
-          const anchoTotal = maxX - minX;
-          const altoTotal = maxY - minY;
-          const padding = 20; 
-
-          setMiViewBox(
-            `${minX - padding} ${minY - padding} ${anchoTotal + padding * 2} ${altoTotal + padding * 2}`
-          );
-
-          setLotesGeometria(datosCliente);
-          return;
-        }
-
-        setLotesGeometria([]);
-      },
+          setLotesGeometria([]);
+          resolve(false);
+        },
+        error: () => {
+          setLotesGeometria([]);
+          resolve(false);
+        },
+      });
     });
   } catch (error) {
-    console.error("Error procesando CSV:", error);
-    Alert.alert("Error", "No se pudo cargar el archivo del plano.");
+    setLotesGeometria([]);
+    return false;
   }
 };
 
@@ -185,11 +282,11 @@ const DetalleProyecto = ({ route, navigation }) => {
 
     if (!loteEncontrado) return "#ffffff";
 
-    switch (loteEncontrado.EstadoLote?.trim()) {
-      case "Al Dia": return "#28a745";
-      case "Retrasado": return "#ffeb3b";
-      case "En Deuda": return "#dc3545";
-      case "Vendido": return "#fd7e14";
+    switch (normalizarClaveCSV(loteEncontrado.EstadoLote)) {
+      case "aldia": return "#28a745";
+      case "retrasado": return "#ffeb3b";
+      case "endeuda": return "#dc3545";
+      case "vendido": return "#fd7e14";
       default: return "#ffffff";
     }
   };
@@ -197,10 +294,20 @@ const DetalleProyecto = ({ route, navigation }) => {
   const obtenerIdLote = (lote) => {
     return lote?.IdLote ?? lote?.idLote ?? lote?.Id ?? lote?.id ?? lote?.Id_Lote;
   };
+  const obtenerManzanasDisponibles = () =>
+    valoresUnicos([
+      ...lotesBD.map((lote) => lote.Manzana),
+      ...lotesGeometria.map((lote) => extraerManzanaCodigo(obtenerCodigoMapa(lote))),
+    ]).sort();
+
+  const altoMapa = esWeb ? Math.max(220, Math.min(300, Math.round(height * 0.32))) : 380;
+  const anchoMapa = esWeb ? Math.max(280, Math.min(width - 40, 860)) : undefined;
+  const altoSvg = esWeb ? Math.max(180, altoMapa - 32) : 350;
+  const anchoSvg = esWeb ? Math.max(240, (anchoMapa || width) - 32) : width - 80;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, esWeb && styles.headerWeb]}>
         <Text style={styles.title}>{proyectoInfo.Nombre}</Text>
         <Text style={styles.label}>
           📍 Ubicación: <Text style={styles.value}>{proyectoInfo.Ubicacion}</Text>
@@ -215,29 +322,30 @@ const DetalleProyecto = ({ route, navigation }) => {
         ) : null}
       </View>
 
-      <ScrollView>
-        <View style={styles.mapContainer}>
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={[styles.scrollContent, esWeb && styles.scrollContentWeb]}
+      >
+        <View style={[styles.mapContainer, esWeb && styles.mapContainerWeb, esWeb && { height: altoMapa, width: anchoMapa }]}>
           {cargando ? (
             <ActivityIndicator size="large" color="#069488" />
+          ) : lotesGeometria.length === 0 ? (
+            <Text style={styles.mapEmptyText}>
+              No se encontró información del plano para mostrar.
+            </Text>
           ) : (
             <Svg
-              height="350"
-              width={width - 80}
+              height={altoSvg}
+              width={anchoSvg}
               viewBox={miViewBox}
               preserveAspectRatio="xMidYMid meet"
             >
               <G scaleY={1} originY={0}>
                 {lotesGeometria.map((lote, index) => {
-                  const kX = Object.keys(lote).find((k) => k.toLowerCase().includes("x"));
-                  const kY = Object.keys(lote).find((k) => k.toLowerCase().includes("y"));
-                  const kVal = Object.keys(lote).find(
-                    (k) => k.toLowerCase().includes("valor") || k.toLowerCase().includes("contenido")
-                  );
-
-                  const x = parseFloat(lote[kX]);
-                  const y = parseFloat(lote[kY]);
-                  const nombre = lote[kVal] || "";
-                  if (isNaN(x) || isNaN(y)) return null;
+                  const x = obtenerNumeroCSV(lote, ["posicionx"]);
+                  const y = obtenerNumeroCSV(lote, ["posiciony"]);
+                  const nombre = obtenerCodigoMapa(lote);
+                  if (x === null || y === null) return null;
 
                   const anchoLote = 15;
                   const altoLote = 10;
@@ -310,7 +418,7 @@ const DetalleProyecto = ({ route, navigation }) => {
           )}
         </View>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, esWeb && styles.footerWeb]}>
           <Text style={styles.subtitle}>Leyenda de Estados:</Text>
           <View style={styles.leyendaContainer}>
             <LeyendaItem color="#ffffff" texto="Libre" />
@@ -327,6 +435,7 @@ const DetalleProyecto = ({ route, navigation }) => {
             navigation.navigate('RegistrarLote', { 
               idProyecto: idProyecto, 
               proyectoNombre: proyectoInfo?.Nombre || proyectoInfo?.nombre || "Proyecto sin nombre",
+              manzanasDisponibles: obtenerManzanasDisponibles(),
               onRefresh: cargarTodo 
             })
           }
@@ -339,7 +448,9 @@ const DetalleProyecto = ({ route, navigation }) => {
             {hayFiltroCliente ? "Información de Lotes Comprados" : "Información de Lotes"} ({lotesBD.length}):
           </Text>
 
-          {lotesBD.map((loteItem, index) => (
+          {lotesBD.length === 0 ? (
+            <Text style={styles.infoText}>No hay lotes registrados para este proyecto.</Text>
+          ) : lotesBD.map((loteItem, index) => (
             <View key={loteItem.IdLote || index} style={styles.cardLote}>
               <View>
                 <Text style={styles.txtCodigoLote}>{loteItem.CodigoLote}</Text>
@@ -430,12 +541,25 @@ const LeyendaItem = ({ color, texto }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#e4f5f3", padding: 10 },
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 30,
+  },
+  scrollContentWeb: {
+    paddingBottom: 140,
+  },
   header: {
     padding: 20,
     backgroundColor: "#fff",
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
     paddingTop: 40,
+  },
+  headerWeb: {
+    paddingTop: 28,
+    paddingBottom: 18,
   },
   title: {
     fontSize: 24,
@@ -455,6 +579,18 @@ const styles = StyleSheet.create({
     elevation: 5,
     overflow: "hidden",
   },
+  mapContainerWeb: {
+    alignSelf: "center",
+    marginVertical: 10,
+    marginHorizontal: 0,
+  },
+  mapEmptyText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "800",
+    paddingHorizontal: 18,
+    textAlign: "center",
+  },
   subtitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -469,9 +605,14 @@ const styles = StyleSheet.create({
   },
   infoText: { marginHorizontal: 20, color: "#666", fontSize: 13 },
   footer: { paddingBottom: 20 },
+  footerWeb: {
+    paddingBottom: 10,
+  },
 
   listaSeccion: {
     backgroundColor: "#e4f5f3",
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   cardLote: {
     flexDirection: "row",

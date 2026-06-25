@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.StaticFiles;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ===============================================
@@ -52,7 +54,18 @@ app.UseCors("AllowAll");
 // Sirve index.html en / y conserva intactas las rutas de los controladores.
 // ===============================================
 app.UseDefaultFiles();
-app.UseStaticFiles();
+
+var contentTypeProvider = new FileExtensionContentTypeProvider();
+contentTypeProvider.Mappings[".csv"] = "text/csv";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = contentTypeProvider,
+    OnPrepareResponse = context =>
+    {
+        context.Context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+    }
+});
 
 // ===============================================
 // 7. AUTORIZACIÓN

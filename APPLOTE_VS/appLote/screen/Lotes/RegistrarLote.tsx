@@ -7,15 +7,20 @@ import {
   ScrollView,
   Alert,
   StyleSheet,
+  Platform,
+  useWindowDimensions,
+  Modal,
 } from "react-native";
 import { API_URL } from "../../config/apiUrl";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
-
-
+const OPCIONES_MANZANA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) => {
   const { idProyecto, proyectoNombre, onRefresh } = route.params || {};
+  const esWeb = Platform.OS === "web";
+  const { height: altoPantalla } = useWindowDimensions();
+  const altoFormularioWeb = Math.max(420, altoPantalla - 80);
   console.log("console para ver los datos de route:", route.params);
   const [codLote, setCodLote] = useState("");
   const [ubicacion, setUbicacion] = useState("");
@@ -31,6 +36,7 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
   const [descrip, setDescrip] = useState("");
   const [imgUrl, setImgUrl] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [selectorManzanaAbierto, setSelectorManzanaAbierto] = useState(false);
 
   const parseDimension = (value: string): number | null => {
     if (!value) return null;
@@ -160,11 +166,25 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Registrar Lote</Text>
+    <View style={[styles.container, esWeb && { height: altoFormularioWeb, maxHeight: altoFormularioWeb }]}>
+    <ScrollView
+      style={[
+        styles.scrollArea,
+        esWeb && ({
+          height: altoFormularioWeb,
+          maxHeight: altoFormularioWeb,
+          overflowY: "auto",
+          overflowX: "hidden",
+        } as any),
+      ]}
+      contentContainerStyle={[styles.content, esWeb && styles.contentWeb]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator
+    >
+      <Text style={[styles.title, esWeb && styles.titleWeb]}>Registrar Lote</Text>
 
       {idProyecto ? (
-        <View style={styles.projectInfoBox}>
+        <View style={[styles.projectInfoBox, esWeb && styles.projectInfoBoxWeb]}>
           <Text style={styles.projectInfoLabel}>Proyecto seleccionado</Text>
           <Text style={styles.projectInfoValue}>{proyectoNombre || idProyecto}</Text>
           {proyectoNombre ? (
@@ -180,6 +200,93 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
         value={codLote}
         onChangeText={setCodLote}
       />
+
+      <Text style={styles.label}>Manzana de lotes</Text>
+      {esWeb ? (
+        <View style={styles.selectorWrapper}>
+          <View style={styles.selectorInputRow}>
+            <TextInput
+              style={[styles.input, styles.selectorInput]}
+              placeholder="Manzana de lotes"
+              value={manzana}
+              onChangeText={(value) => {
+                setManzana(value);
+                if (!value.trim()) setSelectorManzanaAbierto(false);
+              }}
+            />
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Seleccionar manzana de lotes"
+              style={styles.selectorButton}
+              onPress={() => setSelectorManzanaAbierto((abierto) => !abierto)}
+            >
+              <MaterialIcons
+                name={selectorManzanaAbierto ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+                size={26}
+                color="#0f766e"
+              />
+            </TouchableOpacity>
+          </View>
+
+          <Modal
+            animationType="fade"
+            transparent
+            visible={selectorManzanaAbierto}
+            onRequestClose={() => setSelectorManzanaAbierto(false)}
+          >
+            <View style={styles.selectorModalBackdrop}>
+              <View style={styles.selectorModalCard}>
+                <View style={styles.selectorModalHeader}>
+                  <View>
+                    <Text style={styles.selectorModalEyebrow}>Manzana de lotes</Text>
+                    <Text style={styles.selectorModalTitle}>Selecciona una letra</Text>
+                  </View>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Cerrar selector de manzana"
+                    style={styles.selectorCloseButton}
+                    onPress={() => setSelectorManzanaAbierto(false)}
+                  >
+                    <MaterialIcons name="close" size={22} color="#0f766e" />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  style={styles.selectorOptionsScroll}
+                  contentContainerStyle={styles.selectorOptionsContent}
+                  showsVerticalScrollIndicator
+                >
+                  {OPCIONES_MANZANA.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={[
+                      styles.selectorOption,
+                      manzana.trim().toUpperCase() === item.toUpperCase() && styles.selectorOptionActive,
+                    ]}
+                    onPress={() => {
+                      setManzana(item);
+                      setSelectorManzanaAbierto(false);
+                    }}
+                  >
+                    <Text style={styles.selectorOptionText}>Manzana de lotes {item}</Text>
+                    {manzana.trim().toUpperCase() === item.toUpperCase() ? (
+                      <MaterialIcons name="check" size={18} color="#0f766e" />
+                    ) : null}
+                  </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
+        </View>
+      ) : (
+        <TextInput
+          style={styles.input}
+          placeholder="Manzana de lotes"
+          value={manzana}
+          onChangeText={setManzana}
+        />
+      )}
 
       <Text style={styles.label}>Direccion</Text>
       <TextInput
@@ -252,14 +359,6 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
         onChangeText={setNumLote}
       />
 
-      <Text style={styles.label}>Manzana</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Manzana"
-        value={manzana}
-        onChangeText={setManzana}
-      />
-
       <Text style={styles.label}>Precio</Text>
       <TextInput
         style={styles.input}
@@ -289,6 +388,7 @@ const RegistrarLote = ({ route, navigation }: { route: any; navigation: any }) =
         </Text>
       </TouchableOpacity>
     </ScrollView>
+    </View>
   );
 };
 
@@ -297,10 +397,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8fafc",
   },
+  scrollArea: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+  },
   content: {
     padding: 20,
     paddingTop:35,
     paddingBottom: 50,
+  },
+  contentWeb: {
+    width: "100%",
+    maxWidth: 980,
+    alignSelf: "center",
+    paddingTop: 24,
+    paddingBottom: 180,
   },
   title: {
     fontSize: 32,
@@ -309,6 +420,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: "center",
     letterSpacing: 0.5,
+  },
+  titleWeb: {
+    fontSize: 28,
+    marginBottom: 16,
   },
   projectInfoBox: {
     marginBottom: 10,
@@ -322,6 +437,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowRadius: 12,
     elevation: 8,
+  },
+  projectInfoBoxWeb: {
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 8,
   },
   projectInfoLabel: {
     fontSize: 11,
@@ -373,6 +493,121 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 1,
+  },
+  selectorWrapper: {
+    marginBottom: 16,
+    zIndex: 20,
+  },
+  selectorInputRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 8,
+  },
+  selectorInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  selectorButton: {
+    width: 54,
+    borderWidth: 2,
+    borderColor: "#10b981",
+    borderRadius: 14,
+    backgroundColor: "#ecfdf5",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#10b981",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  selectorModalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  selectorModalCard: {
+    width: "100%",
+    maxWidth: 380,
+    maxHeight: "72%",
+    backgroundColor: "#ffffff",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#ccfbf1",
+    overflow: "hidden",
+    shadowColor: "#0f766e",
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 14 },
+    shadowRadius: 26,
+    elevation: 10,
+  },
+  selectorModalHeader: {
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    backgroundColor: "#ecfdf5",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d1fae5",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  selectorModalEyebrow: {
+    color: "#0f766e",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  selectorModalTitle: {
+    color: "#0f172a",
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  selectorCloseButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#99f6e4",
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectorOptionsScroll: {
+    maxHeight: 320,
+  },
+  selectorOptionsContent: {
+    padding: 12,
+    gap: 8,
+  },
+  selectorOption: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#ffffff",
+  },
+  selectorOptionActive: {
+    backgroundColor: "#ecfdf5",
+  },
+  selectorOptionText: {
+    color: "#0f172a",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  selectorEmpty: {
+    padding: 14,
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: "700",
   },
   inputLarge: {
     minHeight: 110,

@@ -20,7 +20,9 @@ const ModificarProyecto = ({ navigation, route }) => {
   const [codProyecto, setCodProyecto] = useState(proyecto?.CodProyecto || "");
   const [Nombre, setNombre] = useState(proyecto?.Nombre || "");
   const [ubicacion, setUbicacion] = useState(proyecto?.Ubicacion || "");
-  const [numHectareas, setNumHectareas] = useState(proyecto?.NumHectareas?.toString() || "");
+  const [numHectareas, setNumHectareas] = useState(
+    proyecto?.NumeroHectareas?.toString() || proyecto?.NumHectareas?.toString() || "",
+  );
   const [partidaRegistral, setPartidaRegistral] = useState(proyecto?.PartidaRegistral || "");
   const [archivoCSV, setArchivoCSV] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
 
@@ -56,6 +58,7 @@ const ModificarProyecto = ({ navigation, route }) => {
     formData.append("NumeroHectareas", numHectareas);
     formData.append("PartidaRegistral", partidaRegistral);
     formData.append("Estado", proyecto?.Estado || "A");
+    formData.append("ImagenUrl", proyecto?.ImagenUrl || "");
 
     if (archivoCSV) {
       // Adjunta File en web y el descriptor URI esperado por React Native en móvil.
