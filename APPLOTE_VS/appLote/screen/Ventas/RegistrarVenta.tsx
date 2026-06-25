@@ -786,7 +786,7 @@ const RegistrarVenta = ({ route, navigation }) => {
           />
         </View>
         
-        {rol === "40" && (
+        {rol === 40 && (
           // Botón Registrar 
           <TouchableOpacity
             style={[styles.button, cargando && styles.buttonDisabled]}

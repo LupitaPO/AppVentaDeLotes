@@ -31,7 +31,7 @@ const BottomTabs = ({ route }) => {
         tabBarItemStyle: esWeb ? styles.tabBarItemWeb : undefined,
       }}
     >
-      {rol === "5" && (
+      {(rol === 3 || rol === 40 ) && (
         <Tab.Screen
           name={i18n.t("btDashboard")}
           component={Home}
@@ -61,7 +61,7 @@ const BottomTabs = ({ route }) => {
           ),
         }}
       />
-      {rol === "5" && (
+      {rol === 3 && (
         <Tab.Screen
          name={i18n.t("btusuario")}
          component={Usuario}
@@ -78,7 +78,7 @@ const BottomTabs = ({ route }) => {
        />
 
       )}
-      {rol === "5" && (
+      {rol === 3 && (
         <Tab.Screen
          name={i18n.t("btAsesor")}
          component={Asesor}
